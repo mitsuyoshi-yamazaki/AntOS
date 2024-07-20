@@ -1,6 +1,6 @@
 import { Command, CommandOutput } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
-import { alignedProcessInfo, processDescription } from "./utilities"
+import { AlignedProcessInfo, processDescription } from "./utilities"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
@@ -8,7 +8,7 @@ export const MessageCommand: Command = {
   command: "message",
 
   help(): string {
-    return "> message {process ID} ...{arguments}"
+    return "message {process ID} ...{arguments}"
   },
 
   /** @throws */
@@ -19,7 +19,7 @@ export const MessageCommand: Command = {
     const output: CommandOutput[] = [
       {
         outputType: "output",
-        message: alignedProcessInfo("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
+        message: AlignedProcessInfo.header("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
       },
       {
         outputType: "output",

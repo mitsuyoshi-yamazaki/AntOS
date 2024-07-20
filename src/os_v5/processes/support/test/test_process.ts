@@ -6,6 +6,10 @@ import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import { Command, runCommands } from "os_v5/standard_io/command"
+import { NotificationReceiver } from "os_v5/system_calls/depended_system_calls/notification_manager"
+import { Notification, notificationManagerTestNotification,  } from "os_v5/system_calls/depended_system_calls/notification_manager_types"
+import { processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "os_v5/system_calls/process_manager/process_manager_notification"
+import { strictEntries } from "shared/utility/strict_entries"
 
 
 const deferredTaskTypes = ["loop_task"] as const
@@ -22,7 +26,7 @@ ProcessDecoder.register("TestProcess", (processId: TestProcessId, state: TestPro
 export type TestProcessId = ProcessId<void, string, void, TestProcessState, TestProcess>
 
 
-export class TestProcess extends Process<void, string, void, TestProcessState, TestProcess> {
+export class TestProcess extends Process<void, string, void, TestProcessState, TestProcess> implements NotificationReceiver {
   public readonly dependencies: ProcessDependencies = {
     processes: [],
   }
@@ -33,6 +37,10 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
     public readonly identifier: string,
   ) {
     super()
+
+    SystemCalls.notificationManager.addObserver(this, processManagerProcessDidLaunchNotification)
+    SystemCalls.notificationManager.addObserver(this, processManagerProcessDidKillNotification)
+    SystemCalls.notificationManager.addObserver(this, notificationManagerTestNotification)
   }
 
   public encode(): TestProcessState {
@@ -72,6 +80,16 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
       return
     }
     SystemCalls.logger.log(this, this.runtimeDescription())
+  }
+
+
+  // ---- Event Receiver ---- //
+  public didReceiveNotification(notification: Notification): void {
+    SystemCalls.logger.log(this, `Did receive notification: \n${this.describeNotification(notification)}`)
+  }
+
+  private describeNotification(notification: Notification): string {
+    return strictEntries(notification).map(([key, value]) => `- ${key}: ${value}`).join("\n")
   }
 
   public didFinishDeferredTask<TaskType extends string, T>(taskResult: DeferredTaskResult<TaskType, T>): void {

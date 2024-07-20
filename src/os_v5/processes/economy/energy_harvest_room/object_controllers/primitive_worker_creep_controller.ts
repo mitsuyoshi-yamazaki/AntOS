@@ -11,7 +11,6 @@ export class PrimitiveWorkerCreepController {
       return
     }
     creep.task = this.workerTaskFor(creep, roomName)
-    // this.runDirectly(creep, roomName)
   }
 
   private workerTaskFor(creep: EnergyHarvestRoomProcessCreep, roomName: RoomName): CreepTask.AnyTask | null {
@@ -19,7 +18,7 @@ export class PrimitiveWorkerCreepController {
       return CreepTask.Tasks.MoveToRoom.create(roomName, [])
     }
 
-    const source = creep.pos.findClosestByRange(FIND_SOURCES_ACTIVE)
+    const source = creep.pos.findClosestByRange(FIND_SOURCES)
     if (source == null) {
       return null // FixMe: 一度に全ての状態を設定するので、タスク状態とCreepMemory両方で無駄が発生している
     }

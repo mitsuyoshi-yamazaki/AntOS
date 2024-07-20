@@ -27,10 +27,11 @@ ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTask
 export type TaskDrivenCreepMemory<Roles> = {
   t: CreepTask.TaskState | null
   r: Roles
+  // s?: true  /// CreepTask tが終了した際に次タスクの生成を求めるか  // TODO:
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TaskDrivenCreepMemoryReservedProperties = V5CreepMemoryReservedProperties | { t: any } | { r: any }
+type TaskDrivenCreepMemoryReservedProperties = V5CreepMemoryReservedProperties | { t: any } | { r: any } | { s: any }
 
 export type TaskDrivenCreep<Roles extends string, M extends SerializableObject> = M extends TaskDrivenCreepMemoryReservedProperties ? never : V5Creep<TaskDrivenCreepMemory<Roles> & M> & {
   task: CreepTask.AnyTask | null

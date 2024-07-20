@@ -6,7 +6,8 @@ import { AnyV5Creep, AnyV5CreepMemory, isV5Creep } from "../game_object/creep"
 
 export class ProcessArgument extends SingleOptionalArgument<void, AnyProcess> {
   /** throws */
-  public parse(): AnyProcess {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): AnyProcess {
     if (this.value == null || this.value.length <= 0) {
       throw this.missingArgumentErrorMessage()
     }

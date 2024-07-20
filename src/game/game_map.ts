@@ -190,6 +190,18 @@ export const GameMap = {
     return Result.Succeeded(undefined)
   },
 
+  clearWaypoints(roomName: RoomName, destinationRoomName: RoomName): void {
+    const outboundWaypoints = Memory.gameMap.interRoomPath[roomName]
+    if (outboundWaypoints != null) {
+      delete outboundWaypoints[destinationRoomName]
+    }
+
+    const returnWaypoints = Memory.gameMap.interRoomPath[destinationRoomName]
+    if (returnWaypoints != null) {
+      delete returnWaypoints[roomName]
+    }
+  },
+
   hasWaypoints(roomName: RoomName, destinationRoomName: RoomName): boolean {
     return this.getWaypoints(roomName, destinationRoomName, {ignoreMissingWaypoints: true}) != null
   },

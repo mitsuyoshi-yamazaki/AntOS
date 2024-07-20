@@ -55,7 +55,7 @@ export class MapAccessorProcess implements Process, MessageObserver {
   }
 
   public didReceiveMessage(message: string): string {
-    const commandList = ["help", "show", "set", "show_missing_waypoints", "set_highway_waypoints", "show_travel_distance"]
+    const commandList = ["help", "show", "set", "clear", "show_missing_waypoints", "set_highway_waypoints", "show_travel_distance"]
     const components = message.split(" ")
     const command = components.shift()
 
@@ -67,6 +67,8 @@ export class MapAccessorProcess implements Process, MessageObserver {
         return this.showWaypoints(components)
       case "set":
         return this.setWaypoints(components)
+      case "clear":
+        return this.clearWaypoints(components)
       case "show_missing_waypoints":
         return this.showMissingWaypoints()
       case "set_highway_waypoints":
@@ -166,6 +168,32 @@ export class MapAccessorProcess implements Process, MessageObserver {
 
       const waypointDescription = waypoints.length <= 0 ? "no waypoints" : waypoints.map(name => roomLink(name)).join(",")
       return `${roomLink(roomName)} -> ${waypointDescription} -> ${roomLink(destinationRoomName)}`
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
+  private clearWaypoints(commandComponents: string[]): string {
+    try {
+      const manual = "clear &ltroom_name&gt &ltdestination_room_name&gt"
+      const roomName = commandComponents[0]
+      if (roomName == null) {
+        throw `room_name not specified. ${manual}`
+      }
+      if (this.isValidRoomName(roomName) !== true) {
+        throw `room_name ${roomName} is not valid`
+      }
+      const destinationRoomName = commandComponents[1]
+      if (destinationRoomName == null) {
+        throw `destination_room_name not specified. ${manual}`
+      }
+      if (this.isValidRoomName(destinationRoomName) !== true) {
+        throw `destination_room_name ${destinationRoomName} is not valid`
+      }
+
+      GameMap.clearWaypoints(roomName, destinationRoomName)
+
+      return `cleared: ${roomLink(roomName)} -> ${roomLink(destinationRoomName)}`
     } catch (error) {
       return `${coloredText("[ERROR]", "error")} ${error}`
     }

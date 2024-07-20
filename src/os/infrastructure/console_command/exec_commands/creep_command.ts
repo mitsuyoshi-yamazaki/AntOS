@@ -11,6 +11,8 @@ import { MoveToRoomTask } from "v5_object_task/creep_task/meta_task/move_to_room
 import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { decodeRoomPosition } from "prototype/room_position"
+import { CommodityConstant, DepositConstant, MineralBaseCompoundsConstant, MineralBoostConstant, MineralConstant } from "shared/utility/resource"
+import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 
 /** @throws */
 export function execCreepCommand(creep: Creep, args: string[]): string {
@@ -116,7 +118,25 @@ function createPickupTask(creep: Creep, pickupTargetId: Id<PickupOppprtunityType
     throw `${target} is not pickup target type`
   }
 
-  return MoveToTargetTask.create(WithdrawApiWrapper.create(target))
+  const resourcePriority: string[] = [  // 添字の大きいほうが優先
+    ...MineralConstant,
+    ...DepositConstant,
+    ...MineralBaseCompoundsConstant,
+    ...MineralBoostConstant,
+    ...CommodityConstant,
+    RESOURCE_OPS,
+    RESOURCE_POWER,
+  ]
+
+  const storedResources = Array.from(Object.keys(target.store))
+  storedResources.sort((lhs, rhs) => resourcePriority.indexOf(rhs) - resourcePriority.indexOf(lhs))
+
+  const resource = storedResources[0]
+  if (resource != null) {
+    return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(target, resource as ResourceConstant))
+  } else {
+    return MoveToTargetTask.create(WithdrawApiWrapper.create(target))
+  }
 }
 
 /** @throws */

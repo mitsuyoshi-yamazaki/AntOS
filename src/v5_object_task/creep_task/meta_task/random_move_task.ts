@@ -26,6 +26,9 @@ export class RandomMoveTask implements CreepTask {
   }
 
   public run(creep: Creep): TaskProgressType {
+    if (creep.fatigue > 0) {
+      return TaskProgressType.InProgress
+    }
     creep.move(randomDirection(0))
     return TaskProgressType.FinishedAndRan
   }

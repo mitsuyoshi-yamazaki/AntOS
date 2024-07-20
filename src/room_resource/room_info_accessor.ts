@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { decodeRoomPosition, Position } from "prototype/room_position"
-import { coloredResourceType, roomLink } from "utility/log"
+import { roomLink } from "utility/log"
 import { MineralCompoundIngredients } from "shared/utility/resource"
 import { Result } from "shared/utility/result"
 import type { RoomName } from "shared/utility/room_name_types"
@@ -457,6 +457,10 @@ export class OwnedRoomInfoAccessor {
         requredAmount: labInfo.requiredAmount,
       }]
     })
+  }
+
+  public clearResearchLabs(): void {
+    delete this.roomInfo.researchLab
   }
 
   private getResearchLabs(): { inputLab1: StructureLab, inputLab2: StructureLab, outputLabs: StructureLab[] } | null {

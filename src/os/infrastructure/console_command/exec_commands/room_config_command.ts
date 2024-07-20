@@ -9,6 +9,7 @@ import { isMineralBoostConstant, isMineralCompoundConstant } from "shared/utilit
 import type { RoomName } from "shared/utility/room_name_types"
 import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
 import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
+import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 const numberAccessorCommands = [
   "mineral_max_amount",
@@ -32,6 +33,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "toggle_remote",
     "toggle_auto_attack",
     "show_labs",
+    "clear_research_labs",
     "no_repair_walls",
     "research",
     ...numberAccessorCommands,
@@ -63,6 +65,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return toggleAutoAttack(roomResource, args)
   case "show_labs":
     return showLabs(roomResource)
+  case "clear_research_labs":
+    return clearResearchLabs(roomResource)
   case "no_repair_walls":
     return noRepairWalls(roomResource, args)
   case "research":
@@ -210,10 +214,16 @@ const showNoRepairWalls = (roomResource: OwnedRoomResource): void => {
 
 /** @throws */
 function showLabs(roomResource: OwnedRoomResource): string {
-  type LabDescription = { lab: StructureLab, text: string, color: string }
+  type LabDescription = {
+    readonly labType: string
+    readonly lab: StructureLab
+    readonly text: string
+    readonly color: string
+  }
   const labs: LabDescription[] = []
 
   const boostLabs: LabDescription[] = roomResource.roomInfoAccessor.boostLabs.map(labInfo => ({
+    labType: ConsoleUtility.coloredResourceType(labInfo.boost),
     lab: labInfo.lab,
     text: (labInfo.boost[0] ?? "").toUpperCase(),
     color: coloredResourceType(labInfo.boost),
@@ -224,17 +234,20 @@ function showLabs(roomResource: OwnedRoomResource): string {
   if (researchLabs != null) {
     const researchLabTextColor = "#000000"
     labs.push({
+      labType: "research input",
       lab: researchLabs.inputLab1,
       text: "i",
       color: researchLabTextColor,
     })
     labs.push({
+      labType: "research input",
       lab: researchLabs.inputLab2,
       text: "i",
       color: researchLabTextColor,
     })
     labs.push(...researchLabs.outputLabs.map((lab): LabDescription => {
       return {
+        labType: "research output",
         lab,
         text: "o",
         color: researchLabTextColor,
@@ -242,18 +255,43 @@ function showLabs(roomResource: OwnedRoomResource): string {
     }))
   }
 
-  labs.forEach(labDescription => {
-    const position = labDescription.lab.pos
-    roomResource.room.visual.text(labDescription.text, position.x, position.y, {color: labDescription.color, strokeWidth: 0.3})
-  })
-
   const researchLabDescription = ((): string => {
     if (researchLabs == null) {
       return "no research labs"
     }
     return `${researchLabs.outputLabs.length} research output labs`
   })()
-  return `${boostLabs.length} boost labs, ${researchLabDescription}`
+
+  const results: string[] = [
+    `- ${boostLabs.length} boost labs`,
+    `- ${researchLabDescription}`,
+    "- labs:",
+  ]
+
+  labs.forEach(labDescription => {
+    const position = labDescription.lab.pos
+    roomResource.room.visual.text(labDescription.text, position.x, position.y, { color: labDescription.color, strokeWidth: 0.3 })
+    results.push(`  - (${position.x},${position.y}) ${labDescription.labType}`)
+  })
+
+
+  return results.join("\n")
+}
+
+function clearResearchLabs(roomResource: OwnedRoomResource): string {
+  const researchLabs = roomResource.roomInfoAccessor.researchLabs
+  if (researchLabs == null) {
+    return "no research labs"
+  }
+
+  roomResource.roomInfoAccessor.clearResearchLabs()
+
+  return [
+    "cleared research labs:",
+    `- input: ${researchLabs.inputLab1}`,
+    `- input: ${researchLabs.inputLab2}`,
+    `- output: ${researchLabs.outputLabs}`,
+  ].join("\n")
 }
 
 /** @throws */

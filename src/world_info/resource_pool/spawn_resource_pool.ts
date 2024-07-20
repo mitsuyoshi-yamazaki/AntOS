@@ -2,20 +2,35 @@ import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { V5CreepMemory } from "prototype/creep"
 import { bodyCost } from "utility/creep_body"
 import { roomLink } from "utility/log"
-import type { RoomName } from "shared/utility/room_name_types"
 import { UniqueId } from "utility/unique_id"
 import { createBodyFrom, CreepSpawnRequest, mergeRequests, sortRequests } from "./creep_specs"
 import { ResourcePoolType } from "./resource_pool"
+import { MyRoom } from "shared/utility/room"
+import { RoomName } from "shared/utility/room_name_types"
 
 export class SpawnPool implements ResourcePoolType<StructureSpawn> {
+  public readonly parentRoomName: RoomName
+  public get availableEnergy(): number {
+    return this._availableEnergy
+  }
+  private _availableEnergy: number
+
+  public readonly idleSpawns: StructureSpawn[] = []
+
   private readonly spawns: StructureSpawn[] = []
 
   public constructor(
-    public readonly parentRoomName: RoomName,
-  ) { }
+    public readonly parentRoom: MyRoom,
+  ) {
+    this.parentRoomName = parentRoom.name
+    this._availableEnergy = parentRoom.energyAvailable
+  }
 
   public addResource(spawn: StructureSpawn): void {
     this.spawns.push(spawn)
+    if (spawn.spawning == null) {
+      this.idleSpawns.push(spawn)
+    }
   }
 
   public show(text: string, color: string): void {
@@ -28,16 +43,13 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
 
   public spawnCreeps(rawRequests: CreepSpawnRequest[]): void {
     const idleSpawns = this.spawns.filter(spawn => spawn.spawning == null)
+
     const spawn = idleSpawns[0]
     if (spawn == null) {
       return
     }
-    // if (idleSpawns.length <= 0) {  // FixMe: Persistent Worldでひとつのリクエストを複数のSpawnで実行してしまう問題の対処療法
-    //   return
-    // }
     const requests = sortRequests(mergeRequests(rawRequests))
 
-    // idleSpawns.forEach(spawn => {
     const requestCount = requests.length
     for (let i = 0; i < requestCount; i += 1) {
       const request = requests.shift()
@@ -55,6 +67,10 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         PrimitiveLogger.programError(`Spawn request ${request.taskIdentifier}, ${request.roles} body is too large (${body.length}parts ${cost}Energy) in ${roomLink(this.parentRoomName)} capacity: ${spawn.room.energyCapacityAvailable}`)
         continue
       }
+      if (cost > this._availableEnergy) {
+        return // ここはreturn  // 高優先度のSpawnRequestから実行するため
+      }
+
       const memory: V5CreepMemory = {
         v: "v5",
         p: request.parentRoomName ?? this.parentRoomName,
@@ -70,6 +86,8 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         if (creep != null) {
           creep.v5task = request.initialTask
         }
+        this._availableEnergy -= cost
+        this.idleSpawns.shift()
         return  // ここはreturn
       }
       case ERR_NOT_ENOUGH_ENERGY:
@@ -79,6 +97,5 @@ export class SpawnPool implements ResourcePoolType<StructureSpawn> {
         break
       }
     }
-    // })
   }
 }

@@ -68,6 +68,9 @@ export class FleeFromAttackerTask implements CreepTask {
     }
     if (this.didFlee === true) {
       this.didFlee = false
+      if (creep.fatigue > 0) {
+        return TaskProgressType.InProgress
+      }
       creep.move(randomDirection(Game.time + this.startTime))
       return TaskProgressType.InProgress
     }
@@ -75,6 +78,9 @@ export class FleeFromAttackerTask implements CreepTask {
   }
 
   private fleeFrom(position: RoomPosition, creep: Creep, range: number): void {
+    if (creep.fatigue > 0) {
+      return
+    }
     const path = PathFinder.search(creep.pos, { pos: position, range }, {
       flee: true,
       maxRooms: 1,

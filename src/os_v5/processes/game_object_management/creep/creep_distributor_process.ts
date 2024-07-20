@@ -78,8 +78,8 @@ export class CreepDistributorProcess extends Process<void, ProcessDefaultIdentif
     this.v5Creeps.clear()
     this.deadCreepNames.clear()
 
-    ;
-    (strictEntries(Memory.creeps) as [string, CreepMemory][]).forEach(([creepName, creepMemory]) => {
+    const creepMemories = (strictEntries(Memory.creeps) as [string, CreepMemory][])
+    creepMemories.forEach(([creepName, creepMemory]) => {
       if (!isV5CreepMemory(creepMemory)) {
         return
       }
@@ -87,6 +87,7 @@ export class CreepDistributorProcess extends Process<void, ProcessDefaultIdentif
       const v5Creep = Game.creeps[creepName] as AnyV5Creep | undefined
       if (v5Creep == null) {
         this.deadCreepNames.getValueFor(v5CreepMemory.p).push(creepName)
+        delete Memory.creeps[creepName]
         return
       }
       (v5Creep as Mutable<AnyV5Creep>).executedActions = new Set()

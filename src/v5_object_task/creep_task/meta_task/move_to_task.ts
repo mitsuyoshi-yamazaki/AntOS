@@ -53,6 +53,9 @@ export class MoveToTask implements CreepTask {
     if (creep.pos.getRangeTo(this.destinationPosition) <= this.range) {
       return TaskProgressType.Finished
     }
+    if (creep.fatigue > 0) {
+      return TaskProgressType.InProgress
+    }
 
     const result = creep.moveTo(this.destinationPosition, this.moveToOpts())
     switch (result) {

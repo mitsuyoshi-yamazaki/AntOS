@@ -15,6 +15,8 @@ export const taskTypeDecodingMap = {
   h: "WithdrawResource",
   i: "DropResource",
   j: "DropAllResources",
+  k: "Build",
+  l: "TrafficManagedMove",
 } as const
 
 export type TaskTypeEncodingMap = ReversedMapping<typeof taskTypeDecodingMap>
@@ -45,5 +47,4 @@ export abstract class Task<State extends TaskState> {
   }
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyTask = Task<TaskState>

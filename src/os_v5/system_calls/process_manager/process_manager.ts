@@ -1,7 +1,8 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Mutable } from "shared/utility/types"
-import { AnyProcess, AnyProcessId, Process, ProcessId } from "../../process/process"
+import { AnyProcess, AnyProcessId, Process, ProcessError, ProcessId } from "../../process/process"
 import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "os_v5/utility/types"
@@ -12,7 +13,7 @@ import { ProcessDecoder, ProcessState } from "./process_decoder"
 import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
 import { ProcessExecutionLog } from "./process_execution_log"
-import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import { ProcessManagerNotification, processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "./process_manager_notification"
 
 
 /**
@@ -42,6 +43,7 @@ type ProcessManagerMemory = {
   processes: ProcessState[] // 順序を崩さないために配列とする
   suspendedProcessIds: string[]
   noDependencyProcessIds: string[]
+  cpuUsageThreshold: number
 }
 
 
@@ -56,6 +58,9 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
   }
   if (mutableMemory.noDependencyProcessIds == null) {
     mutableMemory.noDependencyProcessIds = []
+  }
+  if (mutableMemory.cpuUsageThreshold == null) {
+    mutableMemory.cpuUsageThreshold = 20
   }
 
   return mutableMemory
@@ -86,6 +91,9 @@ type ProcessManager = {
 
   /** @throws */
   sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string
+
+  cpuUsageThreshold(): number
+  setCpuUsageThreshold(threshold: number): void
 }
 
 
@@ -126,6 +134,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
     processStore.listProcesses().forEach(<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P) => {
       ErrorMapper.wrapLoop((): void => {
+        const cpuUsage = Game.cpu.getUsed()
+
         try {
           executionLog.iteratedProcessId = process.processId
 
@@ -153,13 +163,38 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
             }))
           }
         } catch (error) {
+          if (error instanceof ProcessError) {
+            switch (error.error.case) {
+            case "not_executable":
+              processStore.suspend(process.processId)
+              PrimitiveLogger.fatal(`ProcessManager.run(${process}): raised not_executable error. Suspending...`)
+              break
+            default: {
+              // eslint-disable-next-line @typescript-eslint/no-unused-vars
+              const _: never = error.error.case
+              break
+            }
+            }
+            throw error
+          }
+
           executionLog.errorRaised.add(process.processId)
           if (processExecutionLogs[1]?.errorRaised.has(process.processId) === true) {
             processStore.suspend(process.processId)
             PrimitiveLogger.fatal(`ProcessManager.run(${process}): raised error twice. Suspending...`)
           }
           throw error
+
+        } finally {
+
+          // TODO: runAfterTick() が計測されていない
+          const currentCpuUsage = Game.cpu.getUsed()
+          const timeTaken = currentCpuUsage - cpuUsage
+          if (timeTaken > processManagerMemory.cpuUsageThreshold) {
+            PrimitiveLogger.fatal(`ProcessManager.run(${process}): took ${timeTaken.toFixed(1)} cpu to execute at ${Game.time}`)
+          }
         }
+
       }, `ProcessManager.run(${process})`)()
     })
 
@@ -204,6 +239,11 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     processStore.add(process) // 全ての処理が完了してから追加する： process側で中断する際は didLaunch() で例外を出す
+    notificationManagerDelegate({
+      eventName: processManagerProcessDidLaunchNotification,
+      launchedProcessId: process.processId,
+    })
+
     return process
   },
 
@@ -241,6 +281,11 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     processStore.remove(process)
+
+    notificationManagerDelegate({
+      eventName: processManagerProcessDidKillNotification,
+      killedProcessId: process.processId,
+    })
   },
 
 
@@ -290,6 +335,25 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
     return process.didReceiveMessage(argumentParser, dependency)
   },
+
+  cpuUsageThreshold(): number {
+    return processManagerMemory.cpuUsageThreshold
+  },
+
+  setCpuUsageThreshold(threshold: number): void {
+    if (threshold < 1) {
+      return
+    }
+    processManagerMemory.cpuUsageThreshold = threshold
+  },
+}
+
+
+let notificationManagerDelegate: (notification: ProcessManagerNotification) => void = (): void => {
+  console.log("notificationManagerDelegate called before initialized")
+}
+export const setNotificationManagerDelegate = (delegate: (notification: ProcessManagerNotification) => void): void => {
+  notificationManagerDelegate = delegate
 }
 
 
@@ -312,7 +376,11 @@ const restoreProcesses = (processStates: ProcessState[]): AnyProcess[] => {
       return [process]
 
     } catch (error) {
-      PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+      if (error instanceof Error) {
+        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}\n${error.stack ?? ""}`)
+      } else {
+        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+      }
       return []
     }
   })

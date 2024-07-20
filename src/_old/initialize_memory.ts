@@ -43,6 +43,14 @@ export function initializeMemory(): void {
   //   }
   // }
 
+  if (Memory.v3 == null) {
+    Memory.v3 = {rooms: []}
+  } else {
+    if (Memory.v3.rooms == null) {
+      Memory.v3.rooms = []
+    }
+  }
+
   if (Memory.room_info == null) {
     Memory.room_info = {}
   }

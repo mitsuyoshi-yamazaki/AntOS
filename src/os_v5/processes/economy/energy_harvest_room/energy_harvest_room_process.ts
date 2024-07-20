@@ -1,14 +1,15 @@
 // Energy Harvest Room
 import { EnergyHarvestRoomResource, EnergyHarvestRoomResourceState } from "./room_resource"
-import { EnergyHarvestRoomLayoutMaker } from "./room_layout_maker"
+import { } from "./room_layout_maker"
 import { Command, runCommands } from "os_v5/standard_io/command"
 import { EnergyHarvestRoomProcessCreep, EnergyHarvestRoomProcessCreepMemory, EnergyHarvestRoomProcessCreepMemoryExtension, EnergyHarvestRoomProcessCreepRoles, EnergyHarvestRoomProcessDependency } from "./types"
 
 // Object Controller
 import { PrimitiveWorkerCreepController } from "./object_controllers/primitive_worker_creep_controller"
+import {} from "./object_controllers/room_builder"
 
 // Import
-import { AnyProcessId, BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
+import { BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -17,7 +18,7 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepTask } from "../../game_object_management/creep/creep_task/creep_task"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { BotTypes } from "os_v5/process/process_type_map"
-import { DeferredTaskId, deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
+import { DeferredTaskId } from "os_v5/system_calls/depended_system_calls/deferred_task"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 
@@ -26,6 +27,7 @@ import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser
 # EnergyHarvestRoomProcess
 ## 概要
 - そのRoomのEnergyを採掘するだけの、Ownedなリモート部屋
+- 問題が起きたらそのまま殺す
  */
 
 
@@ -69,8 +71,6 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     ],
   }
 
-  private roomResource: EnergyHarvestRoomResource | null
-  private roomResourceStateCache: EnergyHarvestRoomResourceState | null
   private roomResourceGenerationResult: "succeeded" | "failed" | null = null
   private readonly codename: string
 
@@ -80,7 +80,7 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     public readonly processId: EnergyHarvestRoomProcessId,
     private readonly roomName: RoomName,
     private readonly parentRoomName: RoomName,
-    roomResourceState: EnergyHarvestRoomResourceState | null,
+    private roomResourceState: EnergyHarvestRoomResourceState | null,
     private readonly queuingDeferredTasks: Map<DeferredTaskType, DeferredTaskId>,
     private readonly botProcessSpecifier: BotSpecifier | null,
   ) {
@@ -88,37 +88,16 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     this.identifier = roomName
     this.codename = SystemCalls.uniqueId.generateCodename("V3BridgeSpawnRequestProcess", parseInt(processId, 36))
 
-    const [roomResource, roomResourceStateCache] = ((): [EnergyHarvestRoomResource | null, EnergyHarvestRoomResourceState | null] => {
-      if (roomResourceState == null) {
-        return [null, null]
-      }
-      const room = Game.rooms[roomName]
-      if (room?.controller == null) {
-        return [null, roomResourceState]
-      }
-      return [
-        EnergyHarvestRoomResource.decode(roomResourceState, room.controller),
-        null,
-      ]
-    })()
-
-    this.roomResource = roomResource
-    this.roomResourceStateCache = roomResourceStateCache
-
     if (this.botProcessSpecifier != null) {
       this.dependencies.processes.push(this.botProcessSpecifier)
     }
   }
 
   public encode(): EnergyHarvestRoomProcessState {
-    if (this.roomResource != null) {
-      this.roomResourceStateCache = this.roomResource.encode()
-    }
-
     return {
       r: this.roomName,
       p: this.parentRoomName,
-      rr: this.roomResourceStateCache,
+      rr: this.roomResourceState,
       dt: Array.from(this.queuingDeferredTasks.entries()).map(([taskType, taskId]): [DeferredTaskType, DeferredTaskId] => [taskType, taskId]),
       b: this.botProcessSpecifier == null ? null : {
         t: this.botProcessSpecifier.processType,
@@ -177,21 +156,6 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     ])
   }
 
-  /** @throws */
-  public didLaunch(): void {
-    if (Memory.ignoreRooms.includes(this.roomName) !== true) { // !!UNSAFE MEMORY ACCESS!!
-      Memory.ignoreRooms.push(this.roomName)
-      console.log(`${ConsoleUtility.colored("!!UNSAFE MEMORY ACCESS!!", "warn")} ${this.processType}[${this.identifier}] added ${ConsoleUtility.roomLink(this.roomName)} to ignoreRooms`)
-    }
-  }
-
-  public willTerminate(): void {
-    const index = Memory.ignoreRooms.indexOf(this.roomName) // !!UNSAFE MEMORY ACCESS!!
-    if (index >= 0) {
-      Memory.ignoreRooms.splice(index, 1)
-    }
-  }
-
   public run(dependency: Dependency): EnergyHarvestRoomProcessApi {
     const room = Game.rooms[this.roomName]
     const creepsByRole = this.getMyCreeps(dependency)
@@ -205,24 +169,24 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
       }
     }
 
-    if (this.roomResource == null) {
-      if (this.roomResourceGenerationResult !== "failed" && this.queuingDeferredTasks.get("make layout") == null) {
+    // if (this.roomResource == null) {
+    //   if (this.roomResourceGenerationResult !== "failed" && this.queuingDeferredTasks.get("make layout") == null) {
 
-        const controller = room.controller
-        const taskId = SystemCalls.deferredTaskManager.register<DeferredTaskType, EnergyHarvestRoomResource | null>(
-          this.processId as AnyProcessId,
-          "make layout",
-          (): EnergyHarvestRoomResource => {
-            return (new EnergyHarvestRoomLayoutMaker(controller)).makeLayout()
-          },
-          {
-            priority: deferredTaskPriority.low,
-          },
-        )
+    //     const controller = room.controller
+    //     const taskId = SystemCalls.deferredTaskManager.register<DeferredTaskType, EnergyHarvestRoomResource | null>(
+    //       this.processId as AnyProcessId,
+    //       "make layout",
+    //       (): EnergyHarvestRoomResource => {
+    //         return (new EnergyHarvestRoomLayoutMaker(controller)).makeLayout()
+    //       },
+    //       {
+    //         priority: deferredTaskPriority.low,
+    //       },
+    //     )
 
-        this.queuingDeferredTasks.set("make layout", taskId)
-      }
-    }
+    //     this.queuingDeferredTasks.set("make layout", taskId)
+    //   }
+    // }
 
     const workers = creepsByRole.get("worker")
     if (workers == null || workers.length <= 0) {
@@ -233,29 +197,31 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
     }
 
     return {
-      roomResource: this.roomResource,
+      roomResource: null, // TODO:
     }
+
+    // TODO: roomResourceの状態を保存 // 固定値なら固定で良い : それはroom configのような固定値？
   }
 
-  public didFinishDeferredTask(taskResult: DeferredTaskResult<DeferredTaskType, EnergyHarvestRoomResource>): void {
-    switch (taskResult.result.case) {
-    case "succeeded":
-      this.roomResourceGenerationResult = "succeeded"
-      this.queuingDeferredTasks.delete(taskResult.taskType)
-      this.roomResource = taskResult.result.value
-      this.destroyStructures(taskResult.result.value.room)  // ここで行うのは、roomResource が算出される際に残しておくべき Structure の判断も行う想定のため
-      return
-    case "failed":
-      this.roomResourceGenerationResult = "failed"
-      this.queuingDeferredTasks.delete(taskResult.taskType)
-      return
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = taskResult.result
-      return
-    }
-    }
-  }
+  // public didFinishDeferredTask(taskResult: DeferredTaskResult<DeferredTaskType, EnergyHarvestRoomResource>): void {
+  //   switch (taskResult.result.case) {
+  //   case "succeeded":
+  //     this.roomResourceGenerationResult = "succeeded"
+  //     this.queuingDeferredTasks.delete(taskResult.taskType)
+  //     this.roomResource = taskResult.result.value
+  //     this.destroyStructures(taskResult.result.value.room)  // ここで行うのは、roomResource が算出される際に残しておくべき Structure の判断も行う想定のため
+  //     return
+  //   case "failed":
+  //     this.roomResourceGenerationResult = "failed"
+  //     this.queuingDeferredTasks.delete(taskResult.taskType)
+  //     return
+  //   default: {
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //     const _: never = taskResult.result
+  //     return
+  //   }
+  //   }
+  // }
 
   // Private
   private getMyCreeps(dependency: Dependency): Map<CreepRoles, MyCreep[]> {
@@ -281,8 +247,8 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
       WORK, WORK,
       MOVE,
     ]
-    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: null, r: "worker", tempState: "harvesting" })
-    dependency.addSpawnRequest(new CreepBody(body), this.parentRoomName, { codename: this.codename, memory })
+    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: null, r: "worker" })
+    dependency.addSpawnRequest<CreepMemoryExtension>(CreepBody.createWithBodyParts(body), this.parentRoomName, { codename: this.codename, memory })
   }
 
   private spawnClaimer(dependency: Dependency): void {
@@ -301,8 +267,8 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
       }),
     ]
     const claimerTask = CreepTask.Tasks.Sequential.create(tasks)
-    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: claimerTask.encode(), r: "claimer", tempState: "working" })
-    dependency.addSpawnRequest(new CreepBody([MOVE, CLAIM]), this.parentRoomName, { codename: this.codename, memory })
+    const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, { t: claimerTask.encode(), r: "claimer" })
+    dependency.addSpawnRequest(CreepBody.createWithBodyParts([MOVE, CLAIM]), this.parentRoomName, { codename: this.codename, memory })
   }
 
   private destroyStructures(room: Room): void {
@@ -321,21 +287,22 @@ export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, Ener
 
     /** @throws */
     run: (): string => {
-      const deletedObjects: string[] = []
-      if (this.roomResource != null) {
-        deletedObjects.push("room resource")
-        this.roomResource = null
-      }
-      if (this.roomResourceStateCache != null) {
-        deletedObjects.push("room resource state cache")
-        this.roomResourceStateCache = null
-      }
+      // const deletedObjects: string[] = []
+      // if (this.roomResource != null) {
+      //   deletedObjects.push("room resource")
+      //   this.roomResource = null
+      // }
+      // if (this.roomResourceStateCache != null) {
+      //   deletedObjects.push("room resource state cache")
+      //   this.roomResourceStateCache = null
+      // }
 
-      if (deletedObjects.length <= 0) {
-        return "Nothing to reset"
-      }
+      // if (deletedObjects.length <= 0) {
+      //   return "Nothing to reset"
+      // }
 
-      return `Reset ${deletedObjects.join(" & ")}`
+      // return `Reset ${deletedObjects.join(" & ")}`
+      throw "TODO:"
     }
   }
 }

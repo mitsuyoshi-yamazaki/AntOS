@@ -1,14 +1,29 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "./single_argument_parser"
-import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, RoomObjectArgument, RoomObjectIdArgument, StringArgument } from "./single_argument_parsers"
 
 
 export const iterableTypeParserMakers = {
   int: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): IntArgument => {
     return new IntArgument(key, value, options)
   },
+  float: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): FloatArgument => {
+    return new FloatArgument(key, value, options)
+  },
   string: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): StringArgument => {
     return new StringArgument(key, value, parseOptions)
+  },
+  range: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RangeArgument => {
+    return new RangeArgument(key, value, parseOptions)
+  },
+  local_position: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): LocalPositionArgument => {
+    return new LocalPositionArgument(key, value, parseOptions)
+  },
+  room_object_id: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomObjectIdArgument => {
+    return new RoomObjectIdArgument(key, value, parseOptions)
+  },
+  room_object: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomObjectArgument => {
+    return new RoomObjectArgument(key, value, parseOptions)
   },
   room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomArgument => {
     return new RoomArgument(key, value, parseOptions)
@@ -19,9 +34,6 @@ export const iterableTypeParserMakers = {
   room_name: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomNameArgument => {
     return new RoomNameArgument(key, value, parseOptions)
   },
-  local_position: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): LocalPositionArgument => {
-    return new LocalPositionArgument(key, value, parseOptions)
-  },
   my_creep: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): MyCreepArgument => {
     return new MyCreepArgument(key, value, parseOptions)
   },
@@ -31,9 +43,6 @@ export const iterableTypeParserMakers = {
   creep_body: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): CreepBodyArgument => {
     return new CreepBodyArgument(key, value, parseOptions)
   },
-  // float: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): FloatArgument => {
-  //   return new FloatArgument(key, value, options)
-  // },
   // boolean: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): BooleanArgument => {
   //   return new BooleanArgument(key, value, options)
   // },
@@ -49,12 +58,6 @@ export const iterableTypeParserMakers = {
   // commodity: (key: ArgumentKey, value: string, options?: ArgumentParserOptions): TypedStringArgument<CommodityConstant> => {
   //   return new TypedStringArgument(key, value, "CommodityConstant", isCommodityConstant, options)
   // },
-  // object_id: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RawStringArgument => {
-  //   return new RawStringArgument(key, value, parseOptions)
-  // },
-  // room: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): RoomArgument => {
-  //   return new RoomArgument(key, value, parseOptions)
-  // },
 } as const
 
 export type IterableArgumentType = keyof typeof iterableTypeParserMakers
@@ -63,6 +66,7 @@ type IterableArgumentOption<T extends IterableArgumentType> = ParameterType<Iter
 export type IterableArgumentReturnType<T extends IterableArgumentType> = ReturnType<IterableArgumentParserType<T>["parse"]>
 
 
+// src/os_v5/utility/v5_argument_parser/list_argument_parser.ts も変更すること
 export class ListArgumentParser<T extends IterableArgumentType> extends SingleOptionalArgument<IterableArgumentOption<T>, Array<IterableArgumentReturnType<T>>> {
   public constructor(
     key: ArgumentKey,
@@ -79,7 +83,16 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
       throw this.missingArgumentErrorMessage()
     }
 
-    const components = this.value.split(",")
+    const separator = ((): string => {
+      switch (this.argumentType) {
+      case "local_position":
+        return ";"
+      default:
+        return ","
+      }
+    })()
+
+    const components = this.value.split(separator)
     const results: Array<IterableArgumentReturnType<T>> = []
     const errors: string[] = []
 

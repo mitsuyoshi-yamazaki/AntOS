@@ -11,6 +11,9 @@ import { ProcessManager } from "./process_manager/process_manager"
 ## 要件
 - Memoryを消費しない
 - consoleの流速を上げすぎない
+
+## TODO
+- Processがkillされたら無効化する
  */
 
 type LoggerMemory = {

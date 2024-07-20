@@ -24,5 +24,9 @@ const scripts = {
    */
   v5Migration: () => {
     Game.rooms.W53S5.find(FIND_MY_CREEPS).filter(c => (c.getActiveBodyparts(CARRY) > 0) && (c.memory.v == null)).forEach(c => { c.memory = { v: "v5", p: "W53S5",r: ["hauler", "mover"],t: null,i: null,}})
-  }
+  },
+
+  destroyStructures: () => {
+    Game.rooms.E35N53.find(FIND_STRUCTURES).filter(s => [STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_NUKER].includes(s.structureType) !== true).forEach(s => s.destroy())
+  },
 }

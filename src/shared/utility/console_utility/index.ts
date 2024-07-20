@@ -1,7 +1,10 @@
 import { Environment } from "utility/environment"
 import type { RoomName } from "../room_name_types"
 
-export type TextColor = "info" | "warn" | "error" | "critical" | "high" | "almost"
+export type SemanticTextColor = "info" | "warn" | "error" | "critical" | "high" | "almost"
+export type NativeTextColor = "white" | "yellow" | "green" | "blue" | "orange" | "red"
+
+export type TextColor = SemanticTextColor | NativeTextColor
 const textColors: { [index in TextColor]: string } = {
   // Log level
   info: "white",
@@ -12,6 +15,14 @@ const textColors: { [index in TextColor]: string } = {
   // Capacity level
   high: "#64C3F9",    // blue
   almost: "#47CAB0",  // green
+
+  // Native color
+  white: "white",
+  yellow: "#F9E79F",
+  green: "#47CAB0",
+  blue: "#64C3F9",
+  orange: "#F78C6C",
+  red: "#E74C3C",
 }
 
 type Tab = number
@@ -37,8 +48,8 @@ export const safe = (text: string): string => {
   return text.replace("<", "&lt").replace(">", "&gt")
 }
 
-export const tab = (text: string, tabSize: Tab): string => {
-  const numberOfSpaces = Math.max(tabSize - text.length, 0)
+export const tab = (text: string, tabSize: Tab, originalText?: string): string => {
+  const numberOfSpaces = Math.max(tabSize - (originalText ?? text).length, 0)
   const spacer = spaces.slice(0, numberOfSpaces)
   return `${text}${spacer}`
 }

@@ -1,5 +1,5 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { CreepBodyArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RoomArgument, RoomNameArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, RoomObjectArgument, RoomObjectIdArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
@@ -78,13 +78,35 @@ export class ArgumentParser {
   }
 
 
+  // ---- Value Check ---- //
+  public hasAnyKeywordArgumentsOf(keys: string[]): boolean {
+    return keys.some(key => this.rawKeywordArguments.has(key) === true)
+  }
+
+  public hasListArgumentsOf(index: number): boolean {
+    return this.rawArguments.length > (this.rawArgumentOffset + index)
+  }
+
+
   // ---- Primitive Type ---- //
   public int(key: ArgumentKey, options?: ArgumentParserOptions): IntArgument {
     return new IntArgument(key, this.getRawValueFor(key), options)
   }
 
+  public float(key: ArgumentKey, options?: ArgumentParserOptions): FloatArgument {
+    return new FloatArgument(key, this.getRawValueFor(key), options)
+  }
+
   public string(key: ArgumentKey, options?: ArgumentParserOptions): StringArgument {
     return new StringArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public localPosition(key: ArgumentKey, options?: ArgumentParserOptions): LocalPositionArgument {
+    return new LocalPositionArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public range(key: ArgumentKey, options?: ArgumentParserOptions): RangeArgument {
+    return new RangeArgument(key, this.getRawValueFor(key), options)
   }
 
 
@@ -101,6 +123,14 @@ export class ArgumentParser {
 
 
   // ---- Game Object ---- //
+  public roomObjectId(key: ArgumentKey, options?: ArgumentParserOptions): RoomObjectIdArgument {
+    return new RoomObjectIdArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public roomObject(key: ArgumentKey, options?: ArgumentParserOptions): RoomObjectArgument {
+    return new RoomObjectArgument(key, this.getRawValueFor(key), options)
+  }
+
   public room(key: ArgumentKey, options?: ArgumentParserOptions): RoomArgument {
     return new RoomArgument(key, this.getRawValueFor(key), options)
   }
@@ -111,10 +141,6 @@ export class ArgumentParser {
 
   public roomName(key: ArgumentKey, options?: ArgumentParserOptions): RoomNameArgument {
     return new RoomNameArgument(key, this.getRawValueFor(key), options)
-  }
-
-  public localPosition(key: ArgumentKey, options?: ArgumentParserOptions): LocalPositionArgument {
-    return new LocalPositionArgument(key, this.getRawValueFor(key), options)
   }
 
   public myCreep(key: ArgumentKey, options?: ArgumentParserOptions): MyCreepArgument {

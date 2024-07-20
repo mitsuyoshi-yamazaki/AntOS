@@ -3,6 +3,7 @@ import { Position } from "shared/utility/position_v2"
 import { isMyRoom, MyRoom } from "shared/utility/room"
 import { RoomName } from "shared/utility/room_name_types"
 import { AvailableRoomPositions } from "shared/utility/room_position"
+import { Range } from "shared/utility/types"
 import { GameConstants } from "utility/constants"
 import { CreepBody } from "utility/creep_body_v2"
 import { ArgumentKey, ArgumentParserOptions, getKeyDescription, SingleOptionalArgument } from "./single_argument_parser"
@@ -20,13 +21,85 @@ export class IntArgument extends SingleOptionalArgument<{ min?: number, max?: nu
   }
 }
 
+export class FloatArgument extends SingleOptionalArgument<{ min?: number, max?: number }, number> {
+  /** throws */
+  public parse(options?: { min?: number, max?: number }): number {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const floatValue = parseFloat(this.value)
+    if (isNaN(floatValue) === true) {
+      throw `${this.value} is not an floating number`
+    }
+    validateNumberRange(this.key, floatValue, options)
+
+    return floatValue
+  }
+}
+
 export class StringArgument extends SingleOptionalArgument<void, string> {
   /** throws */
-  public parse(): string {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): string {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
     return this.value
+  }
+}
+
+export class LocalPositionArgument extends SingleOptionalArgument<{ minX: number, maxX: number, minY: number, maxY: number }, Position> {
+  /** throws */
+  public parse(options?: { minX: number, maxX: number, minY: number, maxY: number }): Position {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+    const [x, y] = ((): [AvailableRoomPositions, AvailableRoomPositions] => {
+      const components = this.value.split(",")
+      if (components[0] == null || components[1] == null || components.length !== 2) {
+        throw `Invalid format ${this.value}. expected: "{x},{y}"`
+      }
+
+      const { min, max } = GameConstants.room.edgePosition
+
+      return [
+        parseIntValue("x", components[0], { min: Math.max(min, options?.minX ?? min), max: Math.min(max, options?.maxX ?? max) }) as AvailableRoomPositions,
+        parseIntValue("y", components[1], { min: Math.max(min, options?.minY ?? min), max: Math.min(max, options?.maxY ?? max) }) as AvailableRoomPositions,
+      ]
+    })()
+    return {
+      x,
+      y,
+    }
+  }
+}
+
+/// {start}..{end}
+export class RangeArgument extends SingleOptionalArgument<{ min?: number, max?: number }, Range> {
+  /** throws */
+  public parse(options?: { min?: number, max?: number }): Range {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const components = this.value.split("..")
+    if (components.length !== 2 || components[0] == null || components[1] == null) {
+      throw `Invalid format ${this.value}. expected: "{start}..{end}"`
+    }
+
+    const start = parseIntValue(this.key, components[0], options)
+    const end = parseIntValue(this.key, components[1], options)
+    if (start === end) {
+      throw `Invalid range: zero length (${this.value})`
+    }
+    if (start > end) {
+      throw `Invalid range: start (${start}) is bigger than end (${end})`
+    }
+
+    return {
+      start,
+      end,
+    }
   }
 }
 
@@ -45,7 +118,8 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
   }
 
   /** throws */
-  public parse(): T {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): T {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -64,6 +138,39 @@ export class TypedStringArgument<T extends string> extends SingleOptionalArgumen
 
 
 // ---- Game Object ---- //
+export class RoomObjectIdArgument extends SingleOptionalArgument<{shouldVisible?: boolean}, Id<RoomObject & _HasId>> {
+  /** throws */
+  public parse(options?: { shouldVisible?: boolean }): Id<RoomObject & _HasId> {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const roomObject = Game.getObjectById(this.value)
+    if (options?.shouldVisible === true && roomObject == null) {
+      throw `No RoomObject with ID ${this.value} or not visible`
+    }
+
+    return this.value as Id<RoomObject & _HasId>
+  }
+}
+
+export class RoomObjectArgument extends SingleOptionalArgument<void, RoomObject & _HasId> {
+  /** throws */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): RoomObject & _HasId {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const roomObject = Game.getObjectById(this.value)
+    if (roomObject == null) {
+      throw `No RoomObject with ID ${this.value} or not visible`
+    }
+
+    return roomObject as RoomObject & _HasId
+  }
+}
+
 export class RoomArgument extends SingleOptionalArgument<{ my?: boolean }, Room> {
   /** throws */
   public parse(options?: { my?: boolean }): Room {
@@ -82,7 +189,8 @@ export class RoomArgument extends SingleOptionalArgument<{ my?: boolean }, Room>
 
 export class MyRoomArgument extends SingleOptionalArgument<void, MyRoom> {
   /** throws */
-  public parse(): MyRoom {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): MyRoom {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -111,33 +219,10 @@ export class RoomNameArgument extends SingleOptionalArgument<{ my?: boolean, all
   }
 }
 
-export class LocalPositionArgument extends SingleOptionalArgument<void, Position> {
-  /** throws */
-  public parse(): Position {
-    if (this.value == null) {
-      throw this.missingArgumentErrorMessage()
-    }
-    const [x, y] = ((): [AvailableRoomPositions, AvailableRoomPositions] => {
-      const components = this.value.split(",")
-      if (components[0] == null || components[1] == null || components.length !== 2) {
-        throw `Invalid format ${this.value}. expected: "x,y"`
-      }
-      const parseOptions = { min: GameConstants.room.edgePosition.min, max: GameConstants.room.edgePosition.max }
-      return [
-        parseIntValue("x", components[0], parseOptions) as AvailableRoomPositions,
-        parseIntValue("y", components[1], parseOptions) as AvailableRoomPositions,
-      ]
-    })()
-    return {
-      x,
-      y,
-    }
-  }
-}
-
 export class MyCreepArgument extends SingleOptionalArgument<void, Creep> {
   /** throws */
-  public parse(): Creep {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): Creep {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -152,7 +237,8 @@ export class MyCreepArgument extends SingleOptionalArgument<void, Creep> {
 
 export class HostileCreepArgument extends SingleOptionalArgument<void, Creep> {
   /** throws */
-  public parse(): Creep {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): Creep {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
@@ -167,13 +253,12 @@ export class HostileCreepArgument extends SingleOptionalArgument<void, Creep> {
 
 export class CreepBodyArgument extends SingleOptionalArgument<{ requiredEnergyLimit?: number }, CreepBody> {
   /** throws */
-  public parse(options: { requiredEnergyLimit?: number }): CreepBody {
+  public parse(options?: { requiredEnergyLimit?: number }): CreepBody {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
 
-    const creepBody = CreepBody.createFromTextRepresentation(this.value)
-    console.log(`Creep body: ${creepBody.bodyParts}\ncost: ${creepBody.energyCost}, limit: ${options?.requiredEnergyLimit}`)
+    const creepBody = CreepBody.createFromRawStringRepresentation(this.value)
     if (options?.requiredEnergyLimit != null) {
       if (creepBody.energyCost > options.requiredEnergyLimit) {
         throw `Creep body ${creepBody.stringRepresentation} requires ${creepBody.energyCost} energy (> ${options.requiredEnergyLimit})`

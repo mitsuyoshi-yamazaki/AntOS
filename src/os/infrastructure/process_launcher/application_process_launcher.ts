@@ -87,7 +87,7 @@ export class ApplicationProcessLauncher {
 
     const ignoreRoomNames: RoomName[] = [
       ...GclFarmResources.gclFarmRoomNames(),
-      ...Memory.ignoreRooms,
+      // ...Memory.ignoreRooms,
     ]
 
     World.rooms.getAllOwnedRooms().forEach(room => {

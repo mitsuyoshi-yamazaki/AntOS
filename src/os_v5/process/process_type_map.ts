@@ -1,3 +1,4 @@
+import { NativeTextColor } from "shared/utility/console_utility"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { reverseConstMapping, strictEntries } from "shared/utility/strict_entries"
 
@@ -13,10 +14,23 @@ export const processTypeDecodingMap = {
   g: "MitsuyoshiBotProcess",
   h: "AttackRoomManagerProcess",
   i: "CreepTrafficManagerProcess",
-  j: "TestTrafficManagerProcess",
+  // j: "TestTrafficManagerProcess",
   k: "V3ResourceDistributorProcess",
   l: "DisposeResourceProcess",
   m: "V3BridgeDriverProcess",
+  n: "TestTrafficManagerV2Process",
+  o: "TestGuardRoomProcess",
+  p: "StaticMonoCreepKeeperRoomProcess",
+  q: "StaticMonoCreepBuildRoomProcess",
+  r: "GenericRoomKeeperProcess",
+  s: "GenericRoomManagerProcess",
+  t: "TestHarvestRoomProcess",
+  u: "TestPullProcess",
+  v: "CreepPositionAssignerProcess",
+  w: "TerrainCacheProcess",
+  x: "OnHeapContinuousTaskProcess",
+  y: "TestTrafficManagerV3Process",
+  z: "PathManagerProcess",
 } as const
 
 
@@ -34,7 +48,7 @@ export type BotTypes = "MitsuyoshiBotProcess"
 
 
 // Dependency Order
-const processDependencyOrder: ProcessTypes[] = [
+const processDependencyOrder: Readonly<ProcessTypes[]> = [
   // Bot
   "MitsuyoshiBotProcess",
 
@@ -45,21 +59,36 @@ const processDependencyOrder: ProcessTypes[] = [
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
-  "CreepTrafficManagerProcess", // TODO: 実装したら再度確認
   "V3BridgeDriverProcess",
+  "TerrainCacheProcess",
+  "OnHeapContinuousTaskProcess",
 
   // Driver with dependencies
+  "PathManagerProcess",
   "CreepTaskStateManagementProcess",
   "V3BridgeSpawnRequestProcess",
+  "CreepPositionAssignerProcess",
+  "CreepTrafficManagerProcess",
 
   // Application with dependencies
   "V3ResourceDistributorProcess",
 
+  // Manager Processes
+  "GenericRoomManagerProcess",
+
   // Process with dependencies
   "EnergyHarvestRoomProcess",
-  "TestTrafficManagerProcess",
+  "StaticMonoCreepKeeperRoomProcess",
+  "StaticMonoCreepBuildRoomProcess",
   "DisposeResourceProcess",
-]
+  "TestTrafficManagerV2Process",
+  "TestTrafficManagerV3Process",
+  "TestGuardRoomProcess",
+  "GenericRoomKeeperProcess",
+  "TestHarvestRoomProcess",
+  "TestPullProcess",
+] as const
+
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
 
 
@@ -83,4 +112,60 @@ if (Array.from(Object.keys(processTypeDecodingMap)).length !== processDependency
   const errorMessage = ConsoleUtility.colored(`[Program Error] Inconsistent process mapping: ${Array.from(Object.keys(processTypeDecodingMap)).length} : ${processDependencyOrder.length}`, "error")
   console.log(errorMessage)
   Game.notify(errorMessage)
+}
+
+
+export type ProcessCategory = "bot" | "application" | "combat" | "economy" | "driver" | "support"
+export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = {
+  // Bot
+  MitsuyoshiBotProcess: "bot",
+
+  // Application
+  V3ResourceDistributorProcess: "application",
+
+  // Combat
+  AttackRoomManagerProcess: "combat",
+
+  // Economy
+  GenericRoomManagerProcess: "economy",
+  GenericRoomKeeperProcess: "economy",
+  EnergyHarvestRoomProcess: "economy",
+  StaticMonoCreepKeeperRoomProcess: "economy",
+  StaticMonoCreepBuildRoomProcess: "economy",
+  DisposeResourceProcess: "economy",
+
+  // Driver
+  TerrainCacheProcess: "driver",
+  PathManagerProcess: "driver",
+  RoomPathfindingProcess: "driver",
+  CreepDistributorProcess: "driver",
+  CreepTrafficManagerProcess: "driver",
+  CreepPositionAssignerProcess: "driver",
+  CreepTaskStateManagementProcess: "driver",
+
+  // v3 Bridge
+  V3BridgeDriverProcess: "driver",
+  V3BridgeSpawnRequestProcess: "driver",
+
+  // Support
+  TestProcess: "support",
+  TestTrafficManagerV2Process: "support",
+  TestTrafficManagerV3Process: "support",
+  TestGuardRoomProcess: "support",
+  TestHarvestRoomProcess: "support",
+  TestPullProcess: "support",
+  OnHeapContinuousTaskProcess: "support",
+} as const
+
+const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {
+  bot: "blue",
+  application: "white",
+  combat: "red",
+  economy: "green",
+  driver: "orange",
+  support: "none",
+} as const
+
+export const coloredProcessType = (processType: ProcessTypes): string => {
+  return ConsoleUtility.colored(processType, categoryColor[categorizedProcessType[processType]])
 }

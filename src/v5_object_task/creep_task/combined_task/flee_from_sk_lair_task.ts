@@ -65,12 +65,18 @@ export class FleeFromSKLairTask implements CreepTask {
     if (this.didFlee === true) {
       this.didFlee = false
       creep.move(randomDirection(Game.time + this.startTime))
+      if (creep.fatigue > 0) {
+        return TaskProgressType.InProgress
+      }
       return TaskProgressType.InProgress
     }
     return this.childTask.run(creep)
   }
 
   private fleeFrom(position: RoomPosition, creep: Creep, range: number): void {
+    if (creep.fatigue > 0) {
+      return
+    }
     const path = PathFinder.search(creep.pos, { pos: position, range }, {
       flee: true,
       maxRooms: 1,

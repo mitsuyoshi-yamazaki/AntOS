@@ -172,42 +172,46 @@ export class MoveToTargetTask implements CreepTask {
         moveToOps.costCallback = avoidConstructionSitesCostCallback
       }
 
-      const moveToResult = creep.moveTo(this.apiWrapper.target, moveToOps)
-      if (moveToResult === ERR_NO_PATH && this.options.fallbackEnabled === true) {
-        const routeIdentifier = getRouteIdentifier(creep.pos, this.apiWrapper.target.pos)
-        // if (noPathPositions.includes(routeIdentifier) !== true) {
-        if (creep.room.controller == null || creep.room.controller.my !== true) {
-          const range = 5
-          const isEdge = (): boolean => {
-            const { min, max } = GameConstants.room.edgePosition
-            if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
-              return true
+      if (creep.fatigue <= 0) {
+        const moveToResult = creep.moveTo(this.apiWrapper.target, moveToOps)
+        if (moveToResult === ERR_NO_PATH && this.options.fallbackEnabled === true) {
+          const routeIdentifier = getRouteIdentifier(creep.pos, this.apiWrapper.target.pos)
+          // if (noPathPositions.includes(routeIdentifier) !== true) {
+          if (creep.room.controller == null || creep.room.controller.my !== true) {
+            const range = 5
+            const isEdge = (): boolean => {
+              const { min, max } = GameConstants.room.edgePosition
+              if (creep.pos.x === min || creep.pos.x === max || creep.pos.y === min || creep.pos.y === max) {
+                return true
+              }
+              return false
             }
-            return false
-          }
-          if (creep.pos.getRangeTo(this.apiWrapper.target.pos) > range || isEdge() === true) {
-            moveToOps.maxOps = 3000
-            moveToOps.maxRooms = 5
-            moveToOps.ignoreCreeps = true
-            moveToOps.range = range
-            moveToOps.reusePath = 0
-            const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
-            if (retryResult !== ERR_NO_PATH) {
-              return TaskProgressType.InProgress
-            }
+            if (creep.pos.getRangeTo(this.apiWrapper.target.pos) > range || isEdge() === true) {
+              moveToOps.maxOps = 3000
+              moveToOps.maxRooms = 5
+              moveToOps.ignoreCreeps = true
+              moveToOps.range = range
+              moveToOps.reusePath = 0
+              if (creep.fatigue <= 0) {
+                const retryResult = creep.moveTo(this.apiWrapper.target, moveToOps)
+                if (retryResult !== ERR_NO_PATH) {
+                  return TaskProgressType.InProgress
+                }
+              }
 
-            noPathPositions.push(routeIdentifier)
-            const error = `creep.moveTo() ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
-            Logger.log(error)
+              noPathPositions.push(routeIdentifier)
+              const error = `creep.moveTo() ${creep.name} ${creep.pos} in ${roomLink(creep.room.name)} to ${this.apiWrapper.target.pos} returns no path error with ops: ${Array.from(Object.entries(moveToOps)).flatMap(x => x)}`
+              Logger.log(error)
+            }
           }
+          // }
+
+          // const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
+          // if (emptyPositionDirection != null) {
+          //   creep.move(emptyPositionDirection)
+          //   return TaskProgressType.InProgress
+          // }
         }
-        // }
-
-        // const emptyPositionDirection = getEmptyPositionDirection(creep.pos)
-        // if (emptyPositionDirection != null) {
-        //   creep.move(emptyPositionDirection)
-        //   return TaskProgressType.InProgress
-        // }
       }
       return TaskProgressType.InProgress
     }

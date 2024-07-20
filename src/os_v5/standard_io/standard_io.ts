@@ -6,7 +6,7 @@ import { KillCommand } from "./commands/kill_command"
 import { SuspendCommand } from "./commands/suspend_command"
 import { ResumeCommand } from "./commands/resume_command"
 import { MessageCommand } from "./commands/message_command"
-import { LoggerCommand } from "./commands/logger_command"
+import { SettingCommand } from "./commands/setting_command"
 
 // ---- ---- //
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -22,7 +22,7 @@ const commandRunners: Command[] = [
   SuspendCommand,
   ResumeCommand,
   MessageCommand,
-  LoggerCommand,
+  SettingCommand,
 ]
 
 
@@ -31,6 +31,12 @@ export const StandardIO = (input: string): string => {
     const argumentParser = new ArgumentParser(input.split(" "))
     return runCommands(argumentParser, commandRunners)
   } catch (error) {
+    if (error instanceof Error) {
+      const stackTrace = error.stack
+      if (stackTrace != null) {
+        return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}\n${stackTrace}`
+      }
+    }
     return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}`
   }
 }
