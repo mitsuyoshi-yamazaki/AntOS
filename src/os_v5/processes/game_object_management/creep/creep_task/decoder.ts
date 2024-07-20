@@ -24,6 +24,9 @@ const decoders: { [K in TaskTypes]: (state: SerializableObject) => AnyTask | nul
   MoveTo: state => Tasks.MoveTo.decode(state as ReturnType<Tasks.MoveTo["encode"]>),
   MoveToRoom: state => Tasks.MoveToRoom.decode(state as ReturnType<Tasks.MoveToRoom["encode"]>),
 
+  // Traffic Managed Move
+  TrafficManagedMove: state => Tasks.TrafficManagedMove.decode(state as ReturnType<Tasks.TrafficManagedMove["encode"]>),
+
   // Combined
   Sequential: state => {
     const sequentialState = state as ReturnType<Tasks.Sequential["encode"]>
