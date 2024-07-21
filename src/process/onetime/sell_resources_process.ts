@@ -62,7 +62,15 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)} selling ${this.resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`
+    const descriptions: string[] = [
+      `${roomLink(this.roomName)} selling ${this.resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`,
+    ]
+
+    if (this.sleepUntil != null) {
+      descriptions.push(`sleeping ${this.sleepUntil - Game.time} ticks`)
+    }
+
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
