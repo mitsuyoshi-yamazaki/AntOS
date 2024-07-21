@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { coloredResourceType, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink } from "utility/log"
 import { World } from "world_info/world_info"
 import { generateCodename } from "utility/unique_id"
 import { RoomResources } from "room_resource/room_resources"
@@ -79,6 +79,40 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
       descriptions.push(`stopped by: ${this.stopReason}`)
     }
     return descriptions.join(", ")
+  }
+
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "stop", "resume"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "stop":
+        if (this.stopReason != null) {
+          throw `Already stopped by: ${this.stopReason}`
+        }
+        this.stopReason = "manually"
+        return "Stopped"
+
+      case "resume": {
+        if (this.stopReason == null) {
+          throw "Already running"
+        }
+        const reason = this.stopReason
+        this.stopReason = null
+        return `Resumed (stop reason was: ${reason})`
+      }
+
+      default:
+        throw `Invalid command ${command}, see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[Error]", "error")} ${error}`
+    }
   }
 
   public runOnTick(): void {
