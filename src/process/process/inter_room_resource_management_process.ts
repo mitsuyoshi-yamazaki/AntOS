@@ -57,7 +57,7 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
   // }
 
   public runOnTick(): void {
-    if ((Game.time % 31) !== 17) {
+    if ((Game.time % 977) !== 17) {
       return
     }
 
