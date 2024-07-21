@@ -20,6 +20,7 @@ import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { SystemCalls } from "os/system_calls"
+import { isV5CreepMemory } from "prototype/creep"
 
 ProcessDecoder.register("FillNukerProcess", state => {
   return FillNukerProcess.decode(state as FillNukerProcessState)
@@ -96,8 +97,7 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
 
   public runOnTick(): void {
     if (Game.time - this.launchTime > 4000) {
-      PrimitiveLogger.fatal(`${this.identifier} didn't finish in ${Game.time - this.launchTime} ticks`)
-      SystemCalls.systemCall()?.killProcess(this.processId)
+      this.suicide(`${this.identifier} didn't finish in ${Game.time - this.launchTime} ticks`)
       return
     }
 
@@ -105,8 +105,7 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
     const nuker = Game.getObjectById(this.nukerId)
 
     if (roomResource == null || nuker == null) {
-      PrimitiveLogger.fatal(`${this.identifier} no room resource or no nuker in ${roomLink(this.roomName)}`)
-      SystemCalls.systemCall()?.killProcess(this.processId)
+      this.suicide(`${this.identifier} no room resource or no nuker in ${roomLink(this.roomName)}`)
       return
     }
 
@@ -115,7 +114,7 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
 
     if (fillingEnergy !== true && fillingGhodium !== true) {
       processLog(this, `finish filling ${nuker} in ${roomLink(this.roomName)}`)
-      SystemCalls.systemCall()?.killProcess(this.processId)
+      this.suicide()
       return
     }
 
@@ -208,5 +207,20 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
       return null
     }
     return MoveToTask.create(waitingPosition, 0)
+  }
+
+  private suicide(errorMessage?: string): void {
+    World.resourcePools.getCreeps(this.roomName, this.taskIdentifier, () => true).forEach(creep => {
+      if (!isV5CreepMemory(creep.memory)) {
+        return
+      }
+      creep.v5task = null
+      creep.memory.i = null // reallocate
+    })
+
+    if (errorMessage != null) {
+      PrimitiveLogger.fatal(errorMessage)
+    }
+    SystemCalls.systemCall()?.killProcess(this.processId)
   }
 }
