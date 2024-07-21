@@ -15,7 +15,7 @@ import { Season1244215GenericDismantleProcess } from "process/temporary/season_1
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess, canSpawnGuardCreep } from "process/process/guard_remote_room_process"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isResourceConstant } from "shared/utility/resource"
+import { isMineralCompoundConstant, isResourceConstant } from "shared/utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { DistributorProcess } from "process/process/distributor_process"
@@ -100,6 +100,7 @@ import { DistributePowerProcess } from "process/process/distribute_power_process
 import { Season5ClaimReactorProcess } from "process/temporary/season5_claim_reactor_process"
 import { Season5FillReactorProcess } from "process/temporary/season5_fill_reactor_process"
 import { ReportProcess } from "process/process/report/report_process"
+import { ReverseReactionProcess } from "process/onetime/reverse_reaction_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1865,6 +1866,27 @@ ProcessLauncher.register("ReportProcess", () => {
   try {
     return Result.Succeeded((processId) => ReportProcess.create(
       processId,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("ReverseReactionProcess", (args) => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+    if (roomResource.roomInfo.config != null && roomResource.roomInfo.config.researchCompounds != null) {
+      if (Array.from(Object.keys(roomResource.roomInfo.config.researchCompounds)).length > 0) {
+        throw `${roomLink(roomResource.room.name)} has research setting (see "exec room_config ${roomResource.room.name} research show")`
+      }
+    }
+
+    const compoundType = args.typedString("compound", "MineralCompoundConstant", isMineralCompoundConstant).parse()
+
+    return Result.Succeeded((processId) => ReverseReactionProcess.create(
+      processId,
+      roomResource.room.name,
+      compoundType,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
