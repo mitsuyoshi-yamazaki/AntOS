@@ -1733,10 +1733,13 @@ ProcessLauncher.register("SellResourcesProcess", args => {
     }
     const resourceTypes = args.list("resource_types", "resource").parse()
 
+    const keepRunning = args.boolean("keep_running").parse()
+
     return Result.Succeeded((processId) => SellResourcesProcess.create(
       processId,
       roomName,
       resourceTypes,
+      keepRunning,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
