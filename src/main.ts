@@ -14,19 +14,33 @@ const rootFunctions = BootLoader.load()
 rootFunctions.load()
 const mainLoop = rootFunctions.loop
 
+let loopExecuted = Game.time - 1
+
 // ScreepsProfiler.enable()  // TODO: 普段はオフに
 
 // When compiling TS to JS and bundling with rollup, the line numbers and file names in error messages change
 // This utility uses source maps to get the line numbers and file names of the original, TS source code
 export const loop = ErrorMapper.wrapLoop(() => {
-  memhack.beforeTick()
-  // ScreepsProfiler.wrap(mainLoop) mainLoopの呼び出しは停止する
+  try {
+    if (loopExecuted < Game.time - 1) {
+      console.log(ConsoleUtility.colored(`[${Game.time}]`, "error") + ` the program didn't finish in the previous tick: last finished time: ${loopExecuted} (${Game.time - loopExecuted} ticks ago)`)
+    }
+
+    memhack.beforeTick()
+    // ScreepsProfiler.wrap(mainLoop) mainLoopの呼び出しは停止する
+
+  } catch (error) {
+    console.log(`${error}`)
+  }
+
   mainLoop()
   memhack.afterTick()
 
   // TODO: 旧ソースに依存している
   const all_cpu = Math.ceil(Game.cpu.getUsed())
   Memory.cpu_usages.push(all_cpu)
+
+  loopExecuted = Game.time
 }, "Main")
 
 /**
