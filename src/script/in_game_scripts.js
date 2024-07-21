@@ -29,4 +29,8 @@ const scripts = {
   destroyStructures: () => {
     Game.rooms.E35N53.find(FIND_STRUCTURES).filter(s => [STRUCTURE_STORAGE, STRUCTURE_TERMINAL, STRUCTURE_NUKER].includes(s.structureType) !== true).forEach(s => s.destroy())
   },
+
+  nukerStatus: () => {
+    Array.from(Object.values(Game.rooms)).map(r => r.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]).filter(n => n != null && n.store.getFreeCapacity("G") > 0).forEach(n => console.log(n.room.name + ": " + n.store.getFreeCapacity("G")))
+  }
 }
