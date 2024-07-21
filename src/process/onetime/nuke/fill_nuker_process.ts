@@ -6,7 +6,6 @@ import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { World } from "world_info/world_info"
 import { generateCodename } from "utility/unique_id"
-import { OperatingSystem } from "os/os"
 import { RoomResources } from "room_resource/room_resources"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { processLog } from "os/infrastructure/logger"
@@ -20,6 +19,7 @@ import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrappe
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
 import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("FillNukerProcess", state => {
   return FillNukerProcess.decode(state as FillNukerProcessState)
@@ -95,12 +95,18 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
   }
 
   public runOnTick(): void {
+    if (Game.time - this.launchTime > 10000) {
+      PrimitiveLogger.fatal(`${this.identifier} didn't finish in ${Game.time - this.launchTime} ticks`)
+      SystemCalls.systemCall()?.killProcess(this.processId)
+      return
+    }
+
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     const nuker = Game.getObjectById(this.nukerId)
 
     if (roomResource == null || nuker == null) {
       PrimitiveLogger.fatal(`${this.identifier} no room resource or no nuker in ${roomLink(this.roomName)}`)
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.killProcess(this.processId)
       return
     }
 
@@ -109,7 +115,7 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
 
     if (fillingEnergy !== true && fillingGhodium !== true) {
       processLog(this, `finish filling ${nuker} in ${roomLink(this.roomName)}`)
-      OperatingSystem.os.killProcess(this.processId)
+      SystemCalls.systemCall()?.killProcess(this.processId)
       return
     }
 
