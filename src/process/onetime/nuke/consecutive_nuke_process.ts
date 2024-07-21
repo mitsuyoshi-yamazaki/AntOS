@@ -104,7 +104,7 @@ export class ConsecutiveNukeProcess implements Process, Procedural {
       if (firstSucceededLaunchResult == null) {
         return `${this.nukes.length} nukes to ${roomLink(this.targetRoomName)} failed`
       } else {
-        return `${this.nukes.length} nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-firstSucceededLaunchResult.launchTime)} ticks ago`
+        return `${this.nukes.length} nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(Game.time - firstSucceededLaunchResult.launchTime)} ticks ago`
       }
     }
 
@@ -120,7 +120,7 @@ export class ConsecutiveNukeProcess implements Process, Procedural {
       this.processShortDescription(),
       ...this.nukes.map((nuke): string => {
         if (nuke.result == null) {
-          return `- ready: (from ${nuke.nukerId})`
+          return `- ready: ${nuke.nukerId} to ${describePosition(nuke.position)}`
         } else {
           if (nuke.result.case === "succeeded") {
             return `- ${nuke.result.case} ${describePosition(nuke.position)} ${shortenedNumber(Game.time - nuke.result.launchTime)} ticks ago`
@@ -240,7 +240,7 @@ export class ConsecutiveNukeProcess implements Process, Procedural {
   }
 
   private log(launchUntil: Timestamp): void {
-    const remainingNukesCount = this.nukes.filter(isLaunched).length
+    const remainingNukesCount = this.nukes.filter(nuke => nuke.result == null).length
     processLog(this, `${coloredText("[Nuke]", "warn")} ${remainingNukesCount} nukes will launch to ${roomLink(this.targetRoomName)} in ${shortenedNumber(launchUntil)} ticks`)
   }
 }
