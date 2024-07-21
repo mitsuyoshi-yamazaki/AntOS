@@ -21,7 +21,7 @@ ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
 })
 
-const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
+const parameterNames = ["room_name", "target_room_name", "front_base_room_name", "name"]
 const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints", "quad_waypoints", "quad_action", "quad_plan"]
 
 interface QuadMakerProcessState extends ProcessState {
@@ -241,6 +241,16 @@ commands: ${commands}
       const oldValue = this.quadMaker.frontBaseRoomName
       this.quadMaker.frontBaseRoomName = frontBaseRoomName
       return `Changed front_base_room_name ${oldValue} =&gt ${this.quadMaker.frontBaseRoomName}`
+    }
+
+    case "name": {
+      const oldValue = this.quadMaker.quadName
+      if (args[0] == null) {
+        throw "No name argument"
+      }
+      this.quadMaker.quadName = args[0]
+
+      return `Changed name ${oldValue} =&gt ${this.quadMaker.quadName}`
     }
 
     default:

@@ -46,7 +46,7 @@ interface QuadMakerInterface {
 
 export class QuadMaker implements QuadMakerInterface, Stateful {
   private constructor(
-    public readonly quadName: string,
+    public quadName: string,
     public roomName: RoomName,
     public targetRoomName: RoomName,
     public frontBaseRoomName: RoomName | null,
