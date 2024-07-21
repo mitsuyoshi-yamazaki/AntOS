@@ -7,7 +7,7 @@ import type { RoomName } from "shared/utility/room_name_types"
 import type { Timestamp } from "shared/utility/timestamp"
 import { OperatingSystem } from "os/os"
 import { ProcessDecoder } from "process/process_decoder"
-import { decodeRoomPosition, Position } from "prototype/room_position"
+import { decodeRoomPosition, describePosition, Position } from "prototype/room_position"
 import { shortenedNumber } from "shared/utility/console_utility"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { ObserveNukeLandingProcess } from "./observe_nuke_landing_process"
@@ -112,58 +112,31 @@ export class ConsecutiveNukeProcess implements Process, Procedural {
     const failureCount = launchedCount - successCount
     const remainingNukeCount = this.nukes.length - launchedNukes.length
 
-    return `Succeeded: ${successCount}, failed: ${failureCount}, ${remainingNukeCount} launches remaining. Target: ${roomLink(this.targetRoomName)}, next launch: ${shortenedNumber(-timeToLaunch)}`
+    return `Succeeded: ${successCount}, failed: ${failureCount}, ${remainingNukeCount} launches remaining. Target: ${roomLink(this.targetRoomName)}, next launch in ${shortenedNumber(timeToLaunch)} ticks`
   }
 
   public processDescription(): string {
-    return this.processShortDescription()
-    // const timeToLaunch = this.nukeLaunchTime - Game.time
+    const descriptions: string[] = [
+      this.processShortDescription(),
+      ...this.nukes.map((nuke): string => {
+        if (nuke.result == null) {
+          return `- ready: (from ${nuke.nukerId})`
+        } else {
+          if (nuke.result.case === "succeeded") {
+            return `- ${nuke.result.case} ${describePosition(nuke.position)} ${shortenedNumber(Game.time - nuke.result.launchTime)} ticks ago`
+          } else {
+            return `- ${nuke.result.case} ${describePosition(nuke.position)} ${nuke.result.reason}`
+          }
+        }
+      })
+    ]
 
-    // const resourceStatus = (nuker: StructureNuker, resourceType: RESOURCE_ENERGY | RESOURCE_GHODIUM): string => {
-    //   return `${coloredResourceType(resourceType)}: ${Math.floor((nuker.store.getUsedCapacity(resourceType) / nuker.store.getCapacity(resourceType)) * 100)}%`
-    // }
-    // const nukerStatus = (nukerId: Id<StructureNuker>): string => {
-    //   const nuker = Game.getObjectById(nukerId)
-    //   if (nuker == null || nuker.isActive() !== true) {
-    //     return "no active nuker"
-    //   }
-
-    //   if (nuker.cooldown < timeToLaunch && nuker.store.getFreeCapacity(RESOURCE_ENERGY) <= 0 && nuker.store.getFreeCapacity(RESOURCE_GHODIUM) <= 0) {
-    //     if (nuker.cooldown > 0) {
-    //       return `nuker in ${roomLink(nuker.room.name)} ready (cooldown: ${shortenedNumber(nuker.cooldown)})`
-    //     }
-    //     return `nuker in ${roomLink(nuker.room.name)} ready`
-    //   }
-
-    //   return `nuker in ${roomLink(nuker.room.name)} cooldown: ${nuker.cooldown}, ${resourceStatus(nuker, RESOURCE_ENERGY)}, ${resourceStatus(nuker, RESOURCE_GHODIUM)}`
-    // }
-
-    // const overview = ((): string => {
-    //   if (this.result == null) {
-    //     return `launch nukes to ${roomLink(this.targetRoomName)} in ${shortenedNumber(timeToLaunch)} ticks`
-    //   }
-    //   const result = this.result === "succeeded" ? "succeeded" : "failed"
-    //   const timeToLand = NUKE_LAND_TIME + timeToLaunch
-    //   if (timeToLand > 0) {
-    //     return `nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}, estimated landing in ${shortenedNumber(timeToLand)} ticks`
-    //   }
-    //   return `nukes launched to ${roomLink(this.targetRoomName)} ${shortenedNumber(-timeToLaunch)} ticks ago: ${result}, landed ${shortenedNumber(-timeToLand)} ticks ago`
-    // })()
-
-    // const descriptions: string[] = [
-    //   overview,
-    //   ...this.targets.map((target): string => `- ${describePosition(target.position)}: ${nukerStatus(target.nukerId)}`),
-    // ]
-
-    // if (this.result != null && this.result !== "succeeded") {
-    //   descriptions.push(`failed reasons:\n${this.result}`)
-    // }
-
-    // return descriptions.join("\n")
+    return descriptions.join("\n")
   }
 
   public runOnTick(): void {
-    if (this.nukes.filter(isLaunched).length <= 0) {
+    if (this.nukes.filter(nuke => nuke.result == null).length <= 0) {
+      PrimitiveLogger.log(coloredText(`ConsecutiveNukeProcess ${this.taskIdentifier}`, "high"))
       OperatingSystem.os.suspendProcess(this.processId)
       return
     }
