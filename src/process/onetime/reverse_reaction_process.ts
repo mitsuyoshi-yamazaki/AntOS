@@ -29,12 +29,6 @@ interface ReverseReactionProcessState extends ProcessState {
   readonly stopReason: string | null
 }
 
-type ResearchLabs = {
-  readonly inputLab1: Id<StructureLab>
-  readonly inputLab2: Id<StructureLab>
-  readonly outputLabs: Id<StructureLab>[]
-}
-
 export class ReverseReactionProcess implements Process, Procedural, OwnedRoomProcess {
   public readonly identifier: string
   public get taskIdentifier(): string {
@@ -110,6 +104,14 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
       return
     }
 
+    const inputLabs = this.getLabs([researchLab.inputLab1, researchLab.inputLab2])
+    const inputLab1 = inputLabs[0]
+    const inputLab2 = inputLabs[1]
+    if (inputLab1 == null || inputLab2 == null) {
+      this.stopReason = "no input labs"
+      return
+    }
+
     const shouldSpawn = ((): boolean => {
       if (roomResource.hostiles.creeps.length > 0) {
         return false
@@ -126,7 +128,7 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
     })()
 
     if (shouldSpawn === true) {
-      const body = CreepBody.create([], [CARRY, CARRY, CARRY, CARRY, MOVE, MOVE], roomResource.room.energyCapacityAvailable, 4)
+      const body = CreepBody.create([], [CARRY, CARRY, CARRY], roomResource.room.energyCapacityAvailable, 2)
 
       World.resourcePools.addSpawnCreepRequest(this.roomName, {
         priority: CreepSpawnRequestPriority.Low,
@@ -140,18 +142,28 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
       })
     }
 
+    const outputLabs = this.getLabs(researchLab.outputLabs)
+    outputLabs.forEach(lab => {
+      if (lab.cooldown > 0) {
+        return
+      }
+      if (lab.mineralType !== this.compoundType) {
+        return
+      }
+      lab.reverseReaction(inputLab1, inputLab2)
+    })
+
     World.resourcePools.assignTasks(
       this.roomName,
       this.taskIdentifier,
       CreepPoolAssignPriority.Low,
-      creep => this.newTaskFor(creep, roomResource, researchLab),
+      creep => this.newTaskFor(creep, roomResource, inputLab1, inputLab2, outputLabs),
       () => true,
     )
   }
 
-  private newTaskFor(creep: Creep, roomResource: OwnedRoomResource, researchLabs: ResearchLabs): CreepTask | null {
+  private newTaskFor(creep: Creep, roomResource: OwnedRoomResource, inputLab1: StructureLab, inputLab2: StructureLab, outputLabs: StructureLab[]): CreepTask | null {
     if (creep.store.getUsedCapacity(this.compoundType) > 0) {
-      const outputLabs = this.getLabs(researchLabs.outputLabs)
       outputLabs.sort((lhs, rhs) => lhs.store.getUsedCapacity(this.compoundType) - rhs.store.getUsedCapacity(this.compoundType))
       const outputLabToTransfer = outputLabs[0]
 
@@ -178,13 +190,12 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
       return null
     }
 
-    const outputLabs = this.getLabs(researchLabs.outputLabs)
     const outputLabToWithdraw = outputLabs.find(lab => lab.mineralType != null && lab.mineralType !== this.compoundType)
     if (outputLabToWithdraw != null && outputLabToWithdraw.mineralType != null) {
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(outputLabToWithdraw, outputLabToWithdraw.mineralType))
     }
 
-    const inputLabs = this.getLabs([researchLabs.inputLab1, researchLabs.inputLab2])
+    const inputLabs = [inputLab1, inputLab2]
     const ingredients = MineralCompoundIngredients[this.compoundType]
     const ingredientList = [ingredients.lhs, ingredients.rhs]
     const inputLabToWithdraw = inputLabs.find(lab => {
@@ -203,11 +214,32 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
       return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(inputLabToWithdraw, inputLabToWithdraw.mineralType))
     }
 
-    if (roomResource.activeStructures.storage != null && roomResource.activeStructures.storage.store.getUsedCapacity(this.compoundType) > 0) {
-      return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(roomResource.activeStructures.storage, this.compoundType))
+
+    outputLabs.sort((lhs, rhs) => lhs.store.getUsedCapacity(this.compoundType) - rhs.store.getUsedCapacity(this.compoundType))
+    const outputLabToTransfer = outputLabs[0]
+    if (outputLabToTransfer != null && outputLabToTransfer.store.getFreeCapacity(this.compoundType) > 200) {
+      if (roomResource.activeStructures.storage != null && roomResource.activeStructures.storage.store.getUsedCapacity(this.compoundType) > 0) {
+        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(roomResource.activeStructures.storage, this.compoundType))
+      }
+      if (roomResource.activeStructures.terminal != null && roomResource.activeStructures.terminal.store.getUsedCapacity(this.compoundType) > 0) {
+        return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(roomResource.activeStructures.terminal, this.compoundType))
+      }
     }
-    if (roomResource.activeStructures.terminal != null && roomResource.activeStructures.terminal.store.getUsedCapacity(this.compoundType) > 0) {
-      return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(roomResource.activeStructures.terminal, this.compoundType))
+
+    const inputLabWithResource = inputLabs.find(lab => {
+      if (lab.mineralType == null) {
+        return false
+      }
+      if (ingredientList.includes(lab.mineralType) !== true) {
+        return true
+      }
+      if (lab.store.getUsedCapacity(lab.mineralType) >= 100) {
+        return true
+      }
+      return false
+    })
+    if (inputLabWithResource != null && inputLabWithResource.mineralType != null) {
+      return MoveToTargetTask.create(WithdrawResourceApiWrapper.create(inputLabWithResource, inputLabWithResource.mineralType))
     }
 
     creep.say("nth to do")
