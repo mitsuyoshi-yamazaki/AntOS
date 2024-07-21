@@ -136,7 +136,7 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
     })()
 
     if (shouldSpawn === true) {
-      const body = CreepBody.create([], [CARRY, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 2)
+      const body = CreepBody.create([], [CARRY, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 3)
 
       World.resourcePools.addSpawnCreepRequest(this.roomName, {
         priority: CreepSpawnRequestPriority.Low,
