@@ -152,8 +152,11 @@ export class NukerManagementProcess implements Process, Procedural {
       if (nuker == null) {
         continue
       }
-      if (targetNuker == null && nuker.store.getFreeCapacity(RESOURCE_GHODIUM) < amount) {
-        targetNuker = nuker
+      const requiredGhodium = nuker.store.getFreeCapacity(RESOURCE_GHODIUM)
+      if (targetNuker == null) {
+        if (requiredGhodium > 0 && requiredGhodium < amount) {
+          targetNuker = nuker
+        }
       }
     }
 
