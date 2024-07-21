@@ -79,7 +79,7 @@ import { SellAllResourcesProcess } from "process/onetime/sell_all_resources_proc
 import { LandOccupationProcess } from "process/process/land_occupation/land_occupation_process"
 import { BuildableWallTypes, ClusterPlan, LandOccupationStructureTypes, serializePosition } from "process/process/land_occupation/land_occupation_datamodel"
 import { decodeRoomPosition, Position, RoomPositionFilteringOptions } from "prototype/room_position"
-import { FillNukerProcess } from "process/onetime/nuke/fill_nuker_process"
+import { NukerManagementProcess } from "process/onetime/nuke/nuker_management_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { isNukerReady, LaunchNukeProcess, NukeTargetInfo } from "process/onetime/nuke/launch_nuke_process"
 import { isNukerReady as isConsecutiveNukerReady, ConsecutiveNukeProcess, NukeTargetInfo as ConsecutiveNukeTargetInfo } from "process/onetime/nuke/consecutive_nuke_process"
@@ -1379,21 +1379,10 @@ ProcessLauncher.register("LandOccupationProcess", args => {
   }
 })
 
-ProcessLauncher.register("FillNukerProcess", args => {
+ProcessLauncher.register("NukerManagementProcess", () => {
   try {
-    const roomResource = args.ownedRoomResource("room_name").parse()
-    const nuker = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]) as StructureNuker | undefined
-    if (nuker == null) {
-      throw `no nuker in ${roomLink(roomResource.room.name)}`
-    }
-
-    if ((roomResource.roomInfo.config?.genericWaitingPositions ?? []).length <= 0) {
-      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} no waiting position in ${roomLink(roomResource.room.name)}`)
-    }
-
-    return Result.Succeeded((processId) => FillNukerProcess.create(
+    return Result.Succeeded((processId) => NukerManagementProcess.create(
       processId,
-      nuker,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)

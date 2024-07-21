@@ -95,7 +95,7 @@ export class FillNukerProcess implements Process, Procedural, OwnedRoomProcess {
   }
 
   public runOnTick(): void {
-    if (Game.time - this.launchTime > 10000) {
+    if (Game.time - this.launchTime > 4000) {
       PrimitiveLogger.fatal(`${this.identifier} didn't finish in ${Game.time - this.launchTime} ticks`)
       SystemCalls.systemCall()?.killProcess(this.processId)
       return
