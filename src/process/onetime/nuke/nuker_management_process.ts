@@ -67,12 +67,18 @@ export class NukerManagementProcess implements Process, Procedural {
       descriptions.push(`filling ${roomLink(fillNukerProcess.ownedRoomName)}`)
     }
 
+    if (this.sleepUntil != null) {
+      descriptions.push(`sleeping in ${this.sleepUntil - Game.time} ticks`)
+    } else {
+      descriptions.push("running")
+    }
+
     return descriptions.join(", ")
   }
 
   public runOnTick(): void {
     if (this.sleepUntil != null) {
-      if (this.sleepUntil < Game.time) {
+      if (this.sleepUntil > Game.time) {
         return
       }
       this.sleepUntil = null
@@ -80,7 +86,7 @@ export class NukerManagementProcess implements Process, Procedural {
 
     const fillNukerProcess = this.getFillNukerProcess()
     if (fillNukerProcess != null) {
-      this.sleepUntil = Game.time + 181
+      this.sleepUntil = Game.time + 17
       return
     }
 
@@ -88,7 +94,7 @@ export class NukerManagementProcess implements Process, Procedural {
 
     const targetInfo = this.getTargets()
     if (targetInfo == null) {
-      this.sleepUntil = Game.time + 307
+      this.sleepUntil = Game.time + 509
       return
     }
 
