@@ -88,10 +88,11 @@ const SingularParsers: { [T in IterableArgumentType]: (key: string, value: strin
 }
 
 export class IterableArgument<T extends IterableArgumentType> extends SingleOptionalArgument<IterableArgumentOption<T>, Array<IterableArgumentReturnType<T>>> {
-  public constructor(
+  private constructor(
     key: string,
     value: string | null,
     private readonly argumentParserMaker: (key: string, value: string, parseOptions?: ArgumentParsingOptions) => SingleOptionalArgument<IterableArgumentOption<T>, IterableArgumentReturnType<T>>,
+    private readonly argumentType: T,
     parseOptions?: ArgumentParsingOptions,
   ) {
     super(key, value, parseOptions)
@@ -104,7 +105,7 @@ export class IterableArgument<T extends IterableArgumentType> extends SingleOpti
     parseOptions?: ArgumentParsingOptions,
   ): IterableArgument<S> {
     const parserMaker = SingularParsers[argumentType] as (key: string, value: string, parseOptions?: ArgumentParsingOptions) => SingleOptionalArgument<IterableArgumentOption<S>, IterableArgumentReturnType<S>>
-    return new IterableArgument(key, value, parserMaker, parseOptions)
+    return new IterableArgument(key, value, parserMaker, argumentType, parseOptions)
   }
 
   /** throws */
@@ -113,7 +114,16 @@ export class IterableArgument<T extends IterableArgumentType> extends SingleOpti
       throw this.missingArgumentErrorMessage()
     }
 
-    const components = this.value.split(",")
+    const splitter = ((): string => {
+      switch (this.argumentType) {
+      case "local_position":
+        return ";"
+      default:
+        return ","
+      }
+    })()
+
+    const components = this.value.split(splitter)
     return components.map(component => {
       const parser = this.argumentParserMaker(this.key, component, this.parseOptions)
       return parser.parse(options)
