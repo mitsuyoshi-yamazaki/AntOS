@@ -71,7 +71,14 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)} ${coloredResourceType(this.compoundType)}`
+    const descriptions: string[] = [
+      roomLink(this.roomName),
+      coloredResourceType(this.compoundType),
+    ]
+    if (this.stopReason != null) {
+      descriptions.push(`stopped by: ${this.stopReason}`)
+    }
+    return descriptions.join(", ")
   }
 
   public runOnTick(): void {
@@ -101,6 +108,7 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
 
     const researchLab = roomResource.roomInfo.researchLab
     if (researchLab == null || researchLab.outputLabs.length <= 0) {
+      this.stopReason = "no output labs"
       return
     }
 
@@ -128,7 +136,7 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
     })()
 
     if (shouldSpawn === true) {
-      const body = CreepBody.create([], [CARRY, CARRY, CARRY], roomResource.room.energyCapacityAvailable, 2)
+      const body = CreepBody.create([], [CARRY, CARRY, MOVE], roomResource.room.energyCapacityAvailable, 2)
 
       World.resourcePools.addSpawnCreepRequest(this.roomName, {
         priority: CreepSpawnRequestPriority.Low,

@@ -1875,11 +1875,17 @@ ProcessLauncher.register("ReportProcess", () => {
 ProcessLauncher.register("ReverseReactionProcess", (args) => {
   try {
     const roomResource = args.ownedRoomResource("room_name").parse()
+
+    if (roomResource.roomInfo.researchLab == null) {
+      throw `No research labs in ${roomLink(roomResource.room.name)}`
+    }
+
     if (roomResource.roomInfo.config != null && roomResource.roomInfo.config.researchCompounds != null) {
       if (Array.from(Object.keys(roomResource.roomInfo.config.researchCompounds)).length > 0) {
-        throw `${roomLink(roomResource.room.name)} has research setting (see "exec room_config ${roomResource.room.name} research show")`
+        roomResource.roomInfo.config.researchCompounds = {}
       }
     }
+    roomResource.roomInfoAccessor.removeAllBoosts()
 
     const compoundType = args.typedString("compound", "MineralCompoundConstant", isMineralCompoundConstant).parse()
 
