@@ -13,6 +13,7 @@ import { SellResourcesProcess } from "process/onetime/sell_resources_process"
 import { CommodityConstant, DepositConstant } from "shared/utility/resource"
 import { Market } from "shared/utility/market"
 import { SystemCalls } from "os/system_calls"
+import { FillNukerProcess } from "process/onetime/nuke/fill_nuker_process"
 
 ProcessDecoder.register("InterRoomResourceManagementProcess", state => {
   return InterRoomResourceManagementProcess.decode(state as InterRoomResourceManagementProcessState)
@@ -57,7 +58,7 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
   // }
 
   public runOnTick(): void {
-    if ((Game.time % 977) !== 17) {
+    if ((Game.time % 359) !== 17) {
       return
     }
 
@@ -136,6 +137,13 @@ class ResourceTransferer {
         return
       }
       if (processInfo.process instanceof SellResourcesProcess) {
+        const roomName = processInfo.process.ownedRoomName
+        if (this.disabledRoomNames.includes(roomName) !== true) {
+          this.disabledRoomNames.push(roomName)
+        }
+        return
+      }
+      if (processInfo.process instanceof FillNukerProcess) {
         const roomName = processInfo.process.ownedRoomName
         if (this.disabledRoomNames.includes(roomName) !== true) {
           this.disabledRoomNames.push(roomName)
