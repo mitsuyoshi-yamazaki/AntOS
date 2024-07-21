@@ -28,7 +28,6 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import type { SectorName } from "shared/utility/room_sector_type"
-import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/private/submodule_test_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
@@ -125,8 +124,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchTestProcess()
       case "TestChildProcess":
         return this.launchTestChildProcess()
-      case "SpecializedQuadProcess":
-        return this.launchQuad()
       case "Season487837AttackInvaderCoreProcess":
         return this.launchSeason487837AttackInvaderCoreProcess()
       case "BuyPixelProcess":
@@ -245,10 +242,6 @@ export class LaunchCommand implements ConsoleCommand {
       return TestChildProcess.create(processId)
     })
     return Result.Succeeded(process)
-  }
-
-  private launchQuad(): LaunchCommandResult {
-    return launchQuadProcess(this.parseProcessArguments())
   }
 
   private launchSeason487837AttackInvaderCoreProcess(): LaunchCommandResult {
