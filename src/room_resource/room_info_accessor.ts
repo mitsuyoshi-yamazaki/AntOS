@@ -113,6 +113,9 @@ class Config {
     }
     return this.config.genericWaitingPositions.map(position => decodeRoomPosition(position, this.roomName))
   }
+  public clearWaitingPositions(): void {
+    this.config.genericWaitingPositions = []
+  }
   public getGenericWaitingPosition(): RoomPosition | null {
     if (this.config.genericWaitingPositions == null) {
       return null
