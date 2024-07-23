@@ -101,6 +101,7 @@ import { Season5ClaimReactorProcess } from "process/temporary/season5_claim_reac
 import { Season5FillReactorProcess } from "process/temporary/season5_fill_reactor_process"
 import { ReportProcess } from "process/process/report/report_process"
 import { ReverseReactionProcess } from "process/onetime/reverse_reaction_process"
+import { CollectDroppedResourceProcess } from "process/onetime/collect_dropped_resource_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1920,6 +1921,20 @@ ProcessLauncher.register("PowerCreepStealProcess", (args) => {
     return Result.Failed(`${error}`)
   }
 })
+
+ProcessLauncher.register("CollectDroppedResourceProcess", args => {
+  const roomName = args.roomName("room_name").parse({ my: true })
+
+  try {
+    return Result.Succeeded((processId) => CollectDroppedResourceProcess.create(
+      processId,
+      roomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
 
 // ProcessLauncher.register("IntrashardResourceWatchdogProcess", () => {
 //   try {
