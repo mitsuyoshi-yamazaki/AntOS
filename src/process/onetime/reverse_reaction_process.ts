@@ -18,6 +18,8 @@ import { OwnedRoomProcess } from "process/owned_room_process"
 import { ProcessDecoder } from "process/process_decoder"
 import { ProcessState } from "process/process_state"
 import { MineralCompoundIngredients } from "shared/utility/resource"
+import { SystemCalls } from "os/system_calls"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("ReverseReactionProcess", state => {
   return ReverseReactionProcess.decode(state as ReverseReactionProcessState)
@@ -154,11 +156,11 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
       return
     }
 
+    const creepCounnt = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
     const shouldSpawn = ((): boolean => {
       if (roomResource.hostiles.creeps.length > 0) {
         return false
       }
-      const creepCounnt = World.resourcePools.countCreeps(this.roomName, this.taskIdentifier, () => true)
       if (creepCounnt > 0) {
         return false
       }
@@ -182,6 +184,12 @@ export class ReverseReactionProcess implements Process, Procedural, OwnedRoomPro
         taskIdentifier: this.taskIdentifier,
         parentRoomName: null,
       })
+    }
+
+    if (shouldSpawn !== true && creepCounnt <= 0) {
+      PrimitiveLogger.log(`${this.constructor.name} ${roomLink(this.roomName)} suspend`)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
+      return
     }
 
     const outputLabs = this.getLabs(researchLab.outputLabs)
