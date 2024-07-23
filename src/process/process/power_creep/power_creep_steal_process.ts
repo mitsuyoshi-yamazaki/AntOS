@@ -463,6 +463,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
     switch (this.powerStatus(powerCreep, PWR_REGEN_SOURCE)) {
     case "unavailable":
     case "cooling down":
+      state.regenTargetId = null
       return
     case "available":
       break
