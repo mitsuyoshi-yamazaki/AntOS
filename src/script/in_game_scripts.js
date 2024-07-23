@@ -41,4 +41,8 @@ const scripts = {
   nukerReady: () => {
     Array.from(Object.values(Game.rooms)).map(r => r.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]).filter(n => n != null && n.cooldown <= 0 && n.store.getFreeCapacity("G") <= 0 && n.store.getFreeCapacity("energy") <= 0).forEach(n => console.log(n.room.name))
   },
+
+  findNukes: () => {
+    Array.from(Object.values(Game.rooms)).filter(r => r.controller && r.controller.my && r.find(FIND_NUKES).length > 0).forEach(r => console.log(r.name))
+  },
 }
