@@ -10,7 +10,6 @@ import { PowerCreepProcess } from "./power_creep_process"
 import { moveToRoom } from "script/move_to_room"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
-import { defaultMoveToOptions } from "prototype/creep"
 import { strictEntries } from "shared/utility/strict_entries"
 import { CommodityConstant, DepositConstant, MineralBaseCompoundsConstant, MineralBoostConstant, MineralConstant } from "shared/utility/resource"
 import { GameMap } from "game/game_map"
@@ -304,7 +303,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
       return
     }
 
-    powerCreep.moveTo(target, defaultMoveToOptions())
+    powerCreep.moveTo(target, this.moveToOptions())
   }
 
   private getStealTarget(): { id: Id<StealTarget>, resourceType: ResourceConstant } | null {
@@ -399,7 +398,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
       powerCreep.transfer(target, resourceType)
       return
     }
-    powerCreep.moveTo(target, defaultMoveToOptions())
+    powerCreep.moveTo(target, this.moveToOptions())
   }
 
   private renew(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource): void {
@@ -426,7 +425,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
       return
     }
 
-    powerCreep.moveTo(powerSpawn, defaultMoveToOptions())
+    powerCreep.moveTo(powerSpawn, this.moveToOptions())
   }
 
   private moveToTargetRoom(powerCreep: DeployedPowerCreep, state: PowerCreepStateHeading): void {
@@ -441,5 +440,13 @@ export class PowerCreepStealProcess implements Process, Procedural {
     PrimitiveLogger.log(`${this.constructor.name} ${roomLink(this.roomName)} suspend: ${message}`)
     SystemCalls.systemCall()?.resumeProcess(this.powerCreepProcessId)
     SystemCalls.systemCall()?.suspendProcess(this.processId)
+  }
+
+  private moveToOptions(): MoveToOpts {
+    return {
+      maxRooms: 1,
+      reusePath: 10,
+      maxOps: 800,
+    }
   }
 }
