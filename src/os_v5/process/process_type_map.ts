@@ -31,6 +31,7 @@ export const processTypeDecodingMap = {
   x: "OnHeapContinuousTaskProcess",
   y: "TestTrafficManagerV3Process",
   z: "PathManagerProcess",
+  aa: "RoomMapProcess",
 } as const
 
 
@@ -62,6 +63,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "V3BridgeDriverProcess",
   "TerrainCacheProcess",
   "OnHeapContinuousTaskProcess",
+  "RoomMapProcess",
 
   // Driver with dependencies
   "PathManagerProcess",
@@ -138,6 +140,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   TerrainCacheProcess: "driver",
   PathManagerProcess: "driver",
   RoomPathfindingProcess: "driver",
+  RoomMapProcess: "driver",
   CreepDistributorProcess: "driver",
   CreepTrafficManagerProcess: "driver",
   CreepPositionAssignerProcess: "driver",
