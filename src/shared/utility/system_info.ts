@@ -19,11 +19,11 @@ export const ShortVersion = {
 /** @deprecated */
 export const SystemInfo = {
   os: {
-    version: "3.2.25",
+    version: "3.2.26",
     name: "AntOS",
   },
   application: {
-    version: "9.4.28",
+    version: "9.4.29",
     name: "Mitsuyoshi bot",
   },
 }

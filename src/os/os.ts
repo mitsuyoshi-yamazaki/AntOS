@@ -144,6 +144,7 @@ export class OperatingSystem {
       resumeProcess: processId => os.resumeProcess(processId),
       killProcess: processId => os.killProcess(processId),
       processOf: processId => os.processOf(processId),
+      isRunning: processId => os.isRunning(processId),
     })
     return os
   })()

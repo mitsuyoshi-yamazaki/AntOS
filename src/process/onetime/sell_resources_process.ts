@@ -8,11 +8,11 @@ import { Market } from "shared/utility/market"
 import { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { OperatingSystem } from "os/os"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { Timestamp } from "shared/utility/timestamp"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("SellResourcesProcess", state => {
   return SellResourcesProcess.decode(state as SellResourcesProcessState)
@@ -90,8 +90,8 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
           throw `${coloredResourceType(resourceType)} already in the list`
         }
         this.resourceTypes.push(resourceType)
-        if (OperatingSystem.os.isRunning(this.processId) !== true) {
-          OperatingSystem.os.resumeProcess(this.processId)
+        if (SystemCalls.systemCall()?.isRunning(this.processId) !== true) {
+          SystemCalls.systemCall()?.resumeProcess(this.processId)
           return `added ${coloredResourceType(resourceType)} and resumed`
         }
 
@@ -129,18 +129,18 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
 
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
     const terminal = roomResource.activeStructures.terminal
     if (terminal == null) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
     if (this.resourceTypes.length <= 0) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
