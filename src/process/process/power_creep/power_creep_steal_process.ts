@@ -1,7 +1,7 @@
 import { Procedural } from "process/procedural"
 import { Process, ProcessId } from "process/process"
 import type { RoomName } from "shared/utility/room_name_types"
-import { roomLink } from "utility/log"
+import { coloredText, roomLink } from "utility/log"
 import { ProcessState } from "process/process_state"
 import { ProcessDecoder } from "process/process_decoder"
 import { DeployedPowerCreep, isDeployedPowerCreep, PowerCreepName } from "prototype/power_creep"
@@ -157,6 +157,42 @@ export class PowerCreepStealProcess implements Process, Procedural {
     return descriptions.join(", ")
   }
 
+  public didReceiveMessage(message: string): string {
+    const commandList = ["help", "resume"]
+    const components = message.split(" ")
+    const command = components.shift()
+
+    try {
+      switch (command) {
+      case "help":
+        return `Commands: ${commandList}`
+
+      case "resume": {
+        const results: string[] = [
+        ]
+        if (this.targetIds.length <= 0) {
+          throw "Cannot resume: No target IDs "
+        }
+        if (SystemCalls.systemCall()?.isRunning(this.processId) === false) {
+          SystemCalls.systemCall()?.resumeProcess(this.processId)
+          SystemCalls.systemCall()?.suspendProcess(this.powerCreepProcessId)
+          results.push("process resumed")
+        }
+        if (this.shot === true) {
+          this.shot = null
+          results.push("reset shot")
+        }
+        return `Resumed: ${results.join(", ")}`
+      }
+
+      default:
+        throw `Invalid command ${commandList}. see "help"`
+      }
+    } catch (error) {
+      return `${coloredText("[ERROR]", "error")} ${error}`
+    }
+  }
+
   public runOnTick(): void {
     const powerCreepProcess = SystemCalls.systemCall()?.processOf(this.powerCreepProcessId) as PowerCreepProcess
     if (powerCreepProcess == null) {
@@ -201,16 +237,16 @@ export class PowerCreepStealProcess implements Process, Procedural {
       return
 
     case "heading":
-      if (powerCreep.room.name === this.targetRoomName) {
-        if (powerCreep.hits < powerCreep.hitsMax) {
-          this.shot = true
-          this.powerCreepState = {
-            case: "returning",
-            transferTarget: null,
-            waypoints: GameMap.getWaypoints(this.targetRoomName, this.roomName) ?? [],
-          }
-          return
+      if (powerCreep.hits < powerCreep.hitsMax) {
+        this.shot = true
+        this.powerCreepState = {
+          case: "returning",
+          transferTarget: null,
+          waypoints: GameMap.getWaypoints(powerCreep.room.name, this.roomName) ?? [],
         }
+        return
+      }
+      if (powerCreep.room.name === this.targetRoomName) {
         if (this.shot == null) {
           this.shot = false
         }
