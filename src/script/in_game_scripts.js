@@ -45,4 +45,8 @@ const scripts = {
   findNukes: () => {
     Array.from(Object.values(Game.rooms)).filter(r => r.controller && r.controller.my && r.find(FIND_NUKES).length > 0).forEach(r => console.log(r.name))
   },
+
+  roomWithNoCoreLink: () => {
+    Array.from(Object.entries(Memory.v6RoomInfo)).filter(([, i]) => i.links != null && i.links.coreLinkId == null).forEach(([r,]) => console.log(r))
+  },
 }
