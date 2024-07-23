@@ -210,6 +210,9 @@ export class PowerCreepStealProcess implements Process, Procedural {
           }
           return
         }
+        if (this.shot == null) {
+          this.shot = false
+        }
 
         if (powerCreep.store.getFreeCapacity() <= 0) {
           this.powerCreepState = {
