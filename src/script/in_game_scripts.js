@@ -49,4 +49,8 @@ const scripts = {
   roomWithNoCoreLink: () => {
     Array.from(Object.entries(Memory.v6RoomInfo)).filter(([, i]) => i.links != null && i.links.coreLinkId == null).forEach(([r,]) => console.log(r))
   },
+
+  droppedResourceAmount: () => {
+    Array.from(Object.values(Game.rooms)).filter(r => r.controller && r.controller.my).map(r => ([r, r.find(FIND_DROPPED_RESOURCES).reduce((result, resource) => result + resource.amount, 0)])).filter(([r, a]) => a > 1000).forEach(([r, a]) => console.log(r + ": " + a))
+  },
 }
