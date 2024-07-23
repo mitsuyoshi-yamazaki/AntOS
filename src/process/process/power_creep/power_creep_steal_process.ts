@@ -42,6 +42,7 @@ type PowerCreepStateHeading = {
     readonly id: Id<StealTarget>
     readonly resourceType: ResourceConstant
   } | null
+  regenTargetId: Id<Source> | null
   readonly waypoints: RoomName[]
 }
 type PowerCreepStateReturning = {
@@ -190,6 +191,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
         this.powerCreepState = {
           case: "heading",
           stealTarget: null,
+          regenTargetId: this.getRegenTargetSource(roomResource)?.id ?? null,
           waypoints: GameMap.getWaypoints(this.roomName, this.targetRoomName) ?? [],
         }
         return
@@ -227,6 +229,10 @@ export class PowerCreepStealProcess implements Process, Procedural {
         }
         this.steal(powerCreep, roomResource, this.powerCreepState)
       } else {
+        if (powerCreep.room.name === this.roomName && this.powerCreepState.regenTargetId != null) {
+          this.operateRegenSource(powerCreep, this.powerCreepState, this.powerCreepState.regenTargetId)
+          return
+        }
         this.moveToTargetRoom(powerCreep, this.powerCreepState)
       }
       return
@@ -293,6 +299,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
       this.powerCreepState = {
         case: "heading",
         stealTarget: null,
+        regenTargetId: null,
         waypoints: [],
       }
       return
@@ -448,5 +455,71 @@ export class PowerCreepStealProcess implements Process, Procedural {
       reusePath: 10,
       maxOps: 800,
     }
+  }
+
+
+  // ---- Power ---- //
+  private operateRegenSource(powerCreep: DeployedPowerCreep, state: PowerCreepStateHeading, regenTargetId: Id<Source>): void {
+    switch (this.powerStatus(powerCreep, PWR_REGEN_SOURCE)) {
+    case "unavailable":
+    case "cooling down":
+      return
+    case "available":
+      break
+    }
+
+    const source = Game.getObjectById(regenTargetId)
+    if (source == null) {
+      state.regenTargetId = null
+      return
+    }
+    if (powerCreep.pos.getRangeTo(source) <= 3) {
+      powerCreep.usePower(PWR_REGEN_SOURCE, source)
+      return
+    }
+
+    powerCreep.moveTo(source, this.moveToOptions())
+  }
+
+  private getRegenTargetSource(roomResource: OwnedRoomResource): Source | null {
+    if (roomResource.hostiles.creeps.length > 0) {
+      return roomResource.sources.find(source => {
+        if (source.effects == null) {
+          if (source.pos.findInRange(FIND_HOSTILE_CREEPS, 5).length > 0) {
+            return false
+          }
+          return true
+        }
+        return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
+      }) ?? null
+    }
+    return roomResource.sources.find(source => {
+      if (source.effects == null) {
+        return true
+      }
+      return source.effects.some(effect => effect.effect === PWR_REGEN_SOURCE) !== true
+    }) ?? null
+  }
+
+  // private operateGenerateOps(powerCreep: DeployedPowerCreep): void {
+  //   switch (this.powerStatus(powerCreep, PWR_GENERATE_OPS)) {
+  //   case "unavailable":
+  //   case "cooling down":
+  //     return
+  //   case "available":
+  //     powerCreep.usePower(PWR_GENERATE_OPS)
+  //     return
+  //   }
+  // }
+
+  private powerStatus(powerCreep: DeployedPowerCreep, power: PowerConstant): "unavailable" | "cooling down" | "available" {
+    const powerStatus = powerCreep.powers[power]
+    if (powerStatus == null || powerStatus.cooldown == null) {
+      return "unavailable"
+    }
+    if (powerStatus.cooldown > 0) {
+      return "cooling down"
+    }
+    return "available"
   }
 }
