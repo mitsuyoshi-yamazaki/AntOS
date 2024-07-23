@@ -14,6 +14,7 @@ import { defaultMoveToOptions } from "prototype/creep"
 import { strictEntries } from "shared/utility/strict_entries"
 import { CommodityConstant, DepositConstant, MineralBaseCompoundsConstant, MineralBoostConstant, MineralConstant } from "shared/utility/resource"
 import { GameMap } from "game/game_map"
+import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 
 ProcessDecoder.register("PowerCreepStealProcess", state => {
   return PowerCreepStealProcess.decode(state as PowerCreepStealProcessState)
@@ -151,25 +152,32 @@ export class PowerCreepStealProcess implements Process, Procedural {
       }
     }
 
+    descriptions.join(`${this.targetIds.length} targets`)
+
     return descriptions.join(", ")
   }
 
   public runOnTick(): void {
     const powerCreepProcess = SystemCalls.systemCall()?.processOf(this.powerCreepProcessId) as PowerCreepProcess
     if (powerCreepProcess == null) {
+      PrimitiveLogger.log(`no powerCreepProcess for ID ${this.powerCreepProcessId}`)
       SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
+    }
+    if (SystemCalls.systemCall()?.isRunning(this.powerCreepProcessId) === true) {
+      PrimitiveLogger.log(`suspend powerCreepProcess ${this.powerCreepProcessId}`)
+      SystemCalls.systemCall()?.suspendProcess(this.powerCreepProcessId)
     }
 
     const powerCreep = Game.powerCreeps[this.powerCreepName]
     if (powerCreep == null || !isDeployedPowerCreep(powerCreep)) {
-      this.suicide()
+      this.suicide("power creep not deployed")
       return
     }
 
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
-      this.suicide()
+      this.suicide("room not mine")
       return
     }
 
@@ -185,7 +193,6 @@ export class PowerCreepStealProcess implements Process, Procedural {
           stealTarget: null,
           waypoints: GameMap.getWaypoints(this.roomName, this.targetRoomName) ?? [],
         }
-        this.steal(powerCreep, roomResource, this.powerCreepState)
         return
       }
 
@@ -226,13 +233,13 @@ export class PowerCreepStealProcess implements Process, Procedural {
       if (powerCreep.room.name === this.roomName) {
         if (powerCreep.store.getUsedCapacity() <= 0) {
           if (this.shot === true || this.targetIds.length <= 0) {
-            this.suicide()
+            this.suicide("shot or no target")
             return
           }
 
           const powerSpawn = roomResource.activeStructures.powerSpawn
           if (powerSpawn == null) {
-            this.suicide()
+            this.suicide("no power spawn2")
             return
           }
           this.renew(powerCreep, roomResource)
@@ -327,7 +334,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
         }
       }
 
-      const transferResourceType = (strictEntries(powerCreep.store) as [ResourceConstant, number][]).find((resourceType, amount) => amount > 0)
+      const transferResourceType = (strictEntries(powerCreep.store) as [ResourceConstant, number][]).find(([, amount]) => amount > 0)
       if (transferResourceType == null) {
         return null
       }
@@ -340,7 +347,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
 
     if (targetInfo == null) {
       powerCreep.say("no str")
-      this.suicide()
+      this.suicide("no storage")
       return
     }
 
@@ -395,7 +402,7 @@ export class PowerCreepStealProcess implements Process, Procedural {
   private renew(powerCreep: DeployedPowerCreep, roomResource: OwnedRoomResource): void {
     const powerSpawn = roomResource.activeStructures.powerSpawn
     if (powerSpawn == null) {
-      this.suicide()
+      this.suicide("no power spawn")
       return
     }
 
@@ -427,7 +434,8 @@ export class PowerCreepStealProcess implements Process, Procedural {
     moveToRoom(powerCreep, this.roomName, state.waypoints)
   }
 
-  private suicide(): void {
+  private suicide(message: string): void {
+    PrimitiveLogger.log(`${this.constructor.name} ${roomLink(this.roomName)} suspend: ${message}`)
     SystemCalls.systemCall()?.resumeProcess(this.powerCreepProcessId)
     SystemCalls.systemCall()?.suspendProcess(this.processId)
   }
