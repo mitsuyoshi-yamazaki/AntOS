@@ -8,6 +8,7 @@ import { PowerProcessProcess } from "process/process/power_creep/power_process_p
 import { coloredText, roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
+import { PowerCreepStealProcess } from "process/process/power_creep/power_creep_steal_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
@@ -1878,6 +1879,42 @@ ProcessLauncher.register("ReverseReactionProcess", (args) => {
       processId,
       roomResource.room.name,
       compoundType,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("PowerCreepStealProcess", (args) => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    getWaypoints(args, roomName, targetRoomName)
+
+    const process = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      if (processInfo.process instanceof PowerCreepProcess) {
+        if (processInfo.process.ownedRoomName === roomName) {
+          return true
+        }
+      }
+      return false
+    })
+
+    if (process == null) {
+      throw `No running PowerCreepProcess in ${roomLink(roomName)}`
+    }
+    OperatingSystem.os.suspendProcess(process.processId)
+    const powerCreepProcess = process.process as PowerCreepProcess
+
+    const targetIds = args.list("target_ids", "object_id").parse() as Id<StructureStorage | StructureTerminal>[]
+
+    return Result.Succeeded((processId) => PowerCreepStealProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      powerCreepProcess.powerCreepName,
+      powerCreepProcess.processId,
+      targetIds,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
