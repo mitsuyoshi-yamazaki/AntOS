@@ -685,7 +685,7 @@ export class HarvestPowerProcess implements Process, Procedural, OwnedRoomProces
       if (hostileAttackerCreeps.length > 0) {
         const quad = ((): Quad | null => {
           if (this.quadState != null) {
-            const decoded = Quad.decode(this.quadState)
+            const decoded = Quad.decode(this.quadState, null)
             if (decoded != null) {
               return decoded
             }
