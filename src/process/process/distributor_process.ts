@@ -450,6 +450,9 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       if (needEnergy === true && terminalEnergyAmount >= minimumEnergy) {
         return [terminal, storage]
       } else {
+        if (terminalEnergyAmount > 40000 && terminal.store.getFreeCapacity() < 20000) {
+          return [terminal, storage]
+        }
         return [storage, terminal]
       }
     })()
