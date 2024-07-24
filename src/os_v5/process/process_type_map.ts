@@ -32,6 +32,7 @@ export const processTypeDecodingMap = {
   y: "TestTrafficManagerV3Process",
   z: "PathManagerProcess",
   aa: "RoomMapProcess",
+  ab: "RoomPlannerProcess",
 } as const
 
 
@@ -64,6 +65,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "TerrainCacheProcess",
   "OnHeapContinuousTaskProcess",
   "RoomMapProcess",
+  "RoomPlannerProcess",   // TODO: 実装したら再度確認
 
   // Driver with dependencies
   "PathManagerProcess",
@@ -135,6 +137,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   StaticMonoCreepKeeperRoomProcess: "economy",
   StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
+  RoomPlannerProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
