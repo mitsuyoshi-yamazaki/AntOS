@@ -4,6 +4,7 @@ import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bo
 
 // Application
 import { V3ResourceDistributorProcess, V3ResourceDistributorProcessId } from "../../processes/application/v3_resource_distributor_process"
+import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"

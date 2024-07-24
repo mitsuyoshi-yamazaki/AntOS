@@ -33,6 +33,7 @@ export const processTypeDecodingMap = {
   z: "PathManagerProcess",
   aa: "RoomMapProcess",
   ab: "RoomPlannerProcess",
+  ac: "ProblemResolverProcess",
 } as const
 
 
@@ -55,6 +56,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "MitsuyoshiBotProcess",
 
   // Application
+  "ProblemResolverProcess",  // TODO: 実装したら再度確認
 
   // No dependencies
   "TestProcess",
@@ -126,6 +128,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Application
   V3ResourceDistributorProcess: "application",
+  ProblemResolverProcess: "application",
 
   // Combat
   AttackRoomManagerProcess: "combat",
