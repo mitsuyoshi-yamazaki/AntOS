@@ -102,6 +102,8 @@ import { Season5FillReactorProcess } from "process/temporary/season5_fill_reacto
 import { ReportProcess } from "process/process/report/report_process"
 import { ReverseReactionProcess } from "process/onetime/reverse_reaction_process"
 import { CollectDroppedResourceProcess } from "process/onetime/collect_dropped_resource_process"
+import {  } from "process/onetime/collect_dropped_resource_once_process"
+import { InterRoomEnergyTransferProcess } from "process/process/inter_room_energy_transfer_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -1929,6 +1931,16 @@ ProcessLauncher.register("CollectDroppedResourceProcess", args => {
     return Result.Succeeded((processId) => CollectDroppedResourceProcess.create(
       processId,
       roomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("InterRoomEnergyTransferProcess", () => {
+  try {
+    return Result.Succeeded((processId) => InterRoomEnergyTransferProcess.create(
+      processId,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
