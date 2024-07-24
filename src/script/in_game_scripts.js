@@ -53,4 +53,12 @@ const scripts = {
   droppedResourceAmount: () => {
     Array.from(Object.values(Game.rooms)).filter(r => r.controller && r.controller.my).map(r => ([r, r.find(FIND_DROPPED_RESOURCES).reduce((result, resource) => result + resource.amount, 0)])).filter(([r, a]) => a > 1000).forEach(([r, a]) => console.log(r + ": " + a))
   },
+
+  unnecessaryFlags: () => {
+    Array.from(new Set(Array.from(Object.values(Game.flags)).filter(f => f.pos.x !== 0 && f.pos.x !== 49 && f.pos.y !== 0 && f.pos.y !== 49).filter(f => f.room == null || f.room.controller == null || f.room.controller.my !== true).map(f => f.pos.roomName))).forEach(x => console.log(x))
+  },
+
+  removeFlagsInInvisibleRoom: () => {
+    Array.from(Object.values(Game.flags)).filter(f => f.room == null && f.pos.roomName === "E33N56").forEach(f => f.remove())
+  },
 }
