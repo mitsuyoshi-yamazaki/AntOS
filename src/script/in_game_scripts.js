@@ -31,7 +31,7 @@ const scripts = {
   },
 
   nukerStatus: () => {
-    Array.from(Object.values(Game.rooms)).map(r => r.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]).filter(n => n != null && n.store.getFreeCapacity("G") > 0).forEach(n => console.log(n.room.name + ": " + n.store.getFreeCapacity("G")))
+    Array.from(Object.values(Game.rooms)).map(r => r.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]).filter(n => n != null && n.isActive() && (n.store.getFreeCapacity("G") > 0 || n.store.getFreeCapacity("energy") > 0)).forEach(n => console.log(n.room.name + " G: " + n.store.getUsedCapacity("G") + "/5000, energy: " + Math.floor(n.store.getUsedCapacity("energy") / 1000) + "k/300k"))
   },
 
   noNukerRooms: () => {
@@ -39,7 +39,7 @@ const scripts = {
   },
 
   nukerReady: () => {
-    Array.from(Object.values(Game.rooms)).map(r => r.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]).filter(n => n != null && n.cooldown <= 0 && n.store.getFreeCapacity("G") <= 0 && n.store.getFreeCapacity("energy") <= 0).forEach(n => console.log(n.room.name))
+    Array.from(Object.values(Game.rooms)).map(r => r.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]).filter(n => n != null && Game.map.getRoomLinearDistance("E50N50", n.room.name) <= 30 && n.store.getFreeCapacity("G") <= 0 && n.store.getFreeCapacity("energy") <= 0).forEach(n => console.log(n.room.name + (n.cooldown <= 0 ? "" : "(" + n.cooldown + ")")))
   },
 
   findNukes: () => {
