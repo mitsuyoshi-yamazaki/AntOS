@@ -8,6 +8,8 @@ import { } from "@private/os_v5/processes/application/problem_resolver/problem_r
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
+import { } from "../../processes/combat/scout_process"
+import { NukeProcess, NukeProcessId } from "../../processes/combat/nuke/nuke_process"
 
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
@@ -17,7 +19,6 @@ import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_r
 import { GenericRoomManagerProcess, GenericRoomManagerProcessId } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
 import {  } from "@private/os_v5/processes/economy/room_planner/room_planner_process"
 import { } from "@private/os_v5/processes/economy/room_planner/room_planner"
-import { } from "../../processes/combat/scout_process"
 
 // Game Object Management
 import { TerrainCacheProcess, TerrainCacheProcessId } from "../../processes/game_object_management/terrain_cache_process"
@@ -147,6 +148,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["TerrainCacheProcess", processId => TerrainCacheProcess.create(processId as TerrainCacheProcessId)],
     ["PathManagerProcess", processId => PathManagerProcess.create(processId as PathManagerProcessId)],
     ["RoomMapProcess", processId => RoomMapProcess.create(processId as RoomMapProcessId)],
+    ["NukeProcess", processId => NukeProcess.create(processId as NukeProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
