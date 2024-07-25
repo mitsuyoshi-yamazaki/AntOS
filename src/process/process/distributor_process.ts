@@ -365,7 +365,7 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
     //   return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, transferToTerminalResourceType))
     // }
 
-    const terminalAmount = 20000
+    const terminalAmount = 10000
     const excludedResourceTypes: ResourceConstant[] = [
       RESOURCE_ENERGY,
       // RESOURCE_POWER,
