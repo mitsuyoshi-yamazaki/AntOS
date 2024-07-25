@@ -99,7 +99,7 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
   }
 
   public run(dependency: Dependency): void {
-    const creep = dependency.getCreepsFor(this.processId)[0]
+    const creep = dependency.getSpawnedCreepsFor(this.processId)[0]
     if (creep == null) {
       this.spawnScout(dependency)
       return
