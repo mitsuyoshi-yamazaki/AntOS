@@ -1,21 +1,6 @@
 import { } from "_old/extensions" // Memory拡張を読み込むため
-import { SystemInfo } from "shared/utility/system_info"
 
 export function initializeMemory(): void {
-  if (!Memory.versions) {
-    Memory.versions = []
-  }
-  const version = SystemInfo.application.version
-  if (Memory.versions.indexOf(version) < 0) {
-    const removeCount = 10
-    if (Memory.versions.length > (removeCount * 2)) {
-      Memory.versions.splice(removeCount, Memory.versions.length - removeCount)
-    }
-
-    Memory.versions.push(version)
-    console.log(`Updated v${version}`)
-  }
-
   if (Memory.uniqueId == null) {
     Memory.uniqueId = {
       creepNameIndex: 0,
