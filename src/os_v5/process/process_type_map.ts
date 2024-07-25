@@ -34,6 +34,7 @@ export const processTypeDecodingMap = {
   aa: "RoomMapProcess",
   ab: "RoomPlannerProcess",
   ac: "ProblemResolverProcess",
+  ad: "ClaimRoomProcess",
 } as const
 
 
@@ -93,6 +94,9 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
   "TestPullProcess",
+
+  // Normalized Processes
+  "ClaimRoomProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -141,6 +145,9 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
   RoomPlannerProcess: "economy",
+
+  // Economy - Normalized Process
+  ClaimRoomProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
