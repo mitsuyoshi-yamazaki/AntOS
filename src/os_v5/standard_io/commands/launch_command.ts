@@ -17,6 +17,7 @@ import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_r
 import { GenericRoomManagerProcess, GenericRoomManagerProcessId } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
 import {  } from "@private/os_v5/processes/economy/room_planner/room_planner_process"
 import { } from "@private/os_v5/processes/economy/room_planner/room_planner"
+import { } from "../../processes/combat/scout_process"
 
 // Game Object Management
 import { TerrainCacheProcess, TerrainCacheProcessId } from "../../processes/game_object_management/terrain_cache_process"

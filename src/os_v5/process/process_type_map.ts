@@ -35,6 +35,7 @@ export const processTypeDecodingMap = {
   ab: "RoomPlannerProcess",
   ac: "ProblemResolverProcess",
   ad: "ClaimRoomProcess",
+  ae: "ScoutProcess",
 } as const
 
 
@@ -94,6 +95,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
   "TestPullProcess",
+  "ScoutProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -136,6 +138,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Combat
   AttackRoomManagerProcess: "combat",
+  ScoutProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",
