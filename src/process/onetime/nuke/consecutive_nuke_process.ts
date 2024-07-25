@@ -120,7 +120,7 @@ export class ConsecutiveNukeProcess implements Process, Procedural {
       this.processShortDescription(),
       ...this.nukes.map((nuke): string => {
         if (nuke.result == null) {
-          return `- ready: ${nuke.nukerId} to ${describePosition(nuke.position)}`
+          return `- ready: ${nuke.nukerId} in ${roomLink(Game.getObjectById(nuke.nukerId)?.room.name ?? "")} to ${describePosition(nuke.position)}`
         } else {
           if (nuke.result.case === "succeeded") {
             return `- ${nuke.result.case} ${describePosition(nuke.position)} ${shortenedNumber(Game.time - nuke.result.launchTime)} ticks ago`
