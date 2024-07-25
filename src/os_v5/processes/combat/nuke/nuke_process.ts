@@ -8,17 +8,19 @@ import { Command, runCommands } from "os_v5/standard_io/command"
 import { isMyRoom } from "shared/utility/room"
 import { GameConstants } from "utility/constants"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { SystemCalls } from "os_v5/system_calls/interface"
 
 type NukerInfo = {
   readonly nukerId: Id<StructureNuker>
   readonly position: Position
+  launched: boolean
 }
 
 type NukeTarget = {
   readonly roomName: RoomName
   launchTime: Timestamp
   readonly interval: Timestamp
-  readonly nukers: NukerInfo[]
+  readonly nukers: NukerInfo[]  // Nukerはcooldownの短い順にソートされる
 }
 
 type NukeProcessState = {
@@ -38,11 +40,15 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
     processes: [],
   }
 
+  private nextLaunch: Timestamp | null = null
+
   private constructor(
     public readonly processId: NukeProcessId,
     readonly targets: NukeTarget[]
   ) {
     super()
+
+    this.updateNextLaunch()
   }
 
   public encode(): NukeProcessState {
@@ -62,7 +68,12 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
   public getDependentData(): void { }
 
   public staticDescription(): string {
-    return "TODO"
+    const descriptions: string[] = [
+      `${this.targets.length} targets`,
+      this.targets.map(target => roomLink(target.roomName)).join(","),
+    ]
+
+    return descriptions.join(", ")
   }
 
   public runtimeDescription(): string {
@@ -79,6 +90,138 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
   }
 
   public run(): void {
+    if (this.nextLaunch == null) {
+      return
+    }
+    if (this.nextLaunch < Game.time) {
+      return
+    }
+
+    const logs: string[] = []
+    const finishedIndices: number[] = []
+
+    this.targets.forEach((target, index) => {
+      if (target.launchTime > Game.time) {
+        return
+      }
+      const launchResult = this.launch(target)
+      logs.push(...launchResult.logs)
+
+      if (launchResult.finished === true) {
+        finishedIndices.unshift(index)
+      }
+    })
+
+    finishedIndices.forEach(index => {
+      this.targets.splice(index, 1)
+    })
+
+    if (logs.length > 0) {
+      const concattedLogs = logs.map(x => `- ${x}`).join("\n")
+      SystemCalls.logger.log(this, `Launch nukes:\n${concattedLogs}`, true)
+    }
+
+    this.updateNextLaunch()
+  }
+
+
+  // ---- Private ---- //
+  private launch(target: NukeTarget): { logs: string[], finished: boolean } {
+    const logs: string[] = []
+
+    if (target.interval <= 0) {
+      target.nukers.forEach(nukerInfo => {
+        const nuker = Game.getObjectById(nukerInfo.nukerId)
+        if (nuker == null) {
+          logs.push(`Nuker ${nukerInfo.nukerId} was destroyed`)
+          return
+        }
+        const position = new RoomPosition(nukerInfo.position.x, nukerInfo.position.y, target.roomName)
+        const launchResult = nuker.launchNuke(position)
+
+        switch (launchResult) {
+        case OK:
+          nukerInfo.launched = true
+          break
+        default:
+          logs.push(`Nuke launch failed (${launchResult}) ${roomLink(nuker.room.name)} =&gt ${roomLink(target.roomName)}`)
+          break
+        }
+      })
+
+      return {
+        logs,
+        finished: true,
+      }
+    }
+
+    const nukerInfo = ((): { nuker: StructureNuker, nukerInfo: NukerInfo } | null => {
+      for (const nukerInfo of target.nukers) {
+        if (nukerInfo.launched === true) {
+          continue
+        }
+        const nuker = Game.getObjectById(nukerInfo.nukerId)
+        if (nuker == null) {
+          logs.push(`Nuker ${nukerInfo.nukerId} was destroyed`)
+          continue
+        }
+        if (nuker.cooldown > 0) {
+          logs.push(`Nuker at ${nuker.pos} is still cooling down (${nuker.cooldown})`)
+          continue
+        }
+        return {
+          nuker,
+          nukerInfo,
+        }
+      }
+      return null
+    })()
+
+    if (nukerInfo == null) {
+      logs.push(`No nukers to launch to ${roomLink(target.roomName)}`)
+      return {
+        logs,
+        finished: true,
+      }
+    }
+
+    const position = new RoomPosition(nukerInfo.nukerInfo.position.x, nukerInfo.nukerInfo.position.y, target.roomName)
+    const launchResult = nukerInfo.nuker.launchNuke(position)
+
+    switch (launchResult) {
+    case OK:
+      nukerInfo.nukerInfo.launched = true
+      break
+    default:
+      logs.push(`Nuke launch failed (${launchResult}) ${roomLink(nukerInfo.nuker.room.name)} =&gt ${roomLink(target.roomName)}`)
+      break
+    }
+
+    const finished = target.nukers.every(x => x.launched)
+
+    target.launchTime += target.interval
+
+    return {
+      logs,
+      finished,
+    }
+  }
+
+  private updateNextLaunch(): void {
+    this.nextLaunch = null
+    this.targets.forEach(target => {
+      if (target.launchTime < Game.time) {
+        return
+      }
+      if (this.nextLaunch == null) {
+        this.nextLaunch = target.launchTime
+        return
+      }
+      if (target.launchTime > this.nextLaunch) {
+        return
+      }
+      this.nextLaunch = target.launchTime
+    })
   }
 
 
@@ -100,6 +243,9 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         throw `No owned rooms around ${roomLink(targetRoomName)}`
       }
 
+      const reservedNukerIds = new Set(this.targets.flatMap((target): Id<StructureNuker>[] => {
+        return target.nukers.map(nuker => nuker.nukerId)
+      }))
       const nukerRooms = argumentParser.list("room_names", "my_room").parse()
       const nukers = nukerRooms.map(room => {
         const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
@@ -111,6 +257,9 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         }
         if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
           throw `Nuker in ${roomLink(room.name)} lack of ghodium`
+        }
+        if (reservedNukerIds.has(nuker.id) === true) {
+          throw `Nuker in ${roomLink(room.name)} already reserved`
         }
         return nuker
       })
@@ -128,7 +277,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       let launchTime = delay
       nukers.forEach((nuker, index) => {
         if (nuker.cooldown > launchTime) {
-          throw `${ordinalNumber(index)} nuker will not be ready (cooldown ${nuker.cooldown} ticks)`
+          throw `${ordinalNumber(index + 1)} nuker will not be ready (cooldown ${nuker.cooldown} ticks)`
         }
         launchTime += interval
       })
@@ -137,12 +286,13 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       nukers.forEach((nuker, index) => {
         const flag = targetFlags[index]
         if (flag == null) {
-          throw `No ${ordinalNumber(index)} flag`
+          throw `No ${ordinalNumber(index + 1)} flag`
         }
 
         nukerInfo.push({
           nukerId: nuker.id,
           position: { x: flag.pos.x, y: flag.pos.y } as Position,
+          launched: false,
         })
       })
 
@@ -153,13 +303,15 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         nukers: nukerInfo,
       })
 
+      this.updateNextLaunch()
+
       return `${roomLink(targetRoomName)} is added to target list`
     }
   }
 
   private readonly showNukersCommand: Command = {
-    command: "show_nukers",
-    help: (): string => "show_nukers {target room name}",
+    command: "show_nukers_in_range",
+    help: (): string => "show_nukers_in_range {target room name}",
 
     /** @throws */
     run: (argumentParser: ArgumentParser): string => {
@@ -173,6 +325,10 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       if (myRooms.length <= 0) {
         return `No owned rooms around ${roomLink(targetRoomName)}`
       }
+
+      const reservedNukerIds = new Set(this.targets.flatMap((target): Id<StructureNuker>[] => {
+        return target.nukers.map(nuker => nuker.nukerId)
+      }))
 
       const roomInfo = myRooms.map((room): { order: number, description: string } => {
         if (room.controller.level < 8) {
@@ -197,7 +353,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
         let order = 0
         const descriptions: string[] = [
-          `- ${roomLink(room.name)}`,
+          `${roomLink(room.name)}`,
         ]
 
         if (energyAmount < energyCapacity || ghodiumAmount < ghodiumCapacity) {
@@ -210,9 +366,13 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           descriptions.push(`cooldown: ${nuker.cooldown}`)
         }
 
+        if (reservedNukerIds.has(nuker.id) === true) {
+          descriptions.unshift("[reserved] ")
+        }
+
         return {
           order,
-          description: descriptions.join(", "),
+          description: "- " + descriptions.join(", "),
         }
       })
 
