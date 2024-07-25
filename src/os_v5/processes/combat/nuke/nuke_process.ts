@@ -73,6 +73,10 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       this.targets.map(target => roomLink(target.roomName)).join(","),
     ]
 
+    if (this.nextLaunch != null) {
+      descriptions.unshift(`launch in ${this.nextLaunch - Game.time}`)
+    }
+
     return descriptions.join(", ")
   }
 
@@ -366,13 +370,11 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           descriptions.push(`cooldown: ${nuker.cooldown}`)
         }
 
-        if (reservedNukerIds.has(nuker.id) === true) {
-          descriptions.unshift("[reserved] ")
-        }
+        const prefix = reservedNukerIds.has(nuker.id) ? "- [reserved] " : "- "
 
         return {
           order,
-          description: "- " + descriptions.join(", "),
+          description: prefix + descriptions.join(", "),
         }
       })
 
