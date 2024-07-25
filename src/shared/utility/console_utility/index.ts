@@ -105,6 +105,19 @@ export const coloredCreepBody = (body: BodyPartConstant): string => {
   return `<b>${coloredText(body.toUpperCase(), getCreepBodyColorCode(body))}</b>`
 }
 
+export const ordinalNumber = (n: number): string => {
+  switch (n % 10) {
+  case 1:
+    return `${n}st`
+  case 2:
+    return `${n}nd`
+  case 3:
+    return `${n}rd`
+  default:
+    return `${n}th`
+  }
+}
+
 const getResourceColorCode = (resourceType: ResourceConstant): string => {
   switch (resourceType) {
   case RESOURCE_ENERGY:
