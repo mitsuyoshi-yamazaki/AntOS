@@ -18,14 +18,14 @@ type NukeTarget = {
   readonly roomName: RoomName
   launchTime: Timestamp
   readonly interval: Timestamp
-  readonly nukers: NukerInfo
+  readonly nukers: NukerInfo[]
 }
 
 type NukeProcessState = {
   readonly n: NukeTarget[]
 }
 
-const { roomLink, coloredResourceType, shortenedNumber } = ConsoleUtility
+const { roomLink, coloredResourceType, shortenedNumber, ordinalNumber } = ConsoleUtility
 
 ProcessDecoder.register("NukeProcess", (processId: NukeProcessId, state: NukeProcessState) => NukeProcess.decode(processId, state))
 
@@ -74,6 +74,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
   public didReceiveMessage(argumentParser: ArgumentParser): string {
     return runCommands(argumentParser, [
       this.showNukersCommand,
+      this.addTargetCommand,
     ])
   }
 
@@ -82,6 +83,80 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
 
   // ---- Command Runner ---- //
+  private readonly addTargetCommand: Command = {
+    command: "add_target",
+    help: (): string => "add_target {target room name} delay={int} interval={int}, room_names={nuker room names}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const targetRoomName = argumentParser.roomName([0, "target room name"]).parse()
+
+      const targetRange = GameConstants.structure.nuke.targetRange
+      const myRooms = Array.from(Object.values(Game.rooms))
+        .filter(isMyRoom)
+        .filter(room => Game.map.getRoomLinearDistance(targetRoomName, room.name) <= targetRange)
+
+      if (myRooms.length <= 0) {
+        throw `No owned rooms around ${roomLink(targetRoomName)}`
+      }
+
+      const nukerRooms = argumentParser.list("room_names", "my_room").parse()
+      const nukers = nukerRooms.map(room => {
+        const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
+        if (nuker == null) {
+          throw `No nuker in ${roomLink(room.name)}`
+        }
+        if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+          throw `Nuker in ${roomLink(room.name)} lack of energy`
+        }
+        if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
+          throw `Nuker in ${roomLink(room.name)} lack of ghodium`
+        }
+        return nuker
+      })
+
+      const targetFlags = Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === targetRoomName)
+      if (nukers.length !== targetFlags.length) {
+        throw `Target count mismatck: ${nukers.length} nukers != ${targetFlags.length} flags`
+      }
+
+      const delay = argumentParser.int("delay").parse({ min: 10 })
+      const interval = argumentParser.int("interval").parse({ min: 0 })
+
+      nukers.sort((lhs, rhs) => lhs.cooldown - rhs.cooldown)
+
+      let launchTime = delay
+      nukers.forEach((nuker, index) => {
+        if (nuker.cooldown > launchTime) {
+          throw `${ordinalNumber(index)} nuker will not be ready (cooldown ${nuker.cooldown} ticks)`
+        }
+        launchTime += interval
+      })
+
+      const nukerInfo: NukerInfo[] = []
+      nukers.forEach((nuker, index) => {
+        const flag = targetFlags[index]
+        if (flag == null) {
+          throw `No ${ordinalNumber(index)} flag`
+        }
+
+        nukerInfo.push({
+          nukerId: nuker.id,
+          position: { x: flag.pos.x, y: flag.pos.y } as Position,
+        })
+      })
+
+      this.targets.push({
+        roomName: targetRoomName,
+        launchTime: Game.time + delay,
+        interval,
+        nukers: nukerInfo,
+      })
+
+      return `${roomLink(targetRoomName)} is added to target list`
+    }
+  }
+
   private readonly showNukersCommand: Command = {
     command: "show_nukers",
     help: (): string => "show_nukers {target room name}",
@@ -99,7 +174,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         return `No owned rooms around ${roomLink(targetRoomName)}`
       }
 
-      const roomInfo = myRooms.map((room): {order: number, description: string} => {
+      const roomInfo = myRooms.map((room): { order: number, description: string } => {
         if (room.controller.level < 8) {
           return {
             order: 10,
@@ -143,7 +218,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
       roomInfo.sort((lhs, rhs) => lhs.order - rhs.order)
 
-      return `${roomInfo.length} rooms in range of ${roomLink(targetRoomName)}:\n${roomInfo.map(x => x.description).join("n")}`
+      return `${roomInfo.length} rooms in range of ${roomLink(targetRoomName)}:\n${roomInfo.map(x => x.description).join("\n")}`
     }
   }
 }
