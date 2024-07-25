@@ -8,6 +8,7 @@ import { PowerProcessProcess } from "process/process/power_creep/power_process_p
 import { coloredText, roomLink } from "utility/log"
 import { PowerCreepProcess } from "process/process/power_creep/power_creep_process"
 import { MovePowerCreepProcess } from "process/process/power_creep/move_power_creep_process"
+import { PowerCreepStealProcess } from "process/process/power_creep/power_creep_steal_process"
 import { BuyPixelProcess } from "process/process/buy_pixel_process"
 import { Environment } from "utility/environment"
 import { Season1200082SendMineralProcess } from "process/temporary/season_1200082_send_mineral_process"
@@ -15,7 +16,7 @@ import { Season1244215GenericDismantleProcess } from "process/temporary/season_1
 import { isGuardRemoteRoomProcessCreepType, GuardRemoteRoomProcess, canSpawnGuardCreep } from "process/process/guard_remote_room_process"
 import { Season1349943DisturbPowerHarvestingProcess } from "process/temporary/season_1349943_disturb_power_harvesting_process"
 import { Season1606052SKHarvesterProcess } from "process/temporary/season_1606052_sk_harvester_process"
-import { isResourceConstant } from "shared/utility/resource"
+import { isMineralCompoundConstant, isResourceConstant } from "shared/utility/resource"
 import { UpgradePowerCreepProcess } from "process/process/power_creep/upgrade_power_creep_process"
 import { Season1655635SKMineralHarvestProcess } from "process/temporary/season_1655635_sk_mineral_harvest_process"
 import { DistributorProcess } from "process/process/distributor_process"
@@ -28,7 +29,6 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { World35872159TestDeclarationProcess } from "process/temporary/world_35872159_test_declaration_process"
 import { World35872159TestResourcePoolProcess } from "process/temporary/world_35872159_test_resource_pool_process"
 import type { SectorName } from "shared/utility/room_sector_type"
-import { launchQuadProcess } from "process/onetime/submodule_process_launcher"
 import { SubmoduleTestProcess } from "../../../../submodules/private/submodule_test_process"
 import { MonitoringProcess, Target as MonitoringTarget, TargetHostileRoom as MonitoringTargetHostileRoom, TargetOwnedRoom as MonitoringTargetOwnedRoom } from "process/onetime/monitoring_process"
 import { QuadMakerProcess } from "process/onetime/quad_maker/quad_maker_process"
@@ -80,9 +80,10 @@ import { SellAllResourcesProcess } from "process/onetime/sell_all_resources_proc
 import { LandOccupationProcess } from "process/process/land_occupation/land_occupation_process"
 import { BuildableWallTypes, ClusterPlan, LandOccupationStructureTypes, serializePosition } from "process/process/land_occupation/land_occupation_datamodel"
 import { decodeRoomPosition, Position, RoomPositionFilteringOptions } from "prototype/room_position"
-import { FillNukerProcess } from "process/onetime/nuke/fill_nuker_process"
+import { NukerManagementProcess } from "process/onetime/nuke/nuker_management_process"
 import { PrimitiveLogger } from "../primitive_logger"
 import { isNukerReady, LaunchNukeProcess, NukeTargetInfo } from "process/onetime/nuke/launch_nuke_process"
+import { isNukerReady as isConsecutiveNukerReady, ConsecutiveNukeProcess, NukeTargetInfo as ConsecutiveNukeTargetInfo } from "process/onetime/nuke/consecutive_nuke_process"
 import { OnHeapDelayProcess } from "process/onetime/on_heap_delay_process"
 // import {} from "process/process/declarative/empire_process"
 import { } from "process/process/purifier/purifier_process"
@@ -99,6 +100,10 @@ import { DistributePowerProcess } from "process/process/distribute_power_process
 import { Season5ClaimReactorProcess } from "process/temporary/season5_claim_reactor_process"
 import { Season5FillReactorProcess } from "process/temporary/season5_fill_reactor_process"
 import { ReportProcess } from "process/process/report/report_process"
+import { ReverseReactionProcess } from "process/onetime/reverse_reaction_process"
+import { CollectDroppedResourceProcess } from "process/onetime/collect_dropped_resource_process"
+import {  } from "process/onetime/collect_dropped_resource_once_process"
+import { InterRoomEnergyTransferProcess } from "process/process/inter_room_energy_transfer_process"
 
 type LaunchCommandResult = Result<Process, string>
 
@@ -123,8 +128,6 @@ export class LaunchCommand implements ConsoleCommand {
         return this.launchTestProcess()
       case "TestChildProcess":
         return this.launchTestChildProcess()
-      case "SpecializedQuadProcess":
-        return this.launchQuad()
       case "Season487837AttackInvaderCoreProcess":
         return this.launchSeason487837AttackInvaderCoreProcess()
       case "BuyPixelProcess":
@@ -243,10 +246,6 @@ export class LaunchCommand implements ConsoleCommand {
       return TestChildProcess.create(processId)
     })
     return Result.Succeeded(process)
-  }
-
-  private launchQuad(): LaunchCommandResult {
-    return launchQuadProcess(this.parseProcessArguments())
   }
 
   private launchSeason487837AttackInvaderCoreProcess(): LaunchCommandResult {
@@ -1384,21 +1383,10 @@ ProcessLauncher.register("LandOccupationProcess", args => {
   }
 })
 
-ProcessLauncher.register("FillNukerProcess", args => {
+ProcessLauncher.register("NukerManagementProcess", () => {
   try {
-    const roomResource = args.ownedRoomResource("room_name").parse()
-    const nuker = (roomResource.room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]) as StructureNuker | undefined
-    if (nuker == null) {
-      throw `no nuker in ${roomLink(roomResource.room.name)}`
-    }
-
-    if ((roomResource.roomInfo.config?.genericWaitingPositions ?? []).length <= 0) {
-      PrimitiveLogger.log(`${coloredText("[Warning]", "warn")} no waiting position in ${roomLink(roomResource.room.name)}`)
-    }
-
-    return Result.Succeeded((processId) => FillNukerProcess.create(
+    return Result.Succeeded((processId) => NukerManagementProcess.create(
       processId,
-      nuker,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
@@ -1536,6 +1524,139 @@ ProcessLauncher.register("LaunchNukeProcess", args => {
   }
 })
 
+ProcessLauncher.register("ConsecutiveNukeProcess", args => {
+  try {
+    const rooms = args.list("room_names", "room").parse({ my: true })
+    const forced = args.boolean("forced").parseOptional() ?? false
+    const targetRoomName = args.roomName("target_room_name").parse()
+    const delay = args.int("delay").parse({ min: 0 })
+    const interval = args.int("interval").parse({ min: 0 })
+
+    const nukers = rooms.map(room => {
+      const nuker = (room.find(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]) as StructureNuker | undefined
+      if (nuker == null) {
+        throw `${roomLink(room.name)} has no nuker`
+      }
+
+      if (forced !== true) {
+        const result = isConsecutiveNukerReady(nuker, delay)
+        if (result !== true) {
+          throw `nuker in ${roomLink(nuker.room.name)} is not ready (${result}) (set "forced=1" to force launch)`
+        }
+      }
+
+      return nuker
+    })
+
+    const targetIds = args.list("target_ids", "object_id").parseOptional() ?? []
+    const targetStructureTypes = args.list("target_structure_types", "string").parseOptional() ?? []
+    const targetPositions = args.list("target_positions", "local_position").parseOptional() ?? []
+
+    if (targetIds.length <= 0 && targetStructureTypes.length <= 0 && targetPositions.length <= 0) {
+      throw "no target: specify targets by \"target_ids\", \"target_structure_types\" and/or \"target_positions\""
+    }
+
+    rooms.forEach(room => {
+      const distance = Game.map.getRoomLinearDistance(room.name, targetRoomName)
+      if (distance > NUKE_RANGE) {
+        throw `${roomLink(room.name)} is out of range (${distance})`
+      }
+    })
+
+    /** @throws */
+    const launchProcess = (processId: ProcessId, targetRoom: Room): ConsecutiveNukeProcess => {
+      const targetObjects = targetIds.map(targetId => {
+        const targetObject = Game.getObjectById(targetId)
+        if (targetObject == null) {
+          throw `no object with ID ${targetId}`
+        }
+        if (!(targetObject instanceof RoomObject)) {
+          throw `${targetObject} is not RoomObject`
+        }
+        if (targetObject.room == null || targetObject.room.name !== targetRoomName) {
+          throw `${targetObject} is not in the target room ${roomLink(targetRoomName)}`
+        }
+        return targetObject
+      })
+
+      const targetStructures = targetRoom.find(FIND_STRUCTURES).filter(structure => {
+        if (targetStructureTypes.includes(structure.structureType) !== true) {
+          return false
+        }
+        return true
+      })
+
+      const allTargetPositions: Position[] = [
+        ...targetObjects.map(targetObject => targetObject.pos),
+        ...targetStructures.map(structure => structure.pos),
+        ...targetPositions,
+      ].map(position => ({ x: position.x, y: position.y })) // 最終的にMemoryへ保存するため、encodableなオブジェクトに強制する
+
+      if (nukers.length !== allTargetPositions.length) {
+        throw `number of nukers (${nukers.length}) shoud be same as number of targets (${allTargetPositions.length})`
+      }
+
+      const targetInfo: ConsecutiveNukeTargetInfo[] = nukers.map((nuker, index) => {
+        const targetPosition = allTargetPositions[index]
+        if (targetPosition == null) {
+          throw `target position is null (${index})`
+        }
+        return {
+          nukerId: nuker.id,
+          position: targetPosition,
+        }
+      })
+
+      return ConsecutiveNukeProcess.create(
+        processId,
+        targetRoomName,
+        targetInfo,
+        delay,
+        interval,
+      )
+    }
+
+    const checkedTargetRoom = Game.rooms[targetRoomName]
+    if (checkedTargetRoom == null) {
+      const observerRoomResource = args.ownedRoomResource("observer_room_name", { missingArgumentErrorMessage: `observer_room_name is required since the target room ${roomLink(targetRoomName)} is invisible` }).parse()
+      if (observerRoomResource.activeStructures.observer == null) {
+        throw `no observer in ${roomLink(observerRoomResource.room.name)}`
+      }
+
+      const observeResult = observerRoomResource.activeStructures.observer.observeRoom(targetRoomName)
+      switch (observeResult) {
+      case OK:
+        PrimitiveLogger.log(`reserve observation ${roomLink(targetRoomName)} at ${Game.time}`)
+        break
+      default:
+        throw `observe room ${roomLink(targetRoomName)} failed with ${observeResult}`
+      }
+
+      return Result.Succeeded((processId) => OnHeapDelayProcess.create(
+        processId,
+        `observe ${roomLink(targetRoomName)} to plan nuker attack`,
+        1,
+        (): string => {
+          const observedRoom = Game.rooms[targetRoomName]
+          if (observedRoom == null) {
+            throw `${roomLink(targetRoomName)} observation failed at ${Game.time}`
+          }
+
+          const process = OperatingSystem.os.addProcess(null, processId => launchProcess(processId, observedRoom))
+
+          Memory.os.logger.filteringProcessIds.push(process.processId)  // 引数を持ち越せないため手動で
+
+          return `process launched ${process.taskIdentifier}, ${process.processId}`
+        },
+      ))
+    }
+
+    return Result.Succeeded(processId => launchProcess(processId, checkedTargetRoom))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
 ProcessLauncher.register("SaboteurConstructionProcess", args => {
   try {
     const roomResource = args.ownedRoomResource("room_name").parse()
@@ -1605,10 +1726,13 @@ ProcessLauncher.register("SellResourcesProcess", args => {
     }
     const resourceTypes = args.list("resource_types", "resource").parse()
 
+    const keepRunning = args.boolean("keep_running").parse()
+
     return Result.Succeeded((processId) => SellResourcesProcess.create(
       processId,
       roomName,
       resourceTypes,
+      keepRunning,
     ))
   } catch (error) {
     return Result.Failed(`${error}`)
@@ -1727,7 +1851,7 @@ ProcessLauncher.register("Season5FillReactorProcess", args => {
 })
 
 
-ProcessLauncher.register("ReportProcess", args => {
+ProcessLauncher.register("ReportProcess", () => {
   try {
     return Result.Succeeded((processId) => ReportProcess.create(
       processId,
@@ -1736,6 +1860,93 @@ ProcessLauncher.register("ReportProcess", args => {
     return Result.Failed(`${error}`)
   }
 })
+
+ProcessLauncher.register("ReverseReactionProcess", (args) => {
+  try {
+    const roomResource = args.ownedRoomResource("room_name").parse()
+
+    if (roomResource.roomInfo.researchLab == null) {
+      throw `No research labs in ${roomLink(roomResource.room.name)}`
+    }
+
+    if (roomResource.roomInfo.config != null && roomResource.roomInfo.config.researchCompounds != null) {
+      if (Array.from(Object.keys(roomResource.roomInfo.config.researchCompounds)).length > 0) {
+        roomResource.roomInfo.config.researchCompounds = {}
+      }
+    }
+    roomResource.roomInfoAccessor.removeAllBoosts()
+
+    const compoundType = args.typedString("compound", "MineralCompoundConstant", isMineralCompoundConstant).parse()
+
+    return Result.Succeeded((processId) => ReverseReactionProcess.create(
+      processId,
+      roomResource.room.name,
+      compoundType,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("PowerCreepStealProcess", (args) => {
+  try {
+    const roomName = args.roomName("room_name").parse({ my: true })
+    const targetRoomName = args.roomName("target_room_name").parse()
+    getWaypoints(args, roomName, targetRoomName)
+
+    const process = OperatingSystem.os.listAllProcesses().find(processInfo => {
+      if (processInfo.process instanceof PowerCreepProcess) {
+        if (processInfo.process.ownedRoomName === roomName) {
+          return true
+        }
+      }
+      return false
+    })
+
+    if (process == null) {
+      throw `No running PowerCreepProcess in ${roomLink(roomName)}`
+    }
+    OperatingSystem.os.suspendProcess(process.processId)
+    const powerCreepProcess = process.process as PowerCreepProcess
+
+    const targetIds = args.list("target_ids", "object_id").parse() as Id<StructureStorage | StructureTerminal>[]
+
+    return Result.Succeeded((processId) => PowerCreepStealProcess.create(
+      processId,
+      roomName,
+      targetRoomName,
+      powerCreepProcess.powerCreepName,
+      powerCreepProcess.processId,
+      targetIds,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("CollectDroppedResourceProcess", args => {
+  const roomName = args.roomName("room_name").parse({ my: true })
+
+  try {
+    return Result.Succeeded((processId) => CollectDroppedResourceProcess.create(
+      processId,
+      roomName,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
+ProcessLauncher.register("InterRoomEnergyTransferProcess", () => {
+  try {
+    return Result.Succeeded((processId) => InterRoomEnergyTransferProcess.create(
+      processId,
+    ))
+  } catch (error) {
+    return Result.Failed(`${error}`)
+  }
+})
+
 
 // ProcessLauncher.register("IntrashardResourceWatchdogProcess", () => {
 //   try {

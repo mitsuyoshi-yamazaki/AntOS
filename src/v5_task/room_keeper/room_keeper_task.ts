@@ -20,7 +20,6 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { GameConstants } from "utility/constants"
 import { leftoverStructurePriority } from "v5_task/bootstrap_room/upgrade_to_rcl3_task"
 import { SystemCalls } from "os/system_calls"
-import { OperatingSystem } from "os/os"
 
 export interface RoomKeeperTaskState extends TaskState {
   /** room name */
@@ -92,7 +91,7 @@ export class RoomKeeperTask extends Task {
           SystemCalls.systemCall()?.addProcess(null, processId => DistributorProcess.create(processId, this.roomName))
 
           if (Environment.isAutomatic() === true) {
-            OperatingSystem.os.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
+            SystemCalls.systemCall()?.addProcess(null, processId => World35587255ScoutRoomProcess.create(processId, this.roomName))
           }
           this.turnAttackNotificationOn(objects.controller.room)
           this.removeLeftoverFlags(objects.controller.room)

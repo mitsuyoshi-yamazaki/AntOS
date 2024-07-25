@@ -16,6 +16,10 @@ type SystemCall = {
   readonly addProcess: AddProcessType
   readonly listAllProcesses: () => ProcessInfo[]
   readonly suspendProcess: (processId: ProcessId) => Result<string, string>
+  readonly resumeProcess: (processId: ProcessId) => Result<string, string>
+  readonly killProcess: (processId: ProcessId) => Result<string, string>
+  readonly processOf: (processId: ProcessId) => Process | null
+  readonly isRunning: (processId: ProcessId) => boolean
 }
 let systemCall: SystemCall | null = null
 

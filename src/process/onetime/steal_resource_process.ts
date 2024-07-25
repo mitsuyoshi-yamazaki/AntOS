@@ -19,7 +19,6 @@ import { SuicideApiWrapper } from "v5_object_task/creep_task/api_wrapper/suicide
 import { CommodityConstant, DepositConstant, isResourceConstant, MineralBaseCompoundsConstant, MineralBoostConstant, MineralConstant } from "shared/utility/resource"
 import { TransferResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/transfer_resource_api_wrapper"
 import { processLog } from "os/infrastructure/logger"
-import { OperatingSystem } from "os/os"
 import { ProcessDecoder } from "process/process_decoder"
 import { PickupApiWrapper } from "v5_object_task/creep_task/api_wrapper/pickup_api_wrapper"
 import { MessageObserver } from "os/infrastructure/message_observer"
@@ -27,6 +26,7 @@ import { ListArguments } from "shared/utility/argument_parser/list_argument_pars
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { RoomResources } from "room_resource/room_resources"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("StealResourceProcess", state => {
   return StealResourceProcess.decode(state as StealResourceProcessState)
@@ -322,7 +322,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
   public runOnTick(): void {
     const roomResource = RoomResources.getOwnedRoomResource(this.parentRoomName)
     if (roomResource == null) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
@@ -349,7 +349,7 @@ export class StealResourceProcess implements Process, Procedural, OwnedRoomProce
     const creepCount = World.resourcePools.countCreeps(this.parentRoomName, this.identifier)
     if (this.state === "finished" && creepCount <= 0) {
       processLog(this, `${coloredText("[Finished]", "info")} no more valuable resources in ${roomLink(this.targetRoomName)}`)
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
     const numberOfCreeps = ((): number => {

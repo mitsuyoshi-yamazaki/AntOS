@@ -39,6 +39,10 @@ export type StaticMonoCreepBuildRoomProcessId = ProcessId<Dependency, RoomName, 
 
 export class StaticMonoCreepBuildRoomProcess extends Process<Dependency, RoomName, void, StaticMonoCreepBuildRoomProcessState, StaticMonoCreepBuildRoomProcess> {
   public readonly identifier: RoomName
+  public getLinkedIdentifier(): string {
+    return ConsoleUtility.roomLink(this.identifier)
+  }
+
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "V3BridgeSpawnRequestProcess", identifier: processDefaultIdentifier },

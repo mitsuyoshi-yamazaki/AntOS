@@ -51,6 +51,10 @@ export type TestPullProcessId = ProcessId<Dependency, RoomName, void, TestPullPr
 
 export class TestPullProcess extends Process<Dependency, RoomName, void, TestPullProcessState, TestPullProcess> {
   public readonly identifier: RoomName
+  public getLinkedIdentifier(): string {
+    return ConsoleUtility.roomLink(this.identifier)
+  }
+
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "CreepDistributorProcess", identifier: processDefaultIdentifier },

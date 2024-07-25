@@ -86,10 +86,15 @@ export abstract class Process<
     This extends Process<Dependency, Identifier, ProcessMemory, ProcessState, This>
   > {
 
+  // Properties
   readonly abstract processId: ProcessId<Dependency, Identifier, ProcessMemory, ProcessState, This>
   readonly abstract identifier: Identifier
   readonly abstract dependencies: ProcessDependencies // 依存先指定をインスタンスメンバに入れることで、インスタンスごとに依存先を変更できる
 
+  getLinkedIdentifier?(): string
+
+
+  // Lifecycle
   abstract encode(): RestrictedProcessState<ProcessState>
 
   abstract getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null
@@ -103,9 +108,10 @@ export abstract class Process<
   abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void
 
+
+  // Event Handler
   /** @throws */
   didReceiveMessage?(argumentParser: ArgumentParser, dependency: Dependency): string
-
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   didFinishDeferredTask?(taskResult: DeferredTaskResult<string, any>): void

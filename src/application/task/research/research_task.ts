@@ -20,7 +20,6 @@ import { isMineralCompoundConstant, MineralCompoundIngredients } from "shared/ut
 import { coloredResourceType, roomLink } from "utility/log"
 import { ParallelResourceOperationTask } from "object_task/creep_task/task/parallel_resource_operation_task"
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
-import { Environment } from "utility/environment"
 
 type ResearchTaskOutput = void
 type ResearchTaskProblemTypes = MissingActiveStructureProblem | UnexpectedProblem
@@ -307,7 +306,7 @@ export class ResearchTask extends Task<ResearchTaskOutput, ResearchTaskProblemTy
   }
 
   // ---- Profit ---- //
-  public estimate(roomResource: OwnedRoomResource): EconomyTaskPerformance {
+  public estimate(): EconomyTaskPerformance {
     const resourceCost = new Map<ResourceConstant, number>()  // TODO:
 
     return {

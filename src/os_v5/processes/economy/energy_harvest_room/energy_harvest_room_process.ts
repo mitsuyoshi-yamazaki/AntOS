@@ -63,6 +63,10 @@ export type EnergyHarvestRoomProcessId = ProcessId<Dependency, RoomName, EnergyH
 
 export class EnergyHarvestRoomProcess extends Process<Dependency, RoomName, EnergyHarvestRoomProcessApi, EnergyHarvestRoomProcessState, EnergyHarvestRoomProcess> {
   public readonly identifier: RoomName
+  public getLinkedIdentifier(): string {
+    return ConsoleUtility.roomLink(this.identifier)
+  }
+
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "V3BridgeSpawnRequestProcess", identifier: processDefaultIdentifier },

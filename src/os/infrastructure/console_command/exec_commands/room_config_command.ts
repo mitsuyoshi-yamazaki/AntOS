@@ -3,7 +3,7 @@ import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_
 import { describePosition } from "prototype/room_position"
 import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
-import { coloredResourceType, coloredText, roomLink } from "utility/log"
+import { coloredResourceType, coloredText, roomLink, shortenedNumber } from "utility/log"
 import { powerName } from "shared/utility/power"
 import { isMineralBoostConstant, isMineralCompoundConstant } from "shared/utility/resource"
 import type { RoomName } from "shared/utility/room_name_types"
@@ -508,7 +508,7 @@ function accessNumberProperty(command: NumberAccessorCommands, roomResource: Own
       roomResource.roomInfoAccessor.config.wallMaxHits = value
       break
     }
-    return `set ${command} ${value} for ${roomLink(roomResource.room.name)}`
+    return `set ${command} ${shortenedNumber(value)} for ${roomLink(roomResource.room.name)}`
   }
   case "get": {
     const value = ((): number => {
@@ -523,7 +523,7 @@ function accessNumberProperty(command: NumberAccessorCommands, roomResource: Own
         return roomResource.roomInfoAccessor.config.wallMaxHits
       }
     })()
-    return `${command} ${value} for ${roomLink(roomResource.room.name)}`
+    return `${command} ${shortenedNumber(value)} for ${roomLink(roomResource.room.name)}`
   }
   default:
     throw `Invalid action ${action}, set "set" or "get"`
@@ -581,8 +581,19 @@ function waitingPosition(roomResource: OwnedRoomResource, args: string[]): strin
     return waitingPositions.map(position => `${position}`).join(", ")
   }
 
+  case "clear": {
+    const waitingPositions = roomResource.roomInfoAccessor.config.getAllWaitingPositions()
+    if (waitingPositions.length <= 0) {
+      return "no waiting positions"
+    }
+    const oldValue = waitingPositions.map(position => `${position}`).join(", ")
+
+    roomResource.roomInfoAccessor.config.clearWaitingPositions()
+    return `Cleared ${oldValue}`
+  }
+
   default:
-    throw `Invalid action ${action}, actions: set, show`
+    throw `Invalid action ${action}, actions: set, show, clear`
   }
 }
 

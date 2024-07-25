@@ -31,6 +31,10 @@ export const processTypeDecodingMap = {
   x: "OnHeapContinuousTaskProcess",
   y: "TestTrafficManagerV3Process",
   z: "PathManagerProcess",
+  aa: "RoomMapProcess",
+  ab: "RoomPlannerProcess",
+  ac: "ProblemResolverProcess",
+  ad: "ClaimRoomProcess",
 } as const
 
 
@@ -53,6 +57,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "MitsuyoshiBotProcess",
 
   // Application
+  "ProblemResolverProcess",  // TODO: 実装したら再度確認
 
   // No dependencies
   "TestProcess",
@@ -62,6 +67,8 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "V3BridgeDriverProcess",
   "TerrainCacheProcess",
   "OnHeapContinuousTaskProcess",
+  "RoomMapProcess",
+  "RoomPlannerProcess",   // TODO: 実装したら再度確認
 
   // Driver with dependencies
   "PathManagerProcess",
@@ -87,6 +94,9 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
   "TestPullProcess",
+
+  // Normalized Processes
+  "ClaimRoomProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -122,6 +132,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Application
   V3ResourceDistributorProcess: "application",
+  ProblemResolverProcess: "application",
 
   // Combat
   AttackRoomManagerProcess: "combat",
@@ -133,11 +144,16 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   StaticMonoCreepKeeperRoomProcess: "economy",
   StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
+  RoomPlannerProcess: "economy",
+
+  // Economy - Normalized Process
+  ClaimRoomProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
   PathManagerProcess: "driver",
   RoomPathfindingProcess: "driver",
+  RoomMapProcess: "driver",
   CreepDistributorProcess: "driver",
   CreepTrafficManagerProcess: "driver",
   CreepPositionAssignerProcess: "driver",

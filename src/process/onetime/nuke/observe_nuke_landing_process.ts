@@ -93,10 +93,13 @@ export class ObserveNukeLandingProcess implements Process, Procedural, MessageOb
       return `${this.targetInfo.nukes.length} nukes`
     })()
 
+    const observer = Game.getObjectById(this.observerId)
+    const roomInfo = observer != null ? `[${roomLink(observer.room.name)}] ` : ""
+
     if (landUntil > 0) {
-      return `${nukeInfo} landing to ${roomLink(this.targetRoomName)} in ${shortenedNumber(landUntil)} ticks`
+      return `${roomInfo}${nukeInfo} landing to ${roomLink(this.targetRoomName)} in ${shortenedNumber(landUntil)} ticks`
     }
-    return `${nukeInfo} landed to ${roomLink(this.targetRoomName)} ${shortenedNumber(-landUntil)} ticks ago`
+    return `${roomInfo}${nukeInfo} landed to ${roomLink(this.targetRoomName)} ${shortenedNumber(-landUntil)} ticks ago`
   }
 
   public processDescription(): string {

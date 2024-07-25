@@ -4,6 +4,7 @@ import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bo
 
 // Application
 import { V3ResourceDistributorProcess, V3ResourceDistributorProcessId } from "../../processes/application/v3_resource_distributor_process"
+import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
@@ -14,10 +15,13 @@ import {  } from "../../processes/economy/single_task_processes/dispose_resource
 import { StaticMonoCreepKeeperRoomProcess, StaticMonoCreepKeeperRoomProcessId } from "../../processes/economy/static_mono_creep_keeper_room/static_mono_creep_keeper_room_process"
 import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_keeper_process"
 import { GenericRoomManagerProcess, GenericRoomManagerProcessId } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
+import {  } from "@private/os_v5/processes/economy/room_planner/room_planner_process"
+import { } from "@private/os_v5/processes/economy/room_planner/room_planner"
 
 // Game Object Management
 import { TerrainCacheProcess, TerrainCacheProcessId } from "../../processes/game_object_management/terrain_cache_process"
 import { PathManagerProcess, PathManagerProcessId } from "../../processes/game_object_management/path_manager_process"
+import { RoomMapProcess, RoomMapProcessId } from "../../processes/game_object_management/room_map_process"
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
@@ -141,6 +145,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["GenericRoomManagerProcess", processId => GenericRoomManagerProcess.create(processId as GenericRoomManagerProcessId)],
     ["TerrainCacheProcess", processId => TerrainCacheProcess.create(processId as TerrainCacheProcessId)],
     ["PathManagerProcess", processId => PathManagerProcess.create(processId as PathManagerProcessId)],
+    ["RoomMapProcess", processId => RoomMapProcess.create(processId as RoomMapProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {

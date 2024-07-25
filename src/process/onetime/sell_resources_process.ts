@@ -8,10 +8,11 @@ import { Market } from "shared/utility/market"
 import { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { MessageObserver } from "os/infrastructure/message_observer"
-import { OperatingSystem } from "os/os"
 import { ListArguments } from "shared/utility/argument_parser/list_argument_parser"
 import { processLog } from "os/infrastructure/logger"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { Timestamp } from "shared/utility/timestamp"
+import { SystemCalls } from "os/system_calls"
 
 ProcessDecoder.register("SellResourcesProcess", state => {
   return SellResourcesProcess.decode(state as SellResourcesProcessState)
@@ -20,6 +21,7 @@ ProcessDecoder.register("SellResourcesProcess", state => {
 export interface SellResourcesProcessState extends ProcessState {
   readonly roomName: RoomName
   readonly resourceTypes: ResourceConstant[]
+  readonly keepRunning: boolean
 }
 
 export class SellResourcesProcess implements Process, Procedural, OwnedRoomProcess, MessageObserver {
@@ -28,11 +30,14 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
     return this.roomName
   }
 
+  private sleepUntil: Timestamp | null = null
+
   private constructor(
     public readonly launchTime: number,
     public readonly processId: ProcessId,
     private readonly roomName: RoomName,
     private readonly resourceTypes: ResourceConstant[],
+    private readonly keepRunning: boolean,
   ) {
     this.taskIdentifier = this.constructor.name
   }
@@ -44,19 +49,28 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
       i: this.processId,
       roomName: this.roomName,
       resourceTypes: this.resourceTypes,
+      keepRunning: this.keepRunning,
     }
   }
 
   public static decode(state: SellResourcesProcessState): SellResourcesProcess {
-    return new SellResourcesProcess(state.l, state.i, state.roomName, state.resourceTypes)
+    return new SellResourcesProcess(state.l, state.i, state.roomName, state.resourceTypes, state.keepRunning ?? false)
   }
 
-  public static create(processId: ProcessId, roomName: RoomName, resourceTypes: ResourceConstant[]): SellResourcesProcess {
-    return new SellResourcesProcess(Game.time, processId, roomName, resourceTypes)
+  public static create(processId: ProcessId, roomName: RoomName, resourceTypes: ResourceConstant[], keepRunning: boolean): SellResourcesProcess {
+    return new SellResourcesProcess(Game.time, processId, roomName, resourceTypes, keepRunning)
   }
 
   public processShortDescription(): string {
-    return `${roomLink(this.roomName)} selling ${this.resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`
+    const descriptions: string[] = [
+      `${roomLink(this.roomName)} selling ${this.resourceTypes.map(resourceType => coloredResourceType(resourceType)).join(",")}`,
+    ]
+
+    if (this.sleepUntil != null) {
+      descriptions.push(`sleeping ${this.sleepUntil - Game.time} ticks`)
+    }
+
+    return descriptions.join(", ")
   }
 
   public didReceiveMessage(message: string): string {
@@ -76,8 +90,8 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
           throw `${coloredResourceType(resourceType)} already in the list`
         }
         this.resourceTypes.push(resourceType)
-        if (OperatingSystem.os.isRunning(this.processId) !== true) {
-          OperatingSystem.os.resumeProcess(this.processId)
+        if (SystemCalls.systemCall()?.isRunning(this.processId) !== true) {
+          SystemCalls.systemCall()?.resumeProcess(this.processId)
           return `added ${coloredResourceType(resourceType)} and resumed`
         }
 
@@ -106,20 +120,27 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
   }
 
   public runOnTick(): void {
+    if (this.sleepUntil != null) {
+      if (this.sleepUntil > Game.time) {
+        return
+      }
+      this.sleepUntil = null
+    }
+
     const roomResource = RoomResources.getOwnedRoomResource(this.roomName)
     if (roomResource == null) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
     const terminal = roomResource.activeStructures.terminal
     if (terminal == null) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
     if (this.resourceTypes.length <= 0) {
-      OperatingSystem.os.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.suspendProcess(this.processId)
       return
     }
 
@@ -143,7 +164,7 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
       if (amountInTerminal <= 0) {
         if (amountInStorage <= 0) {
           const resourceIndex = this.resourceTypes.indexOf(resourceType)
-          if (resourceIndex >= 0) {
+          if (resourceIndex >= 0 && this.keepRunning !== true) {
             processLog(this, `all ${coloredResourceType(resourceType)} sold from ${roomLink(this.roomName)}`)
             this.resourceTypes.splice(resourceIndex, 1)
           }
@@ -165,5 +186,7 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
         break
       }
     }
+
+    this.sleepUntil = Game.time + 200
   }
 }

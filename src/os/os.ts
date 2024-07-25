@@ -140,7 +140,11 @@ export class OperatingSystem {
     SystemCalls.load({
       addProcess: <T extends Process>(parentProcessId: ProcessId | null, maker: (processId: ProcessId) => T): T => os.addProcess(parentProcessId, maker),
       listAllProcesses: (): ProcessInfo[] => os.listAllProcesses(),
-      suspendProcess: (processId: ProcessId): Result < string, string> => os.suspendProcess(processId),
+      suspendProcess: processId => os.suspendProcess(processId),
+      resumeProcess: processId => os.resumeProcess(processId),
+      killProcess: processId => os.killProcess(processId),
+      processOf: processId => os.processOf(processId),
+      isRunning: processId => os.isRunning(processId),
     })
     return os
   })()

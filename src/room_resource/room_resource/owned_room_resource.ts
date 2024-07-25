@@ -39,6 +39,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     observer: StructureObserver | null
     powerSpawn: StructurePowerSpawn | null
     factory: StructureFactory | null
+    nuker: StructureNuker | null
 
     chargeableStructures: EnergyChargeableStructure[]
     researchLabs: ResearchLabs | null
@@ -86,6 +87,7 @@ export class OwnedRoomResource extends NormalRoomResource {
     let observer = null as StructureObserver | null
     let powerSpawn = null as StructurePowerSpawn | null
     let factory = null as StructureFactory | null
+    let nuker = null as StructureNuker | null
     const chargeableStructures: EnergyChargeableStructure[] = []
     const researchLabs = ((): ResearchLabs | null => {
       if (roomInfo.researchLab == null) {
@@ -232,6 +234,15 @@ export class OwnedRoomResource extends NormalRoomResource {
         }
         this.ramparts.push(structure)
         break
+      case STRUCTURE_NUKER:
+        if (structure.my !== true) {
+          break
+        }
+        if (isActive(structure) !== true) {
+          break
+        }
+        nuker = structure
+        break
       default:
         break // TODO: 全て網羅する
       }
@@ -268,6 +279,7 @@ export class OwnedRoomResource extends NormalRoomResource {
       observer,
       powerSpawn,
       factory,
+      nuker,
       chargeableStructures,
       researchLabs,
     }

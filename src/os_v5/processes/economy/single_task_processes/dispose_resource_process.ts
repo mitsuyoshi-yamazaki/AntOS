@@ -60,6 +60,10 @@ export type DisposeResourceProcessId = ProcessId<Dependency, RoomName, void, Dis
 
 export class DisposeResourceProcess extends Process<Dependency, RoomName, void, DisposeResourceProcessState, DisposeResourceProcess> {
   public readonly identifier: RoomName
+  public getLinkedIdentifier(): string {
+    return ConsoleUtility.roomLink(this.identifier)
+  }
+
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "V3BridgeDriverProcess", identifier: processDefaultIdentifier },

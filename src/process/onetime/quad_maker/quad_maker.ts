@@ -1,12 +1,12 @@
 import type { RoomName } from "shared/utility/room_name_types"
 import { coloredResourceType, coloredText, roomLink } from "utility/log"
-import { QuadCreepSpec, QuadSpec } from "../../../../submodules/private/attack/quad/quad_spec"
+import { QuadCreepSpec, QuadSpec } from "@private/attack/quad/quad_spec"
 import { CreepBody } from "utility/creep_body"
 import { RoomResources } from "room_resource/room_resources"
 import { GameConstants } from "utility/constants"
 import { Result, ResultFailed } from "shared/utility/result"
 import { OperatingSystem } from "os/os"
-import { SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "../../../../submodules/private/attack/quad/quad_process"
+import { QuadAction, QuadPlan, SpecializedQuadLaunchArguments, SpecializedQuadProcess } from "@private/attack/quad/quad_process"
 import { GameMap } from "game/game_map"
 import { LaunchQuadProcess } from "./launch_quad_process"
 import { State, Stateful } from "os/infrastructure/state"
@@ -23,6 +23,8 @@ export interface QuadMakerState extends State {
   readonly targetIds: Id<AnyCreep | AnyStructure>[]
   readonly quadProcessCodename: string | null
   readonly waypoints: RoomName[] | null
+  readonly action?: QuadAction
+  readonly plan?: QuadPlan
 }
 
 type QuadLaunchInfoDryRun = {
@@ -44,7 +46,7 @@ interface QuadMakerInterface {
 
 export class QuadMaker implements QuadMakerInterface, Stateful {
   private constructor(
-    public readonly quadName: string,
+    public quadName: string,
     public roomName: RoomName,
     public targetRoomName: RoomName,
     public frontBaseRoomName: RoomName | null,
@@ -55,6 +57,8 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
     public targetIds: Id<AnyCreep | AnyStructure>[],
     public quadProcessCodename: string | null,
     public waypoints: RoomName[] | null,
+    public action: QuadAction | undefined,
+    public plan: QuadPlan | undefined,
   ) {
   }
 
@@ -72,6 +76,8 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       targetIds: this.targetIds,
       quadProcessCodename: this.quadProcessCodename,
       waypoints: this.waypoints,
+      action: this.action,
+      plan: this.plan,
     }
   }
 
@@ -88,6 +94,8 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       state.targetIds,
       state.quadProcessCodename,
       state.waypoints,
+      state.action,
+      state.plan,
     )
   }
 
@@ -115,7 +123,7 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
       }
     })()
     const frontBaseRoomName: RoomName | null = null
-    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [], null, null)
+    return new QuadMaker(quadName, roomName, targetRoomName, frontBaseRoomName, canHandleMelee, damageTolerance, boosts, creepSpecs, [], null, null, undefined, undefined)
   }
 
   public cloned(quadName: string): QuadMaker {
@@ -310,6 +318,8 @@ export class QuadMaker implements QuadMakerInterface, Stateful {
         predefinedTargetIds: this.targetIds,
         frontBaseRoomName: this.frontBaseRoomName,
         waypoints: this.waypoints,
+        action: this.action ?? null,
+        plan: this.plan ?? null,
       }
 
       const process = ((): LaunchQuadProcess | SpecializedQuadProcess => {

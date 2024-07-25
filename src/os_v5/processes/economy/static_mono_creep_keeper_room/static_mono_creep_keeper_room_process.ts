@@ -58,6 +58,10 @@ export type StaticMonoCreepKeeperRoomProcessId = ProcessId<Dependency, RoomName,
 
 export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomName, void, StaticMonoCreepKeeperRoomProcessState, StaticMonoCreepKeeperRoomProcess> {
   public readonly identifier: RoomName
+  public getLinkedIdentifier(): string {
+    return ConsoleUtility.roomLink(this.identifier)
+  }
+
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "CreepDistributorProcess", identifier: processDefaultIdentifier },

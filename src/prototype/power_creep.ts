@@ -15,7 +15,7 @@ export function init(): void {
   }
 }
 
-export type DeployedPowerCreep = PowerCreep & { room: Room }
+export type DeployedPowerCreep = PowerCreep & Readonly<{ room: Room, ticksToLive: number }>
 export const isDeployedPowerCreep = (powerCreep: PowerCreep): powerCreep is DeployedPowerCreep => {
   if (powerCreep.room == null) {
     return false

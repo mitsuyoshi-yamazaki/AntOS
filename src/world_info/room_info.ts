@@ -421,7 +421,9 @@ export class OwnedRoomObjects {
     // if (chargeableStructures.length <= 0) {
     chargeableStructures.push(...chargeableLabs)
     // }
-    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && (storage != null && storage.store.getUsedCapacity(RESOURCE_ENERGY) > 100000)) {
+
+    const totalEnergyAmount = (storage?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0) + (terminal?.store.getUsedCapacity(RESOURCE_ENERGY) ?? 0)
+    if (chargeableStructures.length <= 0 && nuker != null && nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0 && totalEnergyAmount > 100000) {
       chargeableStructures.push(nuker)
     }
 

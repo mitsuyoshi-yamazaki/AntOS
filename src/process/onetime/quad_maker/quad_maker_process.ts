@@ -15,13 +15,14 @@ import type { RoomName } from "shared/utility/room_name_types"
 import { OwnedRoomProcess } from "process/owned_room_process"
 import { OperatingSystem } from "os/os"
 import { GameMap } from "game/game_map"
+import { isQuadAction, isQuadPlan } from "@private/attack/quad/quad_process"
 
 ProcessDecoder.register("QuadMakerProcess", state => {
   return QuadMakerProcess.decode(state as QuadMakerProcessState)
 })
 
-const parameterNames = ["room_name", "target_room_name", "front_base_room_name"]
-const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints", "quad_waypoints"]
+const parameterNames = ["room_name", "target_room_name", "front_base_room_name", "name"]
+const argumentNames = ["handle_melee", "damage_tolerance", "boosts", "creep", "target_ids", "codename", "waypoints", "quad_waypoints", "quad_action", "quad_plan"]
 
 interface QuadMakerProcessState extends ProcessState {
   readonly quadMakerState: QuadMakerState
@@ -242,6 +243,16 @@ commands: ${commands}
       return `Changed front_base_room_name ${oldValue} =&gt ${this.quadMaker.frontBaseRoomName}`
     }
 
+    case "name": {
+      const oldValue = this.quadMaker.quadName
+      if (args[0] == null) {
+        throw "No name argument"
+      }
+      this.quadMaker.quadName = args[0]
+
+      return `Changed name ${oldValue} =&gt ${this.quadMaker.quadName}`
+    }
+
     default:
       throw `Invalid parameter name ${parameter}. Available parameters are: ${parameterNames}`
     }
@@ -391,6 +402,22 @@ commands: ${commands}
       return `set ${waypoints.map(roomName => roomLink(roomName)).join(" =&gt ")}`
     }
 
+    case "quad_action": {
+      const listArguments = new ListArguments(args)
+      const previousValue = this.quadMaker.action ?? null
+      this.quadMaker.action = listArguments.typedString(0, "action", "QuadAction", isQuadAction).parse()
+
+      return `Set action ${this.quadMaker.action} from ${previousValue}`
+    }
+
+    case "quad_plan": {
+      const listArguments = new ListArguments(args)
+      const previousValue = this.quadMaker.plan ?? null
+      this.quadMaker.plan = listArguments.typedString(0, "plan", "QuadPlan", isQuadPlan).parse()
+
+      return `Set plan ${this.quadMaker.plan} from ${previousValue}`
+    }
+
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
     }
@@ -437,6 +464,14 @@ commands: ${commands}
     case "quad_waypoints":
       this.quadMaker.waypoints = null
       return "reset quad waypoints"
+
+    case "quad_action":
+      this.quadMaker.action = undefined
+      return "reset quad action"
+
+    case "quad_plan":
+      this.quadMaker.plan = undefined
+      return "reset quad plan"
 
     default:
       throw `Invalid argument name ${argument}. Available arguments are: ${argumentNames}`
