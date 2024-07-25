@@ -6,6 +6,7 @@ import { RoomResources } from "room_resource/room_resources"
 import { processLog } from "os/infrastructure/logger"
 import { ProcessDecoder } from "process/process_decoder"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
+import { RoomName } from "shared/utility/room_name_types"
 
 ProcessDecoder.register("InterRoomEnergyTransferProcess", state => {
   return InterRoomEnergyTransferProcess.decode(state as InterRoomEnergyTransferProcessState)
@@ -30,8 +31,13 @@ type RoomInfo = {
 type ExcessEnergyRoomInfo = RoomInfo & {
   energyAmountInTerminal: number
   excessEnergyAmountInTerminal: number // including transfer fee
+  sent: boolean
 }
 type EnergyShortageRoomInfo = RoomInfo & {
+  terminalFreeSpace: number
+}
+type EnergyReceivableRoomInfo = RoomInfo & {
+  readonly energyRatio: number
   terminalFreeSpace: number
 }
 
@@ -72,20 +78,12 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
         return `Commands: ${commandList}`
 
       case "test": {
-        const logs: string[] = []
-        const { excessEnergyRooms, energyShortageRooms, failureLogs } = this.getRooms()
-        logs.push(...failureLogs)
-        logs.push(...this.send(excessEnergyRooms, energyShortageRooms, {test: true}))
-
+        const logs: string[] = this.run({ test: true })
         return `Testing result:\n${logs.join("\n")}`
       }
 
       case "run_manually": {
-        const logs: string[] = []
-        const { excessEnergyRooms, energyShortageRooms, failureLogs } = this.getRooms()
-        logs.push(...failureLogs)
-        logs.push(...this.send(excessEnergyRooms, energyShortageRooms))
-
+        const logs: string[] = this.run()
         return `Result:\n${logs.join("\n")}`
       }
 
@@ -105,32 +103,42 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
       return  // InterRoomResourceManagementProcess 干渉防止
     }
 
-    const logs: string[] = [
-    ]
-
-    const { excessEnergyRooms, energyShortageRooms, failureLogs } = this.getRooms()
-    logs.push(...failureLogs)
-    logs.push(...this.send(excessEnergyRooms, energyShortageRooms))
-
-    if (logs.length <= 0) {
-      logs.push("No energy transfer")
-    }
+    const logs: string[] = this.run()
     logs.forEach(log => processLog(this, log))
   }
 
   // Private
-  private send(excessEnergyRooms: ExcessEnergyRoomInfo[], energyShortageRooms: EnergyShortageRoomInfo[], options?: {test?: true}): string[] {
+  private run(options?: { test?: true }): string[] {
+    const logs: string[] = []
+
+    const { excessEnergyRooms, energyShortageRooms, energyReceivableRooms, failureLogs } = this.getRooms()
+    logs.push(...failureLogs)
+    logs.push(...this.send(excessEnergyRooms, energyShortageRooms, energyReceivableRooms, options))
+
+    if (logs.length <= 0) {
+      logs.push("No energy transfer")
+    }
+    logs.push(`Energy exceeded rooms: ${excessEnergyRooms.map(room => roomLink(room.roomResource.room.name)).join(", ")}`)
+
+    return logs
+  }
+
+  private send(excessEnergyRooms: ExcessEnergyRoomInfo[], energyShortageRooms: EnergyShortageRoomInfo[], energyReceivableRooms: EnergyReceivableRoomInfo[], options?: {test?: true}): string[] {
     const results: string[] = []
 
     excessEnergyRooms.sort((lhs, rhs) => rhs.excessEnergyAmountInTerminal - lhs.excessEnergyAmountInTerminal)
-    const send = (roomInfo: ExcessEnergyRoomInfo, shortageRoomInfo: EnergyShortageRoomInfo, sendAmount: number): ScreepsReturnCode => {
+    const send = (roomInfo: ExcessEnergyRoomInfo, roomName: RoomName, sendAmount: number): ScreepsReturnCode => {
       if (options?.test === true) {
         return OK
       }
-      return roomInfo.terminal.send(RESOURCE_ENERGY, sendAmount, shortageRoomInfo.roomResource.room.name)
+      return roomInfo.terminal.send(RESOURCE_ENERGY, sendAmount, roomName)
     }
 
     excessEnergyRooms.forEach(roomInfo => {
+      if (roomInfo.sent === true) {
+        return
+      }
+
       const priorities = energyShortageRooms.map((shortageRoomInfo): { shortageRoomInfo: EnergyShortageRoomInfo, priority: number } => {
         const distance = Game.map.getRoomLinearDistance(roomInfo.roomResource.room.name, shortageRoomInfo.roomResource.room.name)
         const normalizedDistance = distance / 20
@@ -155,16 +163,62 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
           continue
         }
 
-        const sendResult = send(roomInfo, shortageRoomInfo, sendAmount)
+        const sendResult = send(roomInfo, shortageRoomInfo.roomResource.room.name, sendAmount)
         switch (sendResult) {
         case OK:
           roomInfo.energyAmountInTerminal -= (sendAmount * 2)
+          roomInfo.sent = true
           shortageRoomInfo.terminalFreeSpace -= sendAmount
-          results.push(`Sent ${coloredText(`${sendAmount}`, "info")} ${coloredResourceType(RESOURCE_ENERGY)} from ${roomLink(roomInfo.roomResource.room.name)} (remaining ${shortenedNumber(roomInfo.energyAmountInTerminal)} ${coloredResourceType(RESOURCE_ENERGY)}) to ${roomLink(shortageRoomInfo.roomResource.room.name)} (${shortenedNumber(shortageRoomInfo.terminalFreeSpace)} free space)`)
+          results.push(`[s] Sent ${coloredText(`${sendAmount}`, "info")} ${coloredResourceType(RESOURCE_ENERGY)} from ${roomLink(roomInfo.roomResource.room.name)} (remaining ${shortenedNumber(roomInfo.energyAmountInTerminal)} ${coloredResourceType(RESOURCE_ENERGY)}) to ${roomLink(shortageRoomInfo.roomResource.room.name)} (${shortenedNumber(shortageRoomInfo.terminalFreeSpace)} free space)`)
           return
 
         default:
-          results.push(`Failed (${sendResult}) ${coloredText(`${sendAmount}`, "info")} ${coloredResourceType(RESOURCE_ENERGY)} from ${roomLink(roomInfo.roomResource.room.name)} to ${roomLink(shortageRoomInfo.roomResource.room.name)}`)
+          results.push(`[s] Failed (${sendResult}) ${coloredText(`${sendAmount}`, "info")} ${coloredResourceType(RESOURCE_ENERGY)} from ${roomLink(roomInfo.roomResource.room.name)} to ${roomLink(shortageRoomInfo.roomResource.room.name)}`)
+          continue
+        }
+      }
+    })
+
+    excessEnergyRooms.forEach(roomInfo => {
+      if (roomInfo.sent === true) {
+        return
+      }
+
+      const priorities = energyReceivableRooms.map((receivableRoomInfo): { receivableRoomInfo: EnergyReceivableRoomInfo, priority: number } => {
+        const distance = Game.map.getRoomLinearDistance(roomInfo.roomResource.room.name, receivableRoomInfo.roomResource.room.name)
+        const normalizedDistance = distance / 20
+        const normalizedEnergyRatio = receivableRoomInfo.energyRatio
+
+        return {
+          receivableRoomInfo,
+          priority: normalizedDistance + normalizedEnergyRatio,  // 小さい方が優先
+        }
+      })
+
+      priorities.sort((lhs, rhs) => lhs.priority - rhs.priority)
+
+      for (const { receivableRoomInfo } of priorities) {
+        const receivableEnergyAmount = receivableRoomInfo.terminalFreeSpace - Constants.terminalMinimumFreeSpace
+        if (receivableEnergyAmount < 4000) {
+          continue
+        }
+
+        const sendAmount = Math.min(Math.floor(roomInfo.energyAmountInTerminal / 2), receivableEnergyAmount)
+        if (sendAmount < 3000) {
+          continue
+        }
+
+        const sendResult = send(roomInfo, receivableRoomInfo.roomResource.room.name, sendAmount)
+        switch (sendResult) {
+        case OK:
+          roomInfo.energyAmountInTerminal -= (sendAmount * 2)
+          roomInfo.sent = true
+          receivableRoomInfo.terminalFreeSpace -= sendAmount
+          results.push(`[r] Sent ${coloredText(`${sendAmount}`, "info")} ${coloredResourceType(RESOURCE_ENERGY)} from ${roomLink(roomInfo.roomResource.room.name)} (remaining ${shortenedNumber(roomInfo.energyAmountInTerminal)} ${coloredResourceType(RESOURCE_ENERGY)}) to ${roomLink(receivableRoomInfo.roomResource.room.name)} (${shortenedNumber(receivableRoomInfo.terminalFreeSpace)} free space)`)
+          return
+
+        default:
+          results.push(`[r] Failed (${sendResult}) ${coloredText(`${sendAmount}`, "info")} ${coloredResourceType(RESOURCE_ENERGY)} from ${roomLink(roomInfo.roomResource.room.name)} to ${roomLink(receivableRoomInfo.roomResource.room.name)}`)
           continue
         }
       }
@@ -173,13 +227,15 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
     return results
   }
 
-  private getRooms(): { excessEnergyRooms: ExcessEnergyRoomInfo[], energyShortageRooms: EnergyShortageRoomInfo[], failureLogs: string[] } {
+  private getRooms(): { excessEnergyRooms: ExcessEnergyRoomInfo[], energyShortageRooms: EnergyShortageRoomInfo[], energyReceivableRooms: EnergyReceivableRoomInfo[], failureLogs: string[] } {
 
     const excessEnergyRooms: ExcessEnergyRoomInfo[] = []
     const energyShortageRooms: EnergyShortageRoomInfo[] = []
+    const energyReceivableRooms: EnergyReceivableRoomInfo[] = []
     const failureLogs: string[] = []
 
     const halfMaximumEnergyAmount = Constants.maximumEnergyAmount / 2
+    const thirdMaximumEnergyAmount = Constants.maximumEnergyAmount / 3
 
     RoomResources.getOwnedRoomResources().forEach(roomResource => {
       if (roomResource.controller.level < 6) {
@@ -212,6 +268,7 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
               totalEnergyAmount,
               energyAmountInTerminal,
               excessEnergyAmountInTerminal,
+              sent: false,
             })
           }
           return
@@ -228,10 +285,12 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
               totalEnergyAmount,
               energyAmountInTerminal,
               excessEnergyAmountInTerminal,
+              sent: false,
             })
           }
           return
-        }      }
+        }
+      }
 
       if (totalEnergyAmount < Constants.minimumEnergyAmount) {
         if (totalFreeSpace < Constants.requiredFreeSpace) {
@@ -247,11 +306,27 @@ export class InterRoomEnergyTransferProcess implements Process, Procedural {
         }
         return
       }
+
+      const totalResourceAmount = terminal.store.getUsedCapacity() + storage.store.getUsedCapacity()
+      const energyRatio = totalEnergyAmount / totalResourceAmount
+
+      if (energyRatio < 0.4 && totalEnergyAmount < thirdMaximumEnergyAmount && totalFreeSpace > (Constants.requiredFreeSpace * 2)) {
+        energyReceivableRooms.push({
+          roomResource,
+          terminal,
+          storage,
+          totalEnergyAmount,
+          terminalFreeSpace,
+          energyRatio,
+        })
+        return
+      }
     })
 
     return {
       excessEnergyRooms,
       energyShortageRooms,
+      energyReceivableRooms,
       failureLogs,
     }
   }
