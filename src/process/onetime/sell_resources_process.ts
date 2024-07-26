@@ -140,7 +140,7 @@ export class SellResourcesProcess implements Process, Procedural, OwnedRoomProce
     }
 
     if (this.resourceTypes.length <= 0) {
-      SystemCalls.systemCall()?.suspendProcess(this.processId)
+      SystemCalls.systemCall()?.killProcess(this.processId)
       return
     }
 
