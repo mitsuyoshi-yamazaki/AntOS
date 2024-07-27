@@ -12,3 +12,5 @@ export type IntraShardPortal = Omit<StructurePortal, "destination"> & {
   readonly destination: RoomPosition
 }
 export const isIntraShardPortal = (portal: StructurePortal): portal is IntraShardPortal => portal.destination instanceof RoomPosition
+
+export const findPortalsIn = (room: Room): (InterShardPortal | IntraShardPortal)[] => room.find<StructurePortal>(FIND_STRUCTURES, { filter: { structureType: STRUCTURE_PORTAL } }) as (InterShardPortal | IntraShardPortal)[]
