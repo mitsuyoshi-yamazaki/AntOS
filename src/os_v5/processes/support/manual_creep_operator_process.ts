@@ -172,6 +172,9 @@ export class ManualCreepOperatorProcess extends Process<Dependency, ProcessDefau
 
       return runCommandsWith<[AnyTrafficManagedCreep, Dependency], string>(argumentParser, [trafficManagedCreep, dependency], [
         this.moveToCommand,
+        this.moveToRoomCommand,
+        this.moveToShardCommand,
+        this.clearMovingCommand,
       ])
     }
   }
@@ -194,6 +197,55 @@ export class ManualCreepOperatorProcess extends Process<Dependency, ProcessDefau
       if (result.case !== "reserved") {
         throw `MoveTo failed ${result.case}`
       }
+      dependency.registerManuallySetMoving(creep)
+      return "ok"
+    }
+  }
+
+  private readonly moveToRoomCommand: CreepCommand = {
+    command: "move_to_room",
+    help: (): string => "move_to_room {destination room name} waypoints={room names}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser, [creep, dependency]: [AnyTrafficManagedCreep, Dependency]): string => {
+      const destinationRoomName = argumentParser.roomName([0, "destination room name"]).parse()
+      const waypoints = argumentParser.list("waypoints", "room_name").parse()
+
+      const result = creep.trafficManager.moveToRoom(destinationRoomName, {waypoints})
+      if (result !== "ok") {
+        throw `MoveToRoom failed ${result}`
+      }
+      dependency.registerManuallySetMoving(creep)
+      return "ok"
+    }
+  }
+
+  private readonly moveToShardCommand: CreepCommand = {
+    command: "move_to_shard",
+    help: (): string => "move_to_shard {shard name} portal_room_name={room name} waypoints={room names}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser, [creep, dependency]: [AnyTrafficManagedCreep, Dependency]): string => {
+      const shardName = argumentParser.string([0, "shard name"]).parse()
+      const portalRoomName = argumentParser.roomName("portal_room_name").parse()
+      const waypoints = argumentParser.list("waypoints", "room_name").parse()
+
+      const result = creep.trafficManager.moveToShard(shardName, portalRoomName, { waypoints })
+      if (result !== "ok") {
+        throw `MoveToRoom failed ${result}`
+      }
+      dependency.registerManuallySetMoving(creep)
+      return "ok"
+    }
+  }
+
+  private readonly clearMovingCommand: CreepCommand = {
+    command: "clear",
+    help: (): string => "clear",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser, [creep, dependency]: [AnyTrafficManagedCreep, Dependency]): string => {
+      creep.trafficManager.clear()
       dependency.registerManuallySetMoving(creep)
       return "ok"
     }
