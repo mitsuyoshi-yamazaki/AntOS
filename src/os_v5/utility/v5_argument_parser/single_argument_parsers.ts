@@ -1,7 +1,7 @@
 import { AnyProcess, AnyProcessId } from "os_v5/process/process"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { getKeyDescription, SingleOptionalArgument } from "../argument_parser/single_argument_parser"
-import { AnyV5Creep, AnyV5CreepMemory, isV5Creep } from "../game_object/creep"
+import { AnyV5Creep, AnyV5CreepMemory, AnyV5SpawnedCreep, isSpawnedV5Creep, isV5Creep } from "../game_object/creep"
 
 
 export class ProcessArgument extends SingleOptionalArgument<void, AnyProcess> {
@@ -36,6 +36,35 @@ export class V5CreepArgument extends SingleOptionalArgument<{processId?: AnyProc
     }
     if (!isV5Creep(creep)) {
       throw `Creep ${creep.name} is not initialized for v5`
+    }
+
+    if (options?.processId != null) {
+      const creepMemory: AnyV5CreepMemory = creep.memory
+      if (creepMemory.p !== options.processId) {
+        throw `Creep ${creep.name} does not belong to process ${options.processId}`
+      }
+    }
+
+    return creep
+  }
+}
+
+export class V5SpawnedCreepArgument extends SingleOptionalArgument<{ processId?: AnyProcessId }, AnyV5SpawnedCreep> {
+  /** throws */
+  public parse(options?: { processId?: AnyProcessId }): AnyV5SpawnedCreep {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    const creep = Game.creeps[this.value]
+    if (creep == null) {
+      throw `No my creep named ${this.value}`
+    }
+    if (!isV5Creep(creep)) {
+      throw `Creep ${creep.name} is not initialized for v5`
+    }
+    if (!isSpawnedV5Creep(creep)) {
+      throw `Creep ${creep.name} is spawning`
     }
 
     if (options?.processId != null) {

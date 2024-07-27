@@ -23,6 +23,7 @@ export type V5SpawnedCreep<M extends SerializableObject> = Omit<SpawnedCreep, "m
 
 export type AnyV5CreepMemory = V5CreepMemory<SerializableObject>
 export type AnyV5Creep = V5Creep<SerializableObject>
+export type AnyV5SpawnedCreep = V5SpawnedCreep<SerializableObject>
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
