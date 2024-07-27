@@ -40,52 +40,58 @@ const sortedKeys = (obj: SerializableObject): string[] => {
 }
 
 const getObjectDescription = (obj: SerializableObject, indent: number): string => {
-  const result: string[] = []
+  const results: string[] = [
+    "{",
+  ]
   sortedKeys(obj).forEach(key => {
     const value = obj[key]
     if (value == null) {
-      result.push(`${getIndent(indent)}- ${key}: null`)
+      results.push(`${getIndent(indent)}- ${key}: null`)
     } else if (value instanceof Array) {
       if (value.length <= 0) {
-        result.push(`${getIndent(indent)}- ${key}: []`)
+        results.push(`${getIndent(indent)}- ${key}: []`)
       } else {
-        result.push(`${getIndent(indent)}- ${key}: [`)
-        result.push(getArrayDescription(value, indent + 1))
-        result.push(`${getIndent(indent)}]`)
+        results.push(`${getIndent(indent)}- ${key}: ${getArrayDescription(value, indent + 1)}`)
       }
     } else if (typeof (value) === "object") { // typeof (null) == "object"
-      result.push(`${getIndent(indent)}- ${key}: {`)
-      result.push(getObjectDescription(value, indent + 1))
-      result.push(`${getIndent(indent)}}`)
+      results.push(`${getIndent(indent)}- ${key}: ${getObjectDescription(value, indent + 1)}`)
     } else {
-      result.push(`${getIndent(indent)}- ${key}: ${value}`)
+      results.push(`${getIndent(indent)}- ${key}: ${value}`)
     }
   })
-  return result.join("\n")
+
+  results.push(`${getIndent(indent)}}`)
+  return results.join("\n")
 }
 
 const getArrayDescription = (array: SerializableArray, indent: number): string => {
-  const result: string[] = []
-  array.concat([])
-    .sort((lhs, rhs) => sortIndex(lhs) - sortIndex(rhs))
-    .forEach(value => {
-      if (value == null) {
-        result.push(`${getIndent(indent)}- null`)
-      } else if (value instanceof Array) {
-        if (value.length <= 0) {
-          result.push(`${getIndent(indent)}- []`)
-        } else {
-          result.push(`${getIndent(indent)}- [`)
-          result.push(getArrayDescription(value, indent + 1))
-          result.push(`${getIndent(indent)}]`)
-        }
-      } else if (typeof (value) === "object") {
-        result.push(`${getIndent(indent)}- {`)
-        result.push(getObjectDescription(value, indent + 1))
-        result.push(`${getIndent(indent)}}`)
+  const isPrimitiveValues = array.every(value => typeof value !== "object")
+  if (isPrimitiveValues === true) {
+    return `[${array.map(value => `${value}`).join(",")}]`
+  }
+
+  const results: string[] = [
+    "[",
+  ]
+  array.forEach(value => {
+    if (value == null) {
+      results.push(`${getIndent(indent)}- null`)
+    } else if (value instanceof Array) {
+      if (value.length <= 0) {
+        results.push(`${getIndent(indent)}- []`)
       } else {
-        result.push(`${getIndent(indent)}- ${value}`)
+        results.push(`${getIndent(indent)}- ${getArrayDescription(value, indent + 1)}`)
       }
-    })
-  return result.join("\n")
+    } else if (typeof (value) === "object") {
+      results.push(`${getIndent(indent)}- {`)
+      results.push(getObjectDescription(value, indent + 1))
+      results.push(`${getIndent(indent)}}`)
+    } else {
+      results.push(`${getIndent(indent)}- ${value}`)
+    }
+  })
+
+  results.push(`${getIndent(indent)}]`)
+
+  return results.join("\n")
 }
