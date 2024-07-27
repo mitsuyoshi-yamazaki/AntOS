@@ -37,6 +37,25 @@ export class FloatArgument extends SingleOptionalArgument<{ min?: number, max?: 
   }
 }
 
+export class BoolArgument extends SingleOptionalArgument<void, boolean> {
+  /** throws */
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  public parse(options?: void): boolean {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    switch (this.value) {
+    case "0":
+      return false
+    case "1":
+      return true
+    default:
+      throw `${this.value} is not boolean (0 or 1)`
+    }
+  }
+}
+
 export class StringArgument extends SingleOptionalArgument<void, string> {
   /** throws */
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
