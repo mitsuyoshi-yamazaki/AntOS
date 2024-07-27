@@ -37,6 +37,7 @@ export const processTypeDecodingMap = {
   ad: "ClaimRoomProcess",
   ae: "ScoutProcess",
   af: "NukeProcess",
+  ag: "ManualCreepOperatorProcess",
 } as const
 
 
@@ -98,6 +99,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "TestPullProcess",
   "ScoutProcess",
   "NukeProcess",
+  "ManualCreepOperatorProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -177,6 +179,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   TestHarvestRoomProcess: "support",
   TestPullProcess: "support",
   OnHeapContinuousTaskProcess: "support",
+  ManualCreepOperatorProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

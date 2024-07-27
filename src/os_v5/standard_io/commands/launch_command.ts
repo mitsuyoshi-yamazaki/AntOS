@@ -39,6 +39,7 @@ import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@pri
 import { TestTrafficManagerV3Process, TestTrafficManagerV3ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
+import { ManualCreepOperatorProcess, ManualCreepOperatorProcessId } from "../../processes/support/manual_creep_operator_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -149,6 +150,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["PathManagerProcess", processId => PathManagerProcess.create(processId as PathManagerProcessId)],
     ["RoomMapProcess", processId => RoomMapProcess.create(processId as RoomMapProcessId)],
     ["NukeProcess", processId => NukeProcess.create(processId as NukeProcessId)],
+    ["ManualCreepOperatorProcess", processId => ManualCreepOperatorProcess.create(processId as ManualCreepOperatorProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
