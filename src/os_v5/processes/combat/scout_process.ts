@@ -124,7 +124,7 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
 
     const scout = dependency.registerTrafficManagedCreep(creep)
     if (scout.trafficManager.moving == null) {
-      if (creep.room.name !== this.targetRoomName) {
+      if (creep.room.name === this.targetRoomName) {
         scout.trafficManager.stay()
       } else {
         const result = scout.trafficManager.moveToRoom(this.targetRoomName, { waypoints: [...this.waypoints] })
