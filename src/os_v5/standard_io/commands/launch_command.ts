@@ -8,7 +8,7 @@ import { } from "@private/os_v5/processes/application/problem_resolver/problem_r
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
-import { } from "../../processes/combat/scout_process"
+import { ScoutProcess, ScoutProcessId } from "../../processes/combat/scout_process"
 import { NukeProcess, NukeProcessId } from "../../processes/combat/nuke/nuke_process"
 
 // Economy
@@ -235,5 +235,16 @@ registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser, log) => {
 
   return ((processId: StaticMonoCreepKeeperRoomProcessId): StaticMonoCreepKeeperRoomProcess => {
     return StaticMonoCreepKeeperRoomProcess.create(processId, roomName, parentRoomName, sourceId)
+  }) as ProcessConstructor
+})
+
+registerProcess("ScoutProcess", (argumentParser) => {
+  const room = argumentParser.myRoom("room_name").parse()
+  const targetRoomName = argumentParser.roomName("target_room_name").parse()
+  const waypoints = argumentParser.list("waypoints", "room_name").parse()
+  const creepCount = 1  // TODO:
+
+  return ((processId: ScoutProcessId): ScoutProcess => {
+    return ScoutProcess.create(processId, room.name, targetRoomName, waypoints, {creepCount})
   }) as ProcessConstructor
 })

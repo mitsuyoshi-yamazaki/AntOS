@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
+import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -7,6 +7,8 @@ import { CreepDistributorProcessApi } from "../game_object_management/creep/cree
 import { CreepTrafficManagerProcessApi } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
+import { Command, runCommands } from "os_v5/standard_io/command"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 
 type MyCreepMemory = {
   //
@@ -31,7 +33,11 @@ export type ScoutProcessId = ProcessId<Dependency, RoomName, void, ScoutProcessS
 export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProcessState, ScoutProcess> {
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
-    processes: [],
+    processes: [
+      { processType: "V3BridgeSpawnRequestProcess", identifier: processDefaultIdentifier },
+      { processType: "CreepDistributorProcess", identifier: processDefaultIdentifier },
+      { processType: "CreepTrafficManagerProcess", identifier: processDefaultIdentifier },
+    ],
   }
 
   private readonly codename: string
@@ -62,7 +68,7 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
     return new ScoutProcess(processId, state.p, state.tr, state.w, state.c)
   }
 
-  public static create(processId: ScoutProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], options?: { creepCount?: number }): ScoutProcess {
+  public static create(processId: ScoutProcessId, parentRoomName: RoomName, targetRoomName: RoomName, waypoints: RoomName[], options?: { creepCount?: number | null }): ScoutProcess {
     return new ScoutProcess(processId, parentRoomName, targetRoomName, waypoints, options?.creepCount ?? null)
   }
 
@@ -98,6 +104,13 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
     return descriptions.join(", ")
   }
 
+  /** @throws */
+  public didReceiveMessage(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.setCreepCountCommand,
+    ])
+  }
+
   public run(dependency: Dependency): void {
     const creep = dependency.getSpawnedCreepsFor(this.processId)[0]
     if (creep == null) {
@@ -111,12 +124,30 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
 
     const scout = dependency.registerTrafficManagedCreep(creep)
     if (scout.trafficManager.moving == null) {
-      scout.trafficManager.moveToRoom(this.targetRoomName, {waypoints: [...this.waypoints]})
+      const result = scout.trafficManager.moveToRoom(this.targetRoomName, { waypoints: [...this.waypoints] })
+      if (result !== "ok") {
+        SystemCalls.logger.log(this, `Creep.moveToRoom() failed: ${result} at ${creep.pos}`)
+      }
     }
   }
 
   private spawnScout(dependency: Dependency): void {
     const memory = dependency.createSpawnCreepMemoryFor<MyCreepMemory>(this.processId, {})
     dependency.addSpawnRequest<MyCreepMemory>(CreepBody.createWithBodyParts([MOVE]), this.parentRoomName, { codename: this.codename, memory })
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly setCreepCountCommand: Command = {
+    command: "set_creep_count",
+    help: (): string => "set_creep_count {creep count}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const oldValue = this.remainingScoutCount
+      this.remainingScoutCount = argumentParser.int([0, "creep count"]).parse({ min: 0 })
+
+      return `Set creep count ${this.remainingScoutCount} (from ${oldValue})`
+    }
   }
 }
