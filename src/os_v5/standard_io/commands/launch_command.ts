@@ -27,7 +27,7 @@ import { RoomMapProcess, RoomMapProcessId } from "../../processes/game_object_ma
 import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
 import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
-import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
+import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/traffic/creep_traffic_manager_process"
 import { CreepPositionAssignerProcess, CreepPositionAssignerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
 import { InterShardCommunicatorProcess, InterShardCommunicatorProcessId } from "../../processes/game_object_management/shard/inter_shard_communicator_process"
 
