@@ -38,6 +38,9 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
     }
+    if (this.value.length <= 0) {
+      return []
+    }
 
     const separator = ((): string => {
       switch (this.argumentType) {
