@@ -39,6 +39,7 @@ export const processTypeDecodingMap = {
   af: "NukeProcess",
   ag: "ManualCreepOperatorProcess",
   ah: "TemplateProcess",
+  ai: "InterShardCommunicatorProcess",
 } as const
 
 
@@ -73,6 +74,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "OnHeapContinuousTaskProcess",
   "RoomMapProcess",
   "RoomPlannerProcess",   // TODO: 実装したら再度確認
+  "InterShardCommunicatorProcess",
 
   // Driver with dependencies
   "PathManagerProcess",
@@ -168,6 +170,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   CreepTrafficManagerProcess: "driver",
   CreepPositionAssignerProcess: "driver",
   CreepTaskStateManagementProcess: "driver",
+  InterShardCommunicatorProcess: "driver",
 
   // v3 Bridge
   V3BridgeDriverProcess: "driver",

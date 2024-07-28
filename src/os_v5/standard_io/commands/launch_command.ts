@@ -29,6 +29,7 @@ import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } fr
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
 import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
 import { CreepPositionAssignerProcess, CreepPositionAssignerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
+import { InterShardCommunicatorProcess, InterShardCommunicatorProcessId } from "../../processes/game_object_management/shard/inter_shard_communicator_process"
 
 
 // Support
@@ -152,6 +153,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["RoomMapProcess", processId => RoomMapProcess.create(processId as RoomMapProcessId)],
     ["NukeProcess", processId => NukeProcess.create(processId as NukeProcessId)],
     ["ManualCreepOperatorProcess", processId => ManualCreepOperatorProcess.create(processId as ManualCreepOperatorProcessId)],
+    ["InterShardCommunicatorProcess", processId => InterShardCommunicatorProcess.create(processId as InterShardCommunicatorProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
