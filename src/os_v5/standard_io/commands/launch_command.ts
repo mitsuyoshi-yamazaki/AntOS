@@ -34,6 +34,7 @@ import { CreepPositionAssignerProcess, CreepPositionAssignerProcessId } from "@p
 // Support
 import { /* 直接手動で生成することはない */ } from "../../processes/support/on_heap_continuous_task_process"
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
+import {  } from "../../processes/support/template_process"
 import { TestPullProcess, TestPullProcessId } from "../../processes/support/test/test_pull_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
 import { TestTrafficManagerV3Process, TestTrafficManagerV3ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
