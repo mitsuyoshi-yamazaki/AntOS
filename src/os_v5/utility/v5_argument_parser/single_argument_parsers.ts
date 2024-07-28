@@ -64,7 +64,7 @@ export class V5SpawnedCreepArgument extends SingleOptionalArgument<{ processId?:
       throw `Creep ${creep.name} is not initialized for v5`
     }
     if (!isSpawnedV5Creep(creep)) {
-      throw `Creep ${creep.name} is spawning`
+      throw `Creep ${creep.name} is still spawning`
     }
 
     if (options?.processId != null) {
