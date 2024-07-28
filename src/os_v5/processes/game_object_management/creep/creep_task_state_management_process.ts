@@ -1,7 +1,7 @@
 import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { AnyV5Creep, V5Creep, V5CreepMemoryReservedProperties } from "os_v5/utility/game_object/creep"
-import { EmptySerializable, SerializableObject } from "os_v5/utility/types"
+import { EmptySerializable, SerializableObject } from "shared/utility/serializable_types"
 import { CreepTask } from "./creep_task/creep_task"
 import { CreepName } from "prototype/creep"
 import { CreepDistributorProcessApi } from "./creep_distributor_process"

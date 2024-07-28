@@ -1,5 +1,5 @@
 import { AssignedPositions, CreepPositionAssignerProcessApi } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { reverseConstMapping, ReversedMapping } from "shared/utility/strict_entries"
 
 

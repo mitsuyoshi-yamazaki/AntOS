@@ -1,6 +1,6 @@
 import { AnyProcessId, Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { CreepBody, CreepBodyStringRepresentation } from "utility/creep_body_v2"
 import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"

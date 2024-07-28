@@ -8,7 +8,7 @@ import { ObjectParserCommand, runCommandsWith } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { describePosition } from "shared/utility/position_v2"
-import { EmptySerializable } from "os_v5/utility/types"
+import { EmptySerializable } from "shared/utility/serializable_types"
 
 
 type MyCreepMemory = {

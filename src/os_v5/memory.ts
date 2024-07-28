@@ -1,4 +1,4 @@
-import { AnySerializable } from "./utility/types"
+import { AnySerializable } from "shared/utility/serializable_types"
 
 export type KernelMemory = {
   version: string

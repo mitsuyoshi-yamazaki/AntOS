@@ -1,5 +1,5 @@
 // import { AnyProcessId, Process } from "os_v5/process/process"
-// import { SerializableObject } from "os_v5/utility/types"
+// import { SerializableObject } from "shared/utility/serializable_types"
 // import { MyRoom } from "shared/utility/room"
 
 // export type NormalizedClaimRoomProcessArguments = {

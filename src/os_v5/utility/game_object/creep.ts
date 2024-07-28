@@ -1,6 +1,6 @@
 import { AnyProcessId } from "os_v5/process/process"
 import { SpawnedCreep } from "shared/utility/creep"
-import { SerializableObject } from "../types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { CreepActions } from "./creep_action"
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

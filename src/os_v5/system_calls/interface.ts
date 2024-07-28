@@ -1,4 +1,4 @@
-import { AnySerializable } from "os_v5/utility/types"
+import { AnySerializable } from "shared/utility/serializable_types"
 import { SystemCall } from "../system_call"
 import { Logger } from "./logger"
 import { ProcessManager } from "./process_manager/process_manager"

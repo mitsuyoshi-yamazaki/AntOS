@@ -1,6 +1,6 @@
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { AnyProcess, AnyProcessId, Process, ProcessId, ProcessSpecifier } from "../../process/process"
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { processExecutionOrder, ProcessTypes } from "../../process/process_type_map"
 import { ValuedMapMap } from "shared/utility/valued_collection"
 import { DependencyGraphNode, ProcessDependencyGraph } from "./process_dependency_graph"

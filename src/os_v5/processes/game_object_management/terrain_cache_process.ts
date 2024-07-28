@@ -1,7 +1,7 @@
 import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { ProcessDefaultIdentifier } from "os_v5/process/process"
-import { EmptySerializable } from "os_v5/utility/types"
+import { EmptySerializable } from "shared/utility/serializable_types"
 import { getPositionSpecifier, Position } from "shared/utility/position_v2"
 import { RoomName } from "shared/utility/room_name_types"
 import { ValuedMapMap } from "shared/utility/valued_collection"
