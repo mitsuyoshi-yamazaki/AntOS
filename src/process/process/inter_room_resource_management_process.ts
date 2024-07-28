@@ -155,6 +155,9 @@ class ResourceTransferer {
       if (this.disabledRoomNames.includes(resources.room.name) === true) {
         return
       }
+      if (resources.hostiles.creeps.length > 0 || resources.hostiles.powerCreeps.length > 0) {
+        return
+      }
 
       const terminal = resources.activeStructures.terminal
       const storage = resources.activeStructures.storage
