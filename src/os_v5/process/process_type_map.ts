@@ -65,7 +65,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "ProblemResolverProcess",  // TODO: 実装したら再度確認
 
   // No dependencies
-  "TestProcess",
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
@@ -90,6 +89,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomManagerProcess",
 
   // Process with dependencies
+  "TestProcess",
   "EnergyHarvestRoomProcess",
   "StaticMonoCreepKeeperRoomProcess",
   "StaticMonoCreepBuildRoomProcess",

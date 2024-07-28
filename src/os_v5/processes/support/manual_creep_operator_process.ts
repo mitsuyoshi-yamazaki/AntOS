@@ -190,7 +190,7 @@ export class ManualCreepOperatorProcess extends Process<Dependency, ProcessDefau
 
       const options: CreepMoveOptions = {}
       if (range != null) {
-        options.minRange = range
+        options.range = range
       }
 
       const result = creep.trafficManager.moveTo(destination, options)

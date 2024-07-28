@@ -14,6 +14,7 @@ import { describePosition } from "prototype/room_position"
 export type FindPathOptions = {
   shouldCache?: true
   range?: number
+  avoidCreeps?: true
 }
 
 export type PathManagerProcessApi = {
@@ -96,9 +97,11 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
 
     // FixMe: Creepが道を塞いでいると経路探索に失敗する？
     const roomCallback = (): CostMatrix => {
-      const cached = this.costMatrixCache.get(room.name)
-      if (cached != null) {
-        return cached
+      if (options?.avoidCreeps !== true) {
+        const cached = this.costMatrixCache.get(room.name)
+        if (cached != null) {
+          return cached
+        }
       }
 
       const costMatrix = new PathFinder.CostMatrix
@@ -132,7 +135,23 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
         }
       })
 
-      this.costMatrixCache.set(room.name, costMatrix)
+      if (options?.avoidCreeps !== true) {
+        this.costMatrixCache.set(room.name, costMatrix)
+      } else {
+        const creepPositions: RoomPosition[] = [
+          ...room.find(FIND_CREEPS).map(creep => creep.pos),
+          ...room.find(FIND_POWER_CREEPS).map(creep => creep.pos),
+        ]
+
+        creepPositions.forEach(position => {
+          const positionSpecifier = getPositionSpecifier(position)
+          if (fixedPositions.has(positionSpecifier) === true) {
+            return
+          }
+          costMatrix.set(position.x, position.y, obstacleCost)
+          fixedPositions.add(positionSpecifier)
+        })
+      }
       return costMatrix
     }
 
