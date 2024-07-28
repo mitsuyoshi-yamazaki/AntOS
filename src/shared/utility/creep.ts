@@ -2,9 +2,4 @@ export type CreepName = string
 
 export type SpawnedCreep = Creep & { ticksToLive: number }
 
-export const isSpawnedCreep = (creep: Creep): creep is SpawnedCreep => {
-  if (creep.ticksToLive == null) {
-    return false
-  }
-  return true
-}
+export const isSpawnedCreep = <C extends Omit<Creep, "memory">>(creep: C): creep is C & { ticksToLive: number } => creep.ticksToLive != null

@@ -1,6 +1,6 @@
 import { ArgumentParser as PrimitiveArgumentParser } from "../argument_parser/argument_parser"
 import { ArgumentKey, ArgumentParserOptions } from "../argument_parser/single_argument_parser"
-import { ProcessArgument, V5CreepArgument } from "./single_argument_parsers"
+import { ProcessArgument, V5CreepArgument, V5SpawnedCreepArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 export class ArgumentParser extends PrimitiveArgumentParser {
@@ -18,5 +18,9 @@ export class ArgumentParser extends PrimitiveArgumentParser {
   // ---- Game Object ---- //
   public v5Creep(key: ArgumentKey, options?: ArgumentParserOptions): V5CreepArgument {
     return new V5CreepArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public v5SpawnedCreep(key: ArgumentKey, options?: ArgumentParserOptions): V5SpawnedCreepArgument {
+    return new V5SpawnedCreepArgument(key, this.getRawValueFor(key), options)
   }
 }

@@ -11,9 +11,9 @@ import { GameConstants } from "utility/constants"
 import { describePosition } from "prototype/room_position"
 
 
-type FindPathOptions = {
-  readonly shouldCache?: true
-  readonly range?: number
+export type FindPathOptions = {
+  shouldCache?: true
+  range?: number
 }
 
 export type PathManagerProcessApi = {
@@ -82,7 +82,7 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
     return this.staticDescription()
   }
 
-  public run(dependency: Dependency): PathManagerProcessApi {
+  public run(): PathManagerProcessApi {
     return {
       findPath: (room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null => this.findPath(room, start, end, options),
       createPath: (roomName: RoomName, path: Position[]) => RoomPath.create("TODO", roomName, path),
@@ -94,7 +94,7 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
   private findPath(room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null {
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
 
-    const roomCallback = () => {
+    const roomCallback = (): CostMatrix => {
       const cached = this.costMatrixCache.get(room.name)
       if (cached != null) {
         return cached
@@ -150,7 +150,7 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
     const startPosition = new RoomPosition(start.x, start.y, room.name)
     const result = PathFinder.search(startPosition, destination, pathFinderOptions)
 
-    console.log(`${room.name} from ${describePosition(start)} to ${describePosition(end)} path: ${result.path}`) // FixMe:
+    console.log(`${room.name} from ${describePosition(start)} to ${describePosition(end)} (incomplete: ${result.incomplete}) path: ${result.path}`) // FixMe:
 
     if (result.incomplete === true || result.path.length <= 0) {
       return null

@@ -4,7 +4,7 @@ import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_
 import { AlignedProcessInfo, processDescription } from "./utilities"
 import { DependencyGraphNode } from "os_v5/system_calls/process_manager/process_dependency_graph"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
-import { AnySerializable, SerializableArray, SerializableObject } from "os_v5/utility/types"
+import { describeSerializableObject } from "os_v5/utility/types"
 
 
 const optionValues = ["description", "graph", "memory"] as const
@@ -122,77 +122,8 @@ const showMemory = (process: AnyProcess): string => {
     AlignedProcessInfo.header("PID", "Type", "Identifier", "Running", "Description [s tatic]"),
     processDescription(runningState),
     "Process State:",
-    getObjectDescription(processState, 0),
+    describeSerializableObject(processState),
   ]
 
   return results.join("\n")
-}
-
-
-const spaces = "                                                  " // 50 spaces
-const getIndent = (indent: number): string => spaces.slice(0, indent * 2)
-
-const sortIndex = (value: AnySerializable): number => {
-  if (value instanceof Array) {
-    return 2
-  } else if (typeof (value) === "object") {
-    return 1
-  } else {
-    return 0
-  }
-}
-
-const sortedKeys = (obj: SerializableObject): string[] => {
-  return Object.keys(obj).sort((lhs, rhs) => sortIndex(obj[lhs]) - sortIndex(obj[rhs]))
-}
-
-const getObjectDescription = (obj: SerializableObject, indent: number): string => {
-  const result: string[] = []
-  sortedKeys(obj).forEach(key => {
-    const value = obj[key]
-    if (value == null) {
-      result.push(`${getIndent(indent)}- ${key}: null`)
-    } else if (value instanceof Array) {
-      if (value.length <= 0) {
-        result.push(`${getIndent(indent)}- ${key}: []`)
-      } else {
-        result.push(`${getIndent(indent)}- ${key}: [`)
-        result.push(getArrayDescription(value, indent + 1))
-        result.push(`${getIndent(indent)}]`)
-      }
-    } else if (typeof (value) === "object") { // typeof (null) == "object"
-      result.push(`${getIndent(indent)}- ${key}: {`)
-      result.push(getObjectDescription(value, indent + 1))
-      result.push(`${getIndent(indent)}}`)
-    } else {
-      result.push(`${getIndent(indent)}- ${key}: ${value}`)
-    }
-  })
-  return result.join("\n")
-}
-
-const getArrayDescription = (array: SerializableArray, indent: number): string => {
-  const result: string[] = []
-  array.concat([])
-    .sort((lhs, rhs) => sortIndex(lhs) - sortIndex(rhs))
-    .forEach(value => {
-      if (value == null) {
-        result.push(`${getIndent(indent)}- null`)
-      } else if (value instanceof Array) {
-        if (value.length <= 0) {
-          result.push(`${getIndent(indent)}- []`)
-        } else {
-          result.push(`${getIndent(indent)}- [`)
-          result.push(getArrayDescription(value, indent + 1))
-          result.push(`${getIndent(indent)}]`)
-        }
-      } else if (typeof (value) === "object") {
-        result.push(`${getIndent(indent)}- {`)
-        result.push(getObjectDescription(value, indent + 1))
-        result.push(`${getIndent(indent)}}`)
-      } else {
-        result.push(`${getIndent(indent)}- ${value}`)
-      }
-    })
-  return result.join("\n")
 }

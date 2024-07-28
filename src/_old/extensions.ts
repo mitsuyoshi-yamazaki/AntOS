@@ -41,7 +41,6 @@ declare global {
 
   interface Memory {
     os: OSMemory
-    versions: string[]
     cpu_usages: number[]
     cpu: {
       last_bucket: number

@@ -8,6 +8,8 @@ import { } from "@private/os_v5/processes/application/problem_resolver/problem_r
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
+import { ScoutProcess, ScoutProcessId } from "../../processes/combat/scout_process"
+import { NukeProcess, NukeProcessId } from "../../processes/combat/nuke/nuke_process"
 
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
@@ -27,16 +29,19 @@ import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } fr
 import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
 import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
 import { CreepPositionAssignerProcess, CreepPositionAssignerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
+import { InterShardCommunicatorProcess, InterShardCommunicatorProcessId } from "../../processes/game_object_management/shard/inter_shard_communicator_process"
 
 
 // Support
 import { /* 直接手動で生成することはない */ } from "../../processes/support/on_heap_continuous_task_process"
 import { TestProcess, TestProcessId } from "../../processes/support/test/test_process"
+import {  } from "../../processes/support/template_process"
 import { TestPullProcess, TestPullProcessId } from "../../processes/support/test/test_pull_process"
 import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v2_process"
 import { TestTrafficManagerV3Process, TestTrafficManagerV3ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
+import { ManualCreepOperatorProcess, ManualCreepOperatorProcessId } from "../../processes/support/manual_creep_operator_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -146,6 +151,9 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["TerrainCacheProcess", processId => TerrainCacheProcess.create(processId as TerrainCacheProcessId)],
     ["PathManagerProcess", processId => PathManagerProcess.create(processId as PathManagerProcessId)],
     ["RoomMapProcess", processId => RoomMapProcess.create(processId as RoomMapProcessId)],
+    ["NukeProcess", processId => NukeProcess.create(processId as NukeProcessId)],
+    ["ManualCreepOperatorProcess", processId => ManualCreepOperatorProcess.create(processId as ManualCreepOperatorProcessId)],
+    ["InterShardCommunicatorProcess", processId => InterShardCommunicatorProcess.create(processId as InterShardCommunicatorProcessId)],
   ]
 
   processConstructors.forEach(([processType, constructor]) => {
@@ -232,5 +240,16 @@ registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser, log) => {
 
   return ((processId: StaticMonoCreepKeeperRoomProcessId): StaticMonoCreepKeeperRoomProcess => {
     return StaticMonoCreepKeeperRoomProcess.create(processId, roomName, parentRoomName, sourceId)
+  }) as ProcessConstructor
+})
+
+registerProcess("ScoutProcess", (argumentParser) => {
+  const room = argumentParser.myRoom("room_name").parse()
+  const targetRoomName = argumentParser.roomName("target_room_name").parse()
+  const waypoints = argumentParser.list("waypoints", "room_name").parse()
+  const creepCount = 1  // TODO:
+
+  return ((processId: ScoutProcessId): ScoutProcess => {
+    return ScoutProcess.create(processId, room.name, targetRoomName, waypoints, {creepCount})
   }) as ProcessConstructor
 })

@@ -1,4 +1,5 @@
 import { AnyProcessId } from "os_v5/process/process"
+import { SpawnedCreep } from "shared/utility/creep"
 import { SerializableObject } from "../types"
 import { CreepActions } from "./creep_action"
 
@@ -15,9 +16,14 @@ export type V5Creep<M extends SerializableObject> = Omit<Creep, "memory"> & {
   readonly executedActions: Set<CreepActions>
   readonly memory: V5CreepMemory<M>
 }
+export type V5SpawnedCreep<M extends SerializableObject> = Omit<SpawnedCreep, "memory"> & {
+  readonly executedActions: Set<CreepActions>
+  readonly memory: V5CreepMemory<M>
+}
 
 export type AnyV5CreepMemory = V5CreepMemory<SerializableObject>
 export type AnyV5Creep = V5Creep<SerializableObject>
+export type AnyV5SpawnedCreep = V5SpawnedCreep<SerializableObject>
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -25,6 +31,5 @@ export const isV5CreepMemory = (creepMemory: Record<string, any>): creepMemory i
   return (creepMemory as Partial<AnyV5CreepMemory>).v === "o5"
 }
 
-export const isV5Creep = (creep: Omit<Creep, "memory">): creep is AnyV5Creep => {
-  return isV5CreepMemory((creep as Creep).memory)
-}
+export const isV5Creep = (creep: Omit<Creep, "memory">): creep is AnyV5Creep => isV5CreepMemory((creep as Creep).memory)
+export const isSpawnedV5Creep = <M extends SerializableObject>(creep: V5Creep<M>): creep is V5SpawnedCreep<M> => creep.ticksToLive != null

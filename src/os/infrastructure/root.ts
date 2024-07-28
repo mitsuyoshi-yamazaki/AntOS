@@ -19,7 +19,6 @@ import { emptyPositionCache } from "v5_object_task/creep_task/combined_task/move
 import { UniqueId } from "utility/unique_id"
 import { SwcAllyRequest } from "script/swc_ally_request"
 import { IntegratedAttack } from "../../../submodules/private/attack/integrated_attack/integrated_attack"
-// import { InterShardMemoryWatcher } from "utility/inter_shard_memory"
 
 export class RootProcess {
   private readonly applicationProcessLauncher = new ApplicationProcessLauncher()

@@ -1,5 +1,5 @@
 import { ArgumentKey, ArgumentParserOptions } from "./single_argument_parser"
-import { CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, RoomObjectArgument, RoomObjectIdArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
+import { BoolArgument, CreepBodyArgument, FloatArgument, HostileCreepArgument, IntArgument, LocalPositionArgument, MyCreepArgument, MyRoomArgument, RangeArgument, RoomArgument, RoomNameArgument, RoomObjectArgument, RoomObjectIdArgument, StringArgument, TypedStringArgument } from "./single_argument_parsers"
 import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser"
 
 /**
@@ -20,6 +20,7 @@ export class ArgumentParser {
   protected rawArgumentOffset = 0
   protected readonly rawArguments: string[] = []
   protected readonly rawKeywordArguments = new Map<string, string>()
+  protected readonly optionArguments: Set<string>
 
   /** @throws */
   public constructor(
@@ -27,6 +28,7 @@ export class ArgumentParser {
   ) {
     let hasKeywordArguments = false
     const errors: string[] = []
+    const optionArguments: string[] = []
 
     args.forEach(arg => {
       if (arg.length <= 0) {
@@ -36,30 +38,37 @@ export class ArgumentParser {
       const keyValuePair = arg.split("=")
       switch (keyValuePair.length) {
       case 1:
-        // list argument
+        // list argument or option
+        if (arg.startsWith("-") === true) {
+          optionArguments.push(...arg.split(""))
+          return
+        }
         if (hasKeywordArguments === true) {
           errors.push(`list argument comes after keyword arguments (${arg})`)
-          break
+          return
         }
         this.rawArguments.push(arg)
-        break
+        return
 
       case 2:
         // keyword argument
         hasKeywordArguments = true
         // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
         this.rawKeywordArguments.set(keyValuePair[0]!, keyValuePair[1]!)
-        break
+        return
 
       default:
         errors.push(`cannot parse argument with ${keyValuePair.length - 1} "="s (${arg})`)
-        break
+        return
       }
     })
 
     if (errors.length > 0) {
       throw `Argument parse errors: ${errors.join("\n")}`
     }
+
+    this.optionArguments = new Set<string>(optionArguments)
+    this.optionArguments.delete("-")
   }
 
   public moveOffset(offset: number): void { // ArgumentParser を別関数に渡すなどの場合の用途
@@ -88,6 +97,12 @@ export class ArgumentParser {
   }
 
 
+  // ---- Option Arguments ---- //
+  public hasOption(option: string): boolean {
+    return this.optionArguments.has(option)
+  }
+
+
   // ---- Primitive Type ---- //
   public int(key: ArgumentKey, options?: ArgumentParserOptions): IntArgument {
     return new IntArgument(key, this.getRawValueFor(key), options)
@@ -95,6 +110,10 @@ export class ArgumentParser {
 
   public float(key: ArgumentKey, options?: ArgumentParserOptions): FloatArgument {
     return new FloatArgument(key, this.getRawValueFor(key), options)
+  }
+
+  public bool(key: ArgumentKey, options?: ArgumentParserOptions): BoolArgument {
+    return new BoolArgument(key, this.getRawValueFor(key), options)
   }
 
   public string(key: ArgumentKey, options?: ArgumentParserOptions): StringArgument {

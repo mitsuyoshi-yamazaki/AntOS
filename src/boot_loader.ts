@@ -28,8 +28,17 @@ export const BootLoader = {
     switch (Environment.world) {
     case "private":
       return v2Functions()
-    case "botarena":
+
     case "persistent world":
+      switch (Environment.shard) {
+      case "shard3":
+        return shard3Functions()
+      default:
+        break
+      }
+      return v5ExperimentalFunctions() // FixMe: Debug
+
+    case "botarena":
     case "season 4":
     case "season 5":
     case "simulation":
@@ -38,6 +47,28 @@ export const BootLoader = {
     case "unknown":
       return v5ExperimentalFunctions() // FixMe: Debug
     }
+  }
+}
+
+const shard3Functions = (): RootFunctions => {
+  return {
+    load(): void {
+      initializeMemory()
+
+      ErrorMapper.wrapLoop(() => {
+        v5BootLoader.load()
+      }, "v5BootLoader.load()")()
+    },
+
+    loop(): void {
+      ErrorMapper.wrapLoop(() => {
+        initializerTick()
+      }, "initializerTick")()
+
+      ErrorMapper.wrapLoop(() => {
+        v5BootLoader.run(Game)
+      }, "v5BootLoader.run()")()
+    },
   }
 }
 

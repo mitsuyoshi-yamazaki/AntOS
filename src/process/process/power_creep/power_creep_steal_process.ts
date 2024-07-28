@@ -238,7 +238,9 @@ export class PowerCreepStealProcess implements Process, Procedural {
 
     case "heading":
       if (powerCreep.hits < powerCreep.hitsMax) {
-        this.shot = true
+        if (powerCreep.room.name === this.targetRoomName) {
+          this.shot = true
+        }
         this.powerCreepState = {
           case: "returning",
           transferTarget: null,

@@ -35,6 +35,11 @@ export const processTypeDecodingMap = {
   ab: "RoomPlannerProcess",
   ac: "ProblemResolverProcess",
   ad: "ClaimRoomProcess",
+  ae: "ScoutProcess",
+  af: "NukeProcess",
+  ag: "ManualCreepOperatorProcess",
+  ah: "TemplateProcess",
+  ai: "InterShardCommunicatorProcess",
 } as const
 
 
@@ -69,6 +74,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "OnHeapContinuousTaskProcess",
   "RoomMapProcess",
   "RoomPlannerProcess",   // TODO: 実装したら再度確認
+  "InterShardCommunicatorProcess",
 
   // Driver with dependencies
   "PathManagerProcess",
@@ -94,6 +100,10 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
   "TestPullProcess",
+  "ScoutProcess",
+  "NukeProcess",
+  "ManualCreepOperatorProcess",
+  "TemplateProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -136,6 +146,8 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Combat
   AttackRoomManagerProcess: "combat",
+  ScoutProcess: "combat",
+  NukeProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",
@@ -158,6 +170,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   CreepTrafficManagerProcess: "driver",
   CreepPositionAssignerProcess: "driver",
   CreepTaskStateManagementProcess: "driver",
+  InterShardCommunicatorProcess: "driver",
 
   // v3 Bridge
   V3BridgeDriverProcess: "driver",
@@ -171,6 +184,8 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   TestHarvestRoomProcess: "support",
   TestPullProcess: "support",
   OnHeapContinuousTaskProcess: "support",
+  ManualCreepOperatorProcess: "support",
+  TemplateProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

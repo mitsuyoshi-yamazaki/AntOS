@@ -1,6 +1,6 @@
 import { ParameterType } from "shared/utility/types"
 import { ArgumentKey, ArgumentParserOptions, SingleOptionalArgument } from "../argument_parser/single_argument_parser"
-import { ProcessArgument, V5CreepArgument } from "./single_argument_parsers"
+import { ProcessArgument, V5CreepArgument, V5SpawnedCreepArgument } from "./single_argument_parsers"
 import { iterableTypeParserMakers as primitiveIterableTypeParserMakers } from "../argument_parser/list_argument_parser"
 
 
@@ -11,6 +11,9 @@ const iterableTypeParserMakers = {
   },
   v5_creep: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): V5CreepArgument => {
     return new V5CreepArgument(key, value, parseOptions)
+  },
+  v5_spawned_creep: (key: ArgumentKey, value: string, parseOptions?: ArgumentParserOptions): V5SpawnedCreepArgument => {
+    return new V5SpawnedCreepArgument(key, value, parseOptions)
   },
 } as const
 
@@ -34,6 +37,9 @@ export class ListArgumentParser<T extends IterableArgumentType> extends SingleOp
   public parse(options?: IterableArgumentOption<T>): Array<IterableArgumentReturnType<T>> {
     if (this.value == null) {
       throw this.missingArgumentErrorMessage()
+    }
+    if (this.value.length <= 0) {
+      return []
     }
 
     const separator = ((): string => {
