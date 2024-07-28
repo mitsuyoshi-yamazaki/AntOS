@@ -1,19 +1,24 @@
-import { Process, ProcessDependencies, ProcessId } from "os_v5/process/process"
+import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
 import type { Timestamp } from "shared/utility/timestamp"
 import { shortenedNumber } from "shared/utility/console_utility"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { deferredTaskPriority, DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
-import { Command, runCommands } from "os_v5/standard_io/command"
+import { ObjectParserCommand, runCommandsWith } from "os_v5/standard_io/command"
 import { NotificationReceiver } from "os_v5/system_calls/depended_system_calls/notification_manager"
 import { Notification, notificationManagerTestNotification,  } from "os_v5/system_calls/depended_system_calls/notification_manager_types"
 import { processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "os_v5/system_calls/process_manager/process_manager_notification"
 import { strictEntries } from "shared/utility/strict_entries"
+import { InterShardCommunicatorProcessApi } from "os_v5/processes/game_object_management/shard/inter_shard_communicator_process"
 
 
 const deferredTaskTypes = ["loop_task"] as const
 type DeferredTaskTypes = typeof deferredTaskTypes[number]
+
+
+type Dependency = InterShardCommunicatorProcessApi
+type Command = ObjectParserCommand<Dependency, string>
 
 
 type TestProcessState = {
@@ -23,12 +28,14 @@ type TestProcessState = {
 
 ProcessDecoder.register("TestProcess", (processId: TestProcessId, state: TestProcessState) => TestProcess.decode(processId, state))
 
-export type TestProcessId = ProcessId<void, string, void, TestProcessState, TestProcess>
+export type TestProcessId = ProcessId<Dependency, string, void, TestProcessState, TestProcess>
 
 
-export class TestProcess extends Process<void, string, void, TestProcessState, TestProcess> implements NotificationReceiver {
+export class TestProcess extends Process<Dependency, string, void, TestProcessState, TestProcess> implements NotificationReceiver {
   public readonly dependencies: ProcessDependencies = {
-    processes: [],
+    processes: [
+      { processType: "InterShardCommunicatorProcess", identifier: processDefaultIdentifier },
+    ],
   }
 
   private constructor(
@@ -58,7 +65,9 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
     return new TestProcess(processId, Game.time, identifier)
   }
 
-  public getDependentData(): void {}
+  public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
+    return this.getFlatDependentData(sharedMemory)
+  }
 
   public staticDescription(): string {
     return `launched at ${this.launchTime} (${shortenedNumber(Game.time - this.launchTime)})`
@@ -69,9 +78,10 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
   }
 
   /** @throws */
-  public didReceiveMessage(argumentParser: ArgumentParser): string {
-    return runCommands(argumentParser, [
+  public didReceiveMessage(argumentParser: ArgumentParser, dependency: Dependency): string {
+    return runCommandsWith<Dependency, string>(argumentParser, dependency, [
       this.addDeferredTaskCommand,
+      this.testInterShardCommunicationCommand,
     ])
   }
 
@@ -137,6 +147,38 @@ export class TestProcess extends Process<void, string, void, TestProcessState, T
       )
 
       return `Registered diferred task ${"loop_task"} (${taskId})`
+    }
+  }
+
+  // InterShard
+  private readonly testInterShardCommunicationCommand: Command = {
+    command: "test_inter_shard_communication",
+    help: (): string => "test_inter_shard_communication {test subject} {...args}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser, dependency: Dependency): string => {
+      return runCommandsWith<Dependency, string>(argumentParser, dependency, [
+      ])
+    }
+  }
+
+  private readonly interShardCommunicationReadCommand: Command = {
+    command: "read",
+    help: (): string => "read {shard name}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser, dependency: Dependency): string => {
+      const claimedRooms = dependency.getClaimedRooms()
+      const results: string[] = [
+        `Claimed rooms in ${claimedRooms.size} shards:`,
+      ]
+
+      claimedRooms.forEach((roomNames, shardName) => {
+        results.push(`- ${shardName}:`)
+        results.push(`  - ${roomNames}`)
+      })
+
+      return results.join("\n")
     }
   }
 }

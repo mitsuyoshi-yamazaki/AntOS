@@ -12,14 +12,16 @@ import { SerializableObject } from "./serializable_types"
 
 type InterShardMemoryContent = Record<string, SerializableObject>
 
-let parsedInterShardMemory: InterShardMemoryContent | null
+let parsedInterShardMemory: InterShardMemoryContent | null = null
 let changed = false
+const otherShardMemories = new Map<string, InterShardMemoryContent | null>()
 
 
 export const InterShardMemoryManager = {
   startOfTick(): void {
     parsedInterShardMemory = null
     changed = false
+    otherShardMemories.clear()
   },
 
   endOfTick(): void {
@@ -32,7 +34,7 @@ export const InterShardMemoryManager = {
 
 
 export const InterShardMemoryAccessor = {
-  hasChanges(): boolean {
+  hasChangesInTick(): boolean {
     return parsedInterShardMemory != null && changed === true
   },
 
@@ -41,13 +43,15 @@ export const InterShardMemoryAccessor = {
       parsedInterShardMemory = parseInterShardMemory()
     }
 
-    const memory = parsedInterShardMemory[namespace]
-    if (memory == null) {
-      const emptyMemory = {} as M
-      parsedInterShardMemory[namespace] = emptyMemory
-      return emptyMemory
+    const localMemory = parsedInterShardMemory as Record<string, M>
+
+    const memory = localMemory[namespace]
+    if (memory != null) {
+      return memory
     }
-    return memory as M
+    const emptyMemory = {} as M
+    parsedInterShardMemory[namespace] = emptyMemory
+    return emptyMemory
   },
 
   setInterShardMemory<M extends SerializableObject>(namespace: string, memory: M): void {
@@ -57,6 +61,26 @@ export const InterShardMemoryAccessor = {
 
     parsedInterShardMemory[namespace] = memory
     changed = true
+  },
+
+  getOtherShardMemory<M extends SerializableObject>(shardName: string, namespace: string): M | null {
+    const typedOtherShardMemories = otherShardMemories as Map<string, Record<string, M> | null>
+
+    if (typedOtherShardMemories.has(shardName) === false) {
+      const parsedMemory = parseOtherShardMemory(shardName) as Record<string, M> | null
+      typedOtherShardMemories.set(shardName, parsedMemory)
+
+      if (parsedMemory == null) {
+        return null
+      }
+      return parsedMemory[namespace] ?? null
+    }
+
+    const stored = typedOtherShardMemories.get(shardName)
+    if (stored == null) {
+      return null
+    }
+    return stored[namespace] ?? null
   },
 }
 
@@ -68,6 +92,26 @@ const parseInterShardMemory = (): InterShardMemoryContent => {
   } catch (error) {
     console.log(ConsoleUtility.colored(`InterShardMemory parse memory failed: ${error}`, "error"))
     return {}
+  }
+}
+
+const parseOtherShardMemory = (shardName: string): InterShardMemoryContent | null => {
+  try {
+    const rawMemory = InterShardMemory.getRemote(shardName)
+    if (rawMemory == null) {
+      return null
+    }
+
+    try {
+      return JSON.parse(rawMemory)
+    } catch (error) {
+      console.log(ConsoleUtility.colored(`InterShardMemory parse remote memory failed: ${error}`, "error"))
+      return {}
+    }
+
+  } catch (error) {
+    console.log(ConsoleUtility.colored(`InterShardMemory parse remote memory failed: ${error}`, "error"))
+    return null
   }
 }
 

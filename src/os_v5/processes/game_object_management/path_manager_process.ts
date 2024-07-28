@@ -94,6 +94,7 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
   private findPath(room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null {
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
 
+    // FixMe: Creepが道を塞いでいると経路探索に失敗する？
     const roomCallback = (): CostMatrix => {
       const cached = this.costMatrixCache.get(room.name)
       if (cached != null) {
