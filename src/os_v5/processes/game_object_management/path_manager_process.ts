@@ -11,9 +11,10 @@ import { GameConstants } from "utility/constants"
 import { describePosition } from "prototype/room_position"
 
 
-type FindPathOptions = {
-  readonly shouldCache?: true
-  readonly range?: number
+export type FindPathOptions = {
+  shouldCache?: true
+  range?: number
+  isDestinationPortal?: true
 }
 
 export type PathManagerProcessApi = {
@@ -94,46 +95,93 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
   private findPath(room: Room, start: Position, end: Position, options?: FindPathOptions): RoomPath | null {
     const obstacleCost = GameConstants.pathFinder.costs.obstacle
 
-    const roomCallback = () => {
-      const cached = this.costMatrixCache.get(room.name)
-      if (cached != null) {
-        return cached
+    const roomCallback = ((): () => CostMatrix => {
+      if (options?.isDestinationPortal === true) {
+        return (): CostMatrix => {
+          const costMatrix = new PathFinder.CostMatrix
+          const fixedPositions = new Set<string>()
+
+          room.find(FIND_STRUCTURES).forEach(structure => {
+            const positionSpecifier = getPositionSpecifier(structure.pos)
+            if (fixedPositions.has(positionSpecifier) === true) {
+              return
+            }
+
+            switch (structure.structureType) {
+            case STRUCTURE_ROAD:
+              costMatrix.set(structure.pos.x, structure.pos.y, 1)
+              fixedPositions.add(positionSpecifier)
+              return
+            case STRUCTURE_CONTAINER:
+              return
+            case STRUCTURE_RAMPART:
+              if (structure.my === true) {
+                costMatrix.set(structure.pos.x, structure.pos.y, 2)
+              } else {
+                costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
+                fixedPositions.add(positionSpecifier)
+              }
+              return
+            case STRUCTURE_PORTAL:
+              if (structure.pos.isEqualTo(end.x, end.y) !== true) {
+                costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
+                fixedPositions.add(positionSpecifier)
+              }
+              return
+
+            default:
+              costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
+              fixedPositions.add(positionSpecifier)
+              return
+            }
+          })
+
+          this.costMatrixCache.set(room.name, costMatrix)
+          return costMatrix
+        }
       }
 
-      const costMatrix = new PathFinder.CostMatrix
-      const fixedPositions = new Set<string>()
-
-      room.find(FIND_STRUCTURES).forEach(structure => {
-        const positionSpecifier = getPositionSpecifier(structure.pos)
-        if (fixedPositions.has(positionSpecifier) === true) {
-          return
+      return (): CostMatrix => {
+        const cached = this.costMatrixCache.get(room.name)
+        if (cached != null) {
+          return cached
         }
 
-        switch (structure.structureType) {
-        case STRUCTURE_ROAD:
-          costMatrix.set(structure.pos.x, structure.pos.y, 1)
-          fixedPositions.add(positionSpecifier)
-          return
-        case STRUCTURE_CONTAINER:
-          return
-        case STRUCTURE_RAMPART:
-          if (structure.my === true) {
-            costMatrix.set(structure.pos.x, structure.pos.y, 2)
-          } else {
+        const costMatrix = new PathFinder.CostMatrix
+        const fixedPositions = new Set<string>()
+
+        room.find(FIND_STRUCTURES).forEach(structure => {
+          const positionSpecifier = getPositionSpecifier(structure.pos)
+          if (fixedPositions.has(positionSpecifier) === true) {
+            return
+          }
+
+          switch (structure.structureType) {
+          case STRUCTURE_ROAD:
+            costMatrix.set(structure.pos.x, structure.pos.y, 1)
+            fixedPositions.add(positionSpecifier)
+            return
+          case STRUCTURE_CONTAINER:
+            return
+          case STRUCTURE_RAMPART:
+            if (structure.my === true) {
+              costMatrix.set(structure.pos.x, structure.pos.y, 2)
+            } else {
+              costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
+              fixedPositions.add(positionSpecifier)
+            }
+            return
+          default:
             costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
             fixedPositions.add(positionSpecifier)
+            return
           }
-          return
-        default:
-          costMatrix.set(structure.pos.x, structure.pos.y, obstacleCost)
-          fixedPositions.add(positionSpecifier)
-          return
-        }
-      })
+        })
 
-      this.costMatrixCache.set(room.name, costMatrix)
-      return costMatrix
-    }
+        this.costMatrixCache.set(room.name, costMatrix)
+        return costMatrix
+      }
+    })()
 
     const pathFinderOptions: PathFinderOpts = {
       plainCost: 2,
@@ -150,7 +198,7 @@ export class PathManagerProcess extends Process<Dependency, ProcessDefaultIdenti
     const startPosition = new RoomPosition(start.x, start.y, room.name)
     const result = PathFinder.search(startPosition, destination, pathFinderOptions)
 
-    console.log(`${room.name} from ${describePosition(start)} to ${describePosition(end)} path: ${result.path}`) // FixMe:
+    console.log(`${room.name} from ${describePosition(start)} to ${describePosition(end)} (incomplete: ${result.incomplete}) path: ${result.path}`) // FixMe:
 
     if (result.incomplete === true || result.path.length <= 0) {
       return null
