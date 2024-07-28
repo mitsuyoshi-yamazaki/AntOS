@@ -4,6 +4,8 @@ import { memhack } from "./memory_hack"
 import { BootLoader } from "./boot_loader"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { SemanticVersion } from "shared/utility/semantic_version"
+import { InterShardMemoryManager } from "shared/utility/inter_shard_memory"
+import { ErrorMapper } from "error_mapper/ErrorMapper"
 
 /**
 # BIOS
@@ -25,7 +27,7 @@ let loopExecuted = Game.time - 1
 const mainLoop = rootFunctions.loop
 
 export const Bios = {
-  version: new SemanticVersion(1, 0, 0),
+  version: new SemanticVersion(1, 1, 0),
 
   load(): void {
     console.log(ConsoleUtility.colored(`Rebooted at ${Game.time}, BIOS ${this.version}`, "warn"))
@@ -42,8 +44,16 @@ export const Bios = {
 
     memhack.beforeTick()
 
+    ErrorMapper.wrapLoop(() => {
+      InterShardMemoryManager.startOfTick()
+    }, "InterShardMemoryManager.startOfTick()")
+
     // ScreepsProfiler.wrap(mainLoop) // こちらを実行する場合は、mainLoopの呼び出しは停止する
     mainLoop()
+
+    ErrorMapper.wrapLoop(() => {
+      InterShardMemoryManager.endOfTick()
+    }, "InterShardMemoryManager.endOfTick()")
 
     memhack.afterTick()
 
