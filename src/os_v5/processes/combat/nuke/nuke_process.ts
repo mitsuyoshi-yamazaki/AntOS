@@ -88,6 +88,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
   /** @throws */
   public didReceiveMessage(argumentParser: ArgumentParser): string {
     return runCommands(argumentParser, [
+      this.statusCommand,
       this.showNukersCommand,
       this.addTargetCommand,
     ])
@@ -230,6 +231,31 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
 
   // ---- Command Runner ---- //
+  private readonly statusCommand: Command = {
+    command: "status",
+    help: (): string => "stasut ",
+
+    /** @throws */
+    run: (): string => {
+      const statuses: string[] = [
+        `${this.targets.length} targets:`,
+      ]
+
+      this.targets.forEach(target => {
+        statuses.push(`- ${roomLink(target.roomName)}: ${target.nukers.length} nukes in ${target.launchTime - Game.time} ticks, interval: ${target.interval}`)
+        statuses.push(...target.nukers.map(nukerInfo => {
+          const nuker = Game.getObjectById(nukerInfo.nukerId)
+          if (nuker == null) {
+            return `  - Nuker destroyed, launched: ${nukerInfo.launched}`
+          }
+          return `  - ${roomLink(nuker.room.name)}, launched: ${nukerInfo.launched}`
+        }))
+      })
+
+      return statuses.join("\n")
+    }
+  }
+
   private readonly addTargetCommand: Command = {
     command: "add_target",
     help: (): string => "add_target {target room name} delay={int} interval={int}, room_names={nuker room names}",
@@ -270,7 +296,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
       const targetFlags = Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === targetRoomName)
       if (nukers.length !== targetFlags.length) {
-        throw `Target count mismatck: ${nukers.length} nukers != ${targetFlags.length} flags`
+        throw `Target count mismatch: ${nukers.length} nukers != ${targetFlags.length} flags`
       }
 
       const delay = argumentParser.int("delay").parse({ min: 10 })
@@ -281,7 +307,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       let launchTime = delay
       nukers.forEach((nuker, index) => {
         if (nuker.cooldown > launchTime) {
-          throw `${ordinalNumber(index + 1)} nuker will not be ready (cooldown ${nuker.cooldown} ticks)`
+          throw `${ordinalNumber(index + 1)} nuker in ${roomLink(nuker.room.name)} will not be ready (cooldown ${nuker.cooldown} ticks, planned launch time: ${launchTime})`
         }
         launchTime += interval
       })
