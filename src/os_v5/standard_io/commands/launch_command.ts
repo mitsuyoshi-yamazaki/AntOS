@@ -1,6 +1,6 @@
 // ---- Processes ---- //
 // Bot
-import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "../../processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
+import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "@private/os_v5/processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
 
 // Application
 import { V3ResourceDistributorProcess, V3ResourceDistributorProcessId } from "../../processes/application/v3_resource_distributor_process"
