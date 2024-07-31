@@ -3,33 +3,33 @@
 import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "@private/os_v5/processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
 
 // Application
-import { V3ResourceDistributorProcess, V3ResourceDistributorProcessId } from "../../processes/application/v3_resource_distributor_process"
+import { V3ResourceDistributorProcess } from "../../processes/application/v3_resource_distributor_process"
 import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
 import { ScoutProcess, ScoutProcessId } from "../../processes/combat/scout_process"
-import { NukeProcess, NukeProcessId } from "../../processes/combat/nuke/nuke_process"
+import { NukeProcess } from "../../processes/combat/nuke/nuke_process"
 
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
 import {  } from "../../processes/economy/single_task_processes/dispose_resource_process"
 import { StaticMonoCreepKeeperRoomProcess, StaticMonoCreepKeeperRoomProcessId } from "../../processes/economy/static_mono_creep_keeper_room/static_mono_creep_keeper_room_process"
 import {  } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_keeper_process"
-import { GenericRoomManagerProcess, GenericRoomManagerProcessId } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
+import { GenericRoomManagerProcess } from "@private/os_v5/processes/economy/generic_room_keeper/generic_room_manager_process"
 import {  } from "@private/os_v5/processes/economy/room_planner/room_planner_process"
 import { } from "@private/os_v5/processes/economy/room_planner/room_planner"
 
 // Game Object Management
-import { TerrainCacheProcess, TerrainCacheProcessId } from "../../processes/game_object_management/terrain_cache_process"
-import { PathManagerProcess, PathManagerProcessId } from "../../processes/game_object_management/path_manager_process"
-import { RoomMapProcess, RoomMapProcessId } from "../../processes/game_object_management/room_map_process"
-import { RoomPathfindingProcess, RoomPathfindingProcessId } from "../../processes/game_object_management/room_pathfinding_process"
-import { CreepTaskStateManagementProcess, CreepTaskStateManagementProcessId } from "../../processes/game_object_management/creep/creep_task_state_management_process"
-import { CreepDistributorProcess, CreepDistributorProcessId } from "../../processes/game_object_management/creep/creep_distributor_process"
-import { CreepTrafficManagerProcess, CreepTrafficManagerProcessId } from "@private/os_v5/processes/game_object_management/creep/traffic/creep_traffic_manager_process"
-import { CreepPositionAssignerProcess, CreepPositionAssignerProcessId } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
-import { InterShardCommunicatorProcess, InterShardCommunicatorProcessId } from "../../processes/game_object_management/shard/inter_shard_communicator_process"
+import { TerrainCacheProcess } from "../../processes/game_object_management/terrain_cache_process"
+import { PathManagerProcess } from "../../processes/game_object_management/path_manager_process"
+import { RoomMapProcess } from "../../processes/game_object_management/room_map_process"
+import { RoomPathfindingProcess } from "../../processes/game_object_management/room_pathfinding_process"
+import { CreepTaskStateManagementProcess } from "../../processes/game_object_management/creep/creep_task_state_management_process"
+import { CreepDistributorProcess } from "../../processes/game_object_management/creep/creep_distributor_process"
+import { CreepTrafficManagerProcess } from "@private/os_v5/processes/game_object_management/creep/traffic/creep_traffic_manager_process"
+import { CreepPositionAssignerProcess } from "@private/os_v5/processes/game_object_management/creep/creep_position_assigner_process"
+import { InterShardCommunicatorProcess } from "../../processes/game_object_management/shard/inter_shard_communicator_process"
 
 
 // Support
@@ -41,16 +41,17 @@ import { TestTrafficManagerV2Process, TestTrafficManagerV2ProcessId } from "@pri
 import { TestTrafficManagerV3Process, TestTrafficManagerV3ProcessId } from "@private/os_v5/processes/support/test_traffic_manager/test_traffic_manager_v3_process"
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
-import { ManualCreepOperatorProcess, ManualCreepOperatorProcessId } from "../../processes/support/manual_creep_operator_process"
+import { ManualCreepOperatorProcess } from "../../processes/support/manual_creep_operator_process"
 
 // v3 Bridge
-import { V3BridgeDriverProcess, V3BridgeDriverProcessId } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
-import { V3BridgeSpawnRequestProcess, V3BridgeSpawnRequestProcessId } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
+import { V3BridgeDriverProcess } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
+import { V3BridgeSpawnRequestProcess } from "../../processes/v3_os_bridge/v3_bridge_spawn_request_process"
 
 
 // ---- ---- //
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { AnyProcess, AnyProcessId, Process, ProcessId } from "os_v5/process/process"
+import { IndependentProcessConstructor } from "os_v5/process/process_constructor"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "shared/utility/serializable_types"
@@ -138,28 +139,29 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 // ---- Process Registration ---- //
 // No arguments
 ((): void => {
-  const processConstructors: [ProcessTypes, (processId: AnyProcessId) => AnyProcess][] = [
-    ["V3BridgeSpawnRequestProcess", processId => V3BridgeSpawnRequestProcess.create(processId as V3BridgeSpawnRequestProcessId)],
-    ["V3BridgeDriverProcess", processId => V3BridgeDriverProcess.create(processId as V3BridgeDriverProcessId)],
-    ["RoomPathfindingProcess", processId => RoomPathfindingProcess.create(processId as RoomPathfindingProcessId)],
-    ["CreepTaskStateManagementProcess", processId => CreepTaskStateManagementProcess.create(processId as CreepTaskStateManagementProcessId)],
-    ["CreepDistributorProcess", processId => CreepDistributorProcess.create(processId as CreepDistributorProcessId)],
-    ["CreepTrafficManagerProcess", processId => CreepTrafficManagerProcess.create(processId as CreepTrafficManagerProcessId)],
-    ["CreepPositionAssignerProcess", processId => CreepPositionAssignerProcess.create(processId as CreepPositionAssignerProcessId)],
-    ["V3ResourceDistributorProcess", processId => V3ResourceDistributorProcess.create(processId as V3ResourceDistributorProcessId)],
-    ["GenericRoomManagerProcess", processId => GenericRoomManagerProcess.create(processId as GenericRoomManagerProcessId)],
-    ["TerrainCacheProcess", processId => TerrainCacheProcess.create(processId as TerrainCacheProcessId)],
-    ["PathManagerProcess", processId => PathManagerProcess.create(processId as PathManagerProcessId)],
-    ["RoomMapProcess", processId => RoomMapProcess.create(processId as RoomMapProcessId)],
-    ["NukeProcess", processId => NukeProcess.create(processId as NukeProcessId)],
-    ["ManualCreepOperatorProcess", processId => ManualCreepOperatorProcess.create(processId as ManualCreepOperatorProcessId)],
-    ["InterShardCommunicatorProcess", processId => InterShardCommunicatorProcess.create(processId as InterShardCommunicatorProcessId)],
+  const drivers: [ProcessTypes, IndependentProcessConstructor][] = [
+    ["V3BridgeSpawnRequestProcess", V3BridgeSpawnRequestProcess],
+    ["V3BridgeDriverProcess", V3BridgeDriverProcess],
+    ["RoomPathfindingProcess", RoomPathfindingProcess],
+    ["CreepTaskStateManagementProcess", CreepTaskStateManagementProcess],
+    ["CreepDistributorProcess", CreepDistributorProcess],
+    ["CreepTrafficManagerProcess", CreepTrafficManagerProcess],
+    ["CreepPositionAssignerProcess", CreepPositionAssignerProcess],
+    ["V3ResourceDistributorProcess", V3ResourceDistributorProcess],
+    ["GenericRoomManagerProcess", GenericRoomManagerProcess],
+    ["TerrainCacheProcess", TerrainCacheProcess],
+    ["PathManagerProcess", PathManagerProcess],
+    ["RoomMapProcess", RoomMapProcess],
+    ["NukeProcess", NukeProcess],
+    ["ManualCreepOperatorProcess", ManualCreepOperatorProcess],
+    ["InterShardCommunicatorProcess", InterShardCommunicatorProcess],
   ]
 
-  processConstructors.forEach(([processType, constructor]) => {
-    registerProcess(processType, () => constructor as ProcessConstructor)
+  drivers.forEach(([processType, driverProcessType]) => {
+    registerProcess(processType, () => (processId => driverProcessType.create(processId)) as ProcessConstructor)
   })
 })()
+
 
 // Only room name
 ;
