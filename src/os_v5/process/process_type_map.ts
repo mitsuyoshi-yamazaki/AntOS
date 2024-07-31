@@ -40,6 +40,7 @@ export const processTypeDecodingMap = {
   ag: "ManualCreepOperatorProcess",
   ah: "TemplateProcess",
   ai: "InterShardCommunicatorProcess",
+  aj: "ManualRoomPlannerProcess",
 } as const
 
 
@@ -104,6 +105,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "NukeProcess",
   "ManualCreepOperatorProcess",
   "TemplateProcess",
+  "ManualRoomPlannerProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -186,6 +188,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   OnHeapContinuousTaskProcess: "support",
   ManualCreepOperatorProcess: "support",
   TemplateProcess: "support",
+  ManualRoomPlannerProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

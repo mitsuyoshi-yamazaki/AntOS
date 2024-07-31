@@ -42,6 +42,7 @@ import { TestTrafficManagerV3Process, TestTrafficManagerV3ProcessId } from "@pri
 import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_room_process"
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
 import { ManualCreepOperatorProcess } from "../../processes/support/manual_creep_operator_process"
+import { ManualRoomPlannerProcess } from "../../processes/support/manual_room_planner/manual_room_planner_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -166,6 +167,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["GenericRoomManagerProcess", GenericRoomManagerProcess],
     ["NukeProcess", NukeProcess],
     ["ManualCreepOperatorProcess", ManualCreepOperatorProcess],
+    ["ManualRoomPlannerProcess", ManualRoomPlannerProcess],
   ]
 
   independentProcessTypes.forEach(([processType, driverProcessType]) => {
