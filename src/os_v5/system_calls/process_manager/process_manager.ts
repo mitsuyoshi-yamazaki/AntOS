@@ -2,7 +2,7 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Mutable } from "shared/utility/types"
-import { AnyProcess, AnyProcessId, Process, ProcessError, ProcessId } from "../../process/process"
+import { AnyProcess, AnyProcessId, Process, processDefaultIdentifier, ProcessError, ProcessId } from "../../process/process"
 import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "shared/utility/serializable_types"
@@ -14,6 +14,7 @@ import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
 import { ProcessExecutionLog } from "./process_execution_log"
 import { ProcessManagerNotification, processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "./process_manager_notification"
+import { DriverProcessConstructor } from "os_v5/process/process_constructor"
 
 
 /**
@@ -227,12 +228,17 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     const { missingDependencies } = processStore.checkDependencies(process.dependencies.processes)
-    if (missingDependencies.length > 0) {
-      throw new ProcessManagerError({
-        case: "lack of dependencies",
-        missingDependencies: missingDependencies
-      })
-    }
+    missingDependencies.forEach(dependency => {
+      const constructor = launchableDrivers.get(dependency.processType)
+      if (constructor == null || dependency.identifier !== processDefaultIdentifier) {
+        throw new ProcessManagerError({
+          case: "lack of dependencies",
+          missingDependencies: missingDependencies
+        })
+      }
+
+      this.addProcess((processId: AnyProcessId) => constructor.create(processId))
+    })
 
     if (process.didLaunch != null) {
       process.didLaunch()
@@ -346,6 +352,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
     processManagerMemory.cpuUsageThreshold = threshold
   },
+}
+
+
+let launchableDrivers = new Map<ProcessTypes, DriverProcessConstructor>()
+export const setLaunchableDriverTypes = (drivers: [ProcessTypes, DriverProcessConstructor][]): void => {
+  launchableDrivers = new Map(drivers)
 }
 
 

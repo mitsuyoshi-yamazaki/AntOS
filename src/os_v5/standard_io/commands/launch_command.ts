@@ -51,7 +51,7 @@ import { V3BridgeSpawnRequestProcess } from "../../processes/v3_os_bridge/v3_bri
 // ---- ---- //
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { AnyProcess, AnyProcessId, Process, ProcessId } from "os_v5/process/process"
-import { IndependentProcessConstructor } from "os_v5/process/process_constructor"
+import { DriverProcessConstructor, IndependentProcessConstructor } from "os_v5/process/process_constructor"
 import { Command } from "../command"
 import { ProcessManager } from "os_v5/system_calls/process_manager/process_manager"
 import { SerializableObject } from "shared/utility/serializable_types"
@@ -137,9 +137,8 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 
 
 // ---- Process Registration ---- //
-// No arguments
 ((): void => {
-  const drivers: [ProcessTypes, IndependentProcessConstructor][] = [
+  const driverTypes: [ProcessTypes, DriverProcessConstructor][] = [
     ["V3BridgeSpawnRequestProcess", V3BridgeSpawnRequestProcess],
     ["V3BridgeDriverProcess", V3BridgeDriverProcess],
     ["RoomPathfindingProcess", RoomPathfindingProcess],
@@ -147,17 +146,29 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["CreepDistributorProcess", CreepDistributorProcess],
     ["CreepTrafficManagerProcess", CreepTrafficManagerProcess],
     ["CreepPositionAssignerProcess", CreepPositionAssignerProcess],
-    ["V3ResourceDistributorProcess", V3ResourceDistributorProcess],
-    ["GenericRoomManagerProcess", GenericRoomManagerProcess],
     ["TerrainCacheProcess", TerrainCacheProcess],
     ["PathManagerProcess", PathManagerProcess],
     ["RoomMapProcess", RoomMapProcess],
-    ["NukeProcess", NukeProcess],
-    ["ManualCreepOperatorProcess", ManualCreepOperatorProcess],
     ["InterShardCommunicatorProcess", InterShardCommunicatorProcess],
   ]
 
-  drivers.forEach(([processType, driverProcessType]) => {
+  driverTypes.forEach(([processType, driverProcessType]) => {
+    registerProcess(processType, () => (processId => driverProcessType.create(processId)) as ProcessConstructor)
+  })
+})()
+
+
+// Processes without arguments
+;
+((): void => {
+  const independentProcessTypes: [ProcessTypes, IndependentProcessConstructor][] = [
+    ["V3ResourceDistributorProcess", V3ResourceDistributorProcess],
+    ["GenericRoomManagerProcess", GenericRoomManagerProcess],
+    ["NukeProcess", NukeProcess],
+    ["ManualCreepOperatorProcess", ManualCreepOperatorProcess],
+  ]
+
+  independentProcessTypes.forEach(([processType, driverProcessType]) => {
     registerProcess(processType, () => (processId => driverProcessType.create(processId)) as ProcessConstructor)
   })
 })()
