@@ -1,7 +1,7 @@
 import { Process, ProcessDependencies, ProcessId, processDefaultIdentifier, ProcessDefaultIdentifier } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
-import { Position } from "shared/utility/position_v2"
+import { describePosition, Position } from "shared/utility/position_v2"
 import { Timestamp } from "shared/utility/timestamp"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Command, runCommands } from "os_v5/standard_io/command"
@@ -91,6 +91,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       this.statusCommand,
       this.showNukersCommand,
       this.addTargetCommand,
+      this.checkAssignableNukersCommand,
     ])
   }
 
@@ -407,6 +408,71 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       roomInfo.sort((lhs, rhs) => lhs.order - rhs.order)
 
       return `${roomInfo.length} rooms in range of ${roomLink(targetRoomName)}:\n${roomInfo.map(x => x.description).join("\n")}`
+    }
+  }
+
+  private readonly checkAssignableNukersCommand: Command = {
+    command: "check_assignable_nukers",
+    help: (): string => "check_assignable_nukers {target room names}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      // ターゲットの部屋にはFlagで目標を指定している必要がある
+
+      const targetRoomNames = argumentParser.list([0, "target room name"], "room_name").parse()
+      const allFlags = Array.from(Object.values(Game.flags))
+
+      const targetRange = GameConstants.structure.nuke.targetRange
+      const activeNukers = Array.from(Object.values(Game.rooms))
+        .flatMap((room): StructureNuker[] => {
+          if (room.controller?.my !== true) {
+            return []
+          }
+          const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
+          if (nuker == null || nuker.isActive() !== true) {
+            return []
+          }
+          return [nuker]
+        })
+
+      const roomWithTargets = targetRoomNames.map((roomName): { roomName: RoomName, targetPositions: RoomPosition[], nukersInRange: StructureNuker[] } => ({
+        roomName,
+        targetPositions: allFlags.filter(flag => flag.pos.roomName === roomName).map(flag => flag.pos),
+        nukersInRange: activeNukers.filter(nuker => Game.map.getRoomLinearDistance(nuker.room.name, roomName) <= targetRange),
+      }))
+      roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
+
+      const nukeTargetCount = roomWithTargets.reduce((sum, current) => sum + current.targetPositions.length, 0)
+      const results: string[] = [
+        `${roomWithTargets.length} target rooms with ${nukeTargetCount} nuke targets`,
+      ]
+
+      const reservedNukerRooms = new Set<RoomName>()
+      let nextTargetRoom = roomWithTargets.shift()
+
+      while (nextTargetRoom != null) {
+        const targetRoom = nextTargetRoom
+        results.push(`- ${roomLink(targetRoom.roomName)}: ${targetRoom.targetPositions.length} targets`)
+
+        targetRoom.targetPositions.forEach(targetPosition => {
+          const assignedNuker = targetRoom.nukersInRange.pop()
+          if (assignedNuker != null) {
+            reservedNukerRooms.add(assignedNuker.room.name)
+            results.push(`  - ${describePosition(targetPosition)}: ${roomLink(assignedNuker.room.name)}`)
+          } else {
+            results.push(`  - ${describePosition(targetPosition)}: no available nukers`)
+          }
+        })
+
+        roomWithTargets.forEach(t => {
+          t.nukersInRange = t.nukersInRange.filter(nuker => reservedNukerRooms.has(nuker.room.name) !== true)
+        })
+
+        roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
+        nextTargetRoom = roomWithTargets.shift()
+      }
+
+      return results.join("\n")
     }
   }
 }
