@@ -27,7 +27,7 @@ const initializeMemory = (rawMemory: unknown): UniqueNameMemory => {
 let uniqueNameMemory: UniqueNameMemory = {} as UniqueNameMemory
 
 type UniqueName = {
-  generate(prefix?: string): string
+  generate_unique_creep_name(prefix?: string): string
 }
 
 export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName = {
@@ -50,7 +50,7 @@ export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName
   },
 
   // UniqueName
-  generate(prefix?: string): string {
+  generate_unique_creep_name(prefix?: string): string {
     const index = uniqueNameMemory.uniqueIdIndex
     uniqueNameMemory.uniqueIdIndex += 1
     const shortName = `${prefix ?? ""}${index.toString(UniqueId.radix)}`
