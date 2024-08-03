@@ -377,31 +377,12 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           }
         }
 
-        const energyAmount = nuker.store.getUsedCapacity(RESOURCE_ENERGY)
-        const energyCapacity = nuker.store.getCapacity(RESOURCE_ENERGY)
-        const ghodiumAmount = nuker.store.getUsedCapacity(RESOURCE_GHODIUM)
-        const ghodiumCapacity = nuker.store.getCapacity(RESOURCE_GHODIUM)
-
-        let order = 0
-        const descriptions: string[] = [
-          `${roomLink(room.name)}`,
-        ]
-
-        if (energyAmount < energyCapacity || ghodiumAmount < ghodiumCapacity) {
-          order += 1
-          descriptions.push(`${resourceDescription(RESOURCE_ENERGY, energyAmount, energyCapacity)}, ${resourceDescription(RESOURCE_GHODIUM, ghodiumAmount, ghodiumCapacity)}`)
-        }
-
-        if (nuker.cooldown > 0) {
-          order += 1
-          descriptions.push(`cooldown: ${nuker.cooldown}`)
-        }
-
         const prefix = reservedNukerIds.has(nuker.id) ? "- [reserved] " : "- "
+        const { order, description } = nukerDescription(nuker)
 
         return {
           order,
-          description: prefix + descriptions.join(", "),
+          description: prefix + description,
         }
       })
 
@@ -458,7 +439,8 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           const assignedNuker = targetRoom.nukersInRange.pop()
           if (assignedNuker != null) {
             reservedNukerRooms.add(assignedNuker.room.name)
-            results.push(`  - ${describePosition(targetPosition)}: ${roomLink(assignedNuker.room.name)}`)
+            const {description} = nukerDescription(assignedNuker)
+            results.push(`  - ${describePosition(targetPosition)}: ${description}`)
           } else {
             results.push(`  - ${describePosition(targetPosition)}: no available nukers`)
           }
@@ -479,4 +461,31 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
 const resourceDescription = (resourceType: ResourceConstant, amount: number, capacity: number): string => {
   return `${coloredResourceType(resourceType)}: ${shortenedNumber(amount)}/${shortenedNumber(capacity)}`
+}
+
+const nukerDescription = (nuker: StructureNuker): {order: number, description: string} => {
+  const energyAmount = nuker.store.getUsedCapacity(RESOURCE_ENERGY)
+  const energyCapacity = nuker.store.getCapacity(RESOURCE_ENERGY)
+  const ghodiumAmount = nuker.store.getUsedCapacity(RESOURCE_GHODIUM)
+  const ghodiumCapacity = nuker.store.getCapacity(RESOURCE_GHODIUM)
+
+  let order = 0
+  const descriptions: string[] = [
+    `${roomLink(nuker.room.name)}`,
+  ]
+
+  if (energyAmount < energyCapacity || ghodiumAmount < ghodiumCapacity) {
+    order += 1
+    descriptions.push(`${resourceDescription(RESOURCE_ENERGY, energyAmount, energyCapacity)}, ${resourceDescription(RESOURCE_GHODIUM, ghodiumAmount, ghodiumCapacity)}`)
+  }
+
+  if (nuker.cooldown > 0) {
+    order += 1
+    descriptions.push(`cooldown: ${nuker.cooldown}`)
+  }
+
+  return {
+    order,
+    description: descriptions.join(", "),
+  }
 }
