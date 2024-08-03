@@ -416,19 +416,25 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           return [nuker]
         })
 
+
+      const reservedNukerIds = new Set<Id<StructureNuker>>(this.targets.flatMap((target): Id<StructureNuker>[] => {
+        return target.nukers.map(nuker => nuker.nukerId)
+      }))
+
       const roomWithTargets = targetRoomNames.map((roomName): { roomName: RoomName, targetPositions: RoomPosition[], nukersInRange: StructureNuker[] } => ({
         roomName,
         targetPositions: allFlags.filter(flag => flag.pos.roomName === roomName).map(flag => flag.pos),
-        nukersInRange: activeNukers.filter(nuker => Game.map.getRoomLinearDistance(nuker.room.name, roomName) <= targetRange),
+        nukersInRange: activeNukers
+          .filter(nuker => Game.map.getRoomLinearDistance(nuker.room.name, roomName) <= targetRange && reservedNukerIds.has(nuker.id) !== true),
       }))
       roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
+
 
       const nukeTargetCount = roomWithTargets.reduce((sum, current) => sum + current.targetPositions.length, 0)
       const results: string[] = [
         `${roomWithTargets.length} target rooms with ${nukeTargetCount} nuke targets`,
       ]
 
-      const reservedNukerRooms = new Set<RoomName>()
       let nextTargetRoom = roomWithTargets.shift()
 
       while (nextTargetRoom != null) {
@@ -438,7 +444,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         targetRoom.targetPositions.forEach(targetPosition => {
           const assignedNuker = targetRoom.nukersInRange.pop()
           if (assignedNuker != null) {
-            reservedNukerRooms.add(assignedNuker.room.name)
+            reservedNukerIds.add(assignedNuker.id)
             const {description} = nukerDescription(assignedNuker)
             results.push(`  - ${describePosition(targetPosition)}: ${description}`)
           } else {
@@ -447,7 +453,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         })
 
         roomWithTargets.forEach(t => {
-          t.nukersInRange = t.nukersInRange.filter(nuker => reservedNukerRooms.has(nuker.room.name) !== true)
+          t.nukersInRange = t.nukersInRange.filter(nuker => reservedNukerIds.has(nuker.id) !== true)
         })
 
         roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
