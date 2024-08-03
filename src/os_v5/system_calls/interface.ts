@@ -4,6 +4,7 @@ import { Logger } from "./logger"
 import { ProcessManager } from "./process_manager/process_manager"
 import { Environment } from "./environment"
 import { UniqueId } from "./unique_id"
+import { SystemInfo } from "./system_info"
 import { NotificationManager } from "./depended_system_calls/notification_manager"
 import { UniqueName } from "./game_system_calls/unique_name"
 import { InterShardMemoryManager } from "./game_system_calls/inter_shard_memory"
@@ -13,6 +14,7 @@ import { ScheduledStaticTaskManager } from "./depended_system_calls/scheduled_st
 
 class SystemCallList {
   // Primitive
+  readonly systemInfo = SystemInfo
   readonly logger = Logger
   readonly environment = Environment
   readonly uniqueId = UniqueId

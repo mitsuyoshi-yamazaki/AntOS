@@ -1,7 +1,7 @@
 import { Mutable } from "shared/utility/types"
 import { BiosFunction } from "../bios_function"
 
-type CpuLog = {
+export type CpuLog = {
   readonly getUsed: number
   readonly bucket: number
 }
