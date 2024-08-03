@@ -41,6 +41,7 @@ export const processTypeDecodingMap = {
   ah: "TemplateProcess",
   ai: "InterShardCommunicatorProcess",
   aj: "ManualRoomPlannerProcess",
+  ak: "SaboteurPositionProcess",
 } as const
 
 
@@ -106,6 +107,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "ManualCreepOperatorProcess",
   "TemplateProcess",
   "ManualRoomPlannerProcess",
+  "SaboteurPositionProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -150,6 +152,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   AttackRoomManagerProcess: "combat",
   ScoutProcess: "combat",
   NukeProcess: "combat",
+  SaboteurPositionProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",

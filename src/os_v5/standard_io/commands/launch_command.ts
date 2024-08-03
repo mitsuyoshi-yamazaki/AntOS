@@ -10,6 +10,7 @@ import { } from "@private/os_v5/processes/application/problem_resolver/problem_r
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
 import { ScoutProcess, ScoutProcessId } from "../../processes/combat/scout_process"
 import { NukeProcess } from "../../processes/combat/nuke/nuke_process"
+import { SaboteurPositionProcess, SaboteurPositionProcessId } from "../../processes/combat/saboteur_position_process"
 
 // Economy
 import { EnergyHarvestRoomProcess, EnergyHarvestRoomProcessId } from "../../processes/economy/energy_harvest_room/energy_harvest_room_process"
@@ -268,3 +269,14 @@ registerProcess("ScoutProcess", (argumentParser) => {
     return ScoutProcess.create(processId, room.name, targetRoomName, waypoints, {creepCount})
   }) as ProcessConstructor
 })
+
+// registerProcess("SaboteurPositionProcess", (argumentParser) => {
+//   const room = argumentParser.myRoom("room_name").parse()
+//   const targetRoomName = argumentParser.roomName("target_room_name").parse()
+//   const waypoints = argumentParser.list("waypoints", "room_name").parse()
+//   const creepCount = 1  // TODO:
+
+//   return ((processId: SaboteurPositionProcessId): ScoutProcess => {
+//     return SaboteurPositionProcess.create(processId, room.name, targetRoomName, waypoints, { creepCount })
+//   }) as ProcessConstructor
+// })
