@@ -1,3 +1,6 @@
+import { ConsoleUtility } from "../../utility/console_utility/console_utility"
+import { SerializableObject } from "../../utility/serializable_types"
+
 /**
 # InterShardMemory
 ## 概要
@@ -7,8 +10,6 @@
 - そのtickでInterShardMemoryの変更があった場合のみserializeする
  */
 
-import { ConsoleUtility } from "./console_utility/console_utility"
-import { SerializableObject } from "./serializable_types"
 
 type InterShardMemoryContent = Record<string, SerializableObject>
 

@@ -1,11 +1,18 @@
 import { memhack } from "./memory_hack"
 // import * as ScreepsProfiler from "screeps-profiler" // Game.profiler.profile(ticks)
 
+// BIOS Function
+// import { InterShardMemoryManager } from "shared/bios_function/functions/inter_shard_memory"
+import { Cpu } from "shared/bios_function/functions/cpu"
+
+// Import
 import { BootLoader } from "./boot_loader"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { SemanticVersion } from "shared/utility/semantic_version"
-import { InterShardMemoryManager } from "shared/utility/inter_shard_memory"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { BiosFunction } from "shared/bios_function/bios_function"
+import { SerializableObject } from "shared/utility/serializable_types"
+import { Mutable } from "shared/utility/types"
 
 /**
 # BIOS
@@ -13,24 +20,64 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 - OSより上位のゲーム全体に関わる処理を行う
 
 ## 責任範囲
-- memhack
-- 処理全体のCPU監視
-- InterShardMemory
+- OSより責任範囲が広いもの全て
+  - memhack
+  - 処理全体のCPU監視
+  - InterShardMemory
+  - CPU, Memory使用量
+  - Profiler
  */
 
 // TODO: Memoryのルートに置いていた処理をBIOSの名前空間以下に移動
 
+console.log("Loading BIOS...")
 memhack.load()  // 全ての処理に優先して（Memoryアクセスのあるより先に）読み込む必要がある
+
+
+type BiosMemory = {
+  readonly functions: {[FunctionName: string]: SerializableObject}
+}
+const initializeBiosMemory = (memory: unknown): BiosMemory => {
+  const mutableMemroy = memory as Mutable<BiosMemory>
+
+  if (mutableMemroy.functions == null) {
+    mutableMemroy.functions = {}
+  }
+
+  return mutableMemroy
+}
+
+
+const biosFunctions: BiosFunction<string, SerializableObject>[] = [
+  // CPUは常に先頭
+  Cpu,
+
+  // InterShardMemoryManager,
+]
+const reversedBiosFunctions = [...biosFunctions].reverse()
+
+let biosMemory = {} as BiosMemory
 
 const rootFunctions = BootLoader.load()
 let loopExecuted = Game.time - 1
 const mainLoop = rootFunctions.loop
 
 export const Bios = {
-  version: new SemanticVersion(1, 1, 0),
+  version: new SemanticVersion(1, 2, 0),
 
-  load(): void {
+  load(memory: unknown): void {
     console.log(ConsoleUtility.colored(`Rebooted at ${Game.time}, BIOS ${this.version}`, "warn"))
+
+    biosMemory = initializeBiosMemory(memory)
+
+    biosFunctions.forEach(<FunctionName extends string, FunctionMemory extends SerializableObject>(func: BiosFunction<FunctionName, FunctionMemory>) => {
+      if (biosMemory.functions[func.name] == null) {
+        biosMemory.functions[func.name] = {}
+      }
+      ErrorMapper.wrapLoop((): void => {
+        func.load(biosMemory.functions[func.name] as FunctionMemory)
+      }, "BiosFunction.load()")()
+    })
 
     rootFunctions.load()
 
@@ -44,18 +91,24 @@ export const Bios = {
 
     memhack.beforeTick()
 
-    ErrorMapper.wrapLoop(() => {
-      InterShardMemoryManager.startOfTick()
-    }, "InterShardMemoryManager.startOfTick()")
+    biosFunctions.forEach(func => {
+      ErrorMapper.wrapLoop((): void => {
+        func.startOfTick()
+      }, "BiosFunction.startOfTick()")()
+    })
+
 
     // ScreepsProfiler.wrap(mainLoop) // こちらを実行する場合は、mainLoopの呼び出しは停止する
     mainLoop()
 
-    ErrorMapper.wrapLoop(() => {
-      InterShardMemoryManager.endOfTick()
-    }, "InterShardMemoryManager.endOfTick()")
+    reversedBiosFunctions.forEach(func => {
+      ErrorMapper.wrapLoop((): void => {
+        biosMemory.functions[func.name] = func.endOfTick()
+      }, "BiosFunction.endOfTick()")()
+    })
 
-    memhack.afterTick()
+
+    memhack.afterTick() // Memory書き込みがある全ての処理の後に実行する必要がある
 
     // TODO: 旧ソースに依存している
     const all_cpu = Math.ceil(Game.cpu.getUsed())
