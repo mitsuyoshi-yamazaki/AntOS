@@ -431,7 +431,8 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         roomName,
         targetPositions: allFlags.filter(flag => flag.pos.roomName === roomName).map(flag => flag.pos),
         nukersInRange: activeNukers
-          .filter(nuker => Game.map.getRoomLinearDistance(nuker.room.name, roomName) <= targetRange && reservedNukerIds.has(nuker.id) !== true),
+          .filter(nuker => Game.map.getRoomLinearDistance(nuker.room.name, roomName) <= targetRange && reservedNukerIds.has(nuker.id) !== true)
+          .sort((lhs, rhs) => nukerDescription(lhs).order - nukerDescription(rhs).order),
       }))
       roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
 
@@ -454,7 +455,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         results.push(`- ${roomLink(targetRoom.roomName)}: ${targetRoom.targetPositions.length} targets`)
 
         targetRoom.targetPositions.forEach(targetPosition => {
-          const assignedNuker = targetRoom.nukersInRange.pop()
+          const assignedNuker = targetRoom.nukersInRange.shift()
           if (assignedNuker != null) {
             reservedNukerIds.add(assignedNuker.id)
             const {description} = nukerDescription(assignedNuker)
