@@ -394,11 +394,13 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
   private readonly checkAssignableNukersCommand: Command = {
     command: "check_assignable_nukers",
-    help: (): string => "check_assignable_nukers {target room names}",
+    help: (): string => "check_assignable_nukers {target room names} launch_in={time?}",
 
     /** @throws */
     run: (argumentParser: ArgumentParser): string => {
       // ターゲットの部屋にはFlagで目標を指定している必要がある
+
+      const launchIn = argumentParser.int("launch_in").parseOptional({min: 0})
 
       const targetRoomNames = argumentParser.list([0, "target room name"], "room_name").parse()
       const allFlags = Array.from(Object.values(Game.flags))
@@ -435,10 +437,15 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
         `${roomWithTargets.length} target rooms with ${nukeTargetCount} nuke targets`,
       ]
 
+
+      let fullyAssigned = true
+      const assignMap: { targetRoomName: RoomName, targets: { position: Position, nuker: StructureNuker }[] }[] = []
       let nextTargetRoom = roomWithTargets.shift()
 
       while (nextTargetRoom != null) {
         const targetRoom = nextTargetRoom
+        const assignedTargets: { position: Position, nuker: StructureNuker }[] = []
+
         results.push(`- ${roomLink(targetRoom.roomName)}: ${targetRoom.targetPositions.length} targets`)
 
         targetRoom.targetPositions.forEach(targetPosition => {
@@ -447,9 +454,22 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
             reservedNukerIds.add(assignedNuker.id)
             const {description} = nukerDescription(assignedNuker)
             results.push(`  - ${describePosition(targetPosition)}: ${description}`)
+
+            assignedTargets.push({
+              position: { x: targetPosition.x, y: targetPosition.y } as Position,
+              nuker: assignedNuker,
+            })
+
           } else {
             results.push(`  - ${describePosition(targetPosition)}: no available nukers`)
+            fullyAssigned = false
           }
+
+        })
+
+        assignMap.push({
+          targetRoomName: targetRoom.roomName,
+          targets: assignedTargets,
         })
 
         roomWithTargets.forEach(t => {
@@ -458,6 +478,26 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
         roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
         nextTargetRoom = roomWithTargets.shift()
+      }
+
+      if (launchIn != null) {
+        if (fullyAssigned === true) {
+          const launchTime = Game.time + launchIn
+
+          assignMap.forEach(assign => {
+            this.targets.push({
+              roomName: assign.targetRoomName,
+              launchTime,
+              interval: 0,
+              nukers: assign.targets.map((target): NukerInfo => ({nukerId: target.nuker.id, position: target.position, launched: false}) )
+            })
+          })
+          this.updateNextLaunch()
+
+          results.unshift(`Fully assigned ${assignMap.length} targets and will launch in ${launchIn}`)
+        } else {
+          results.unshift("Not fully assigned")
+        }
       }
 
       return results.join("\n")
