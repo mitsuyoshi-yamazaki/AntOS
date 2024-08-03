@@ -394,13 +394,14 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
   private readonly checkAssignableNukersCommand: Command = {
     command: "check_assignable_nukers",
-    help: (): string => "check_assignable_nukers {target room names} launch_in={time?}",
+    help: (): string => "check_assignable_nukers {target room names} launch_in={time?} exclude_nuker_rooms={room names?}",
 
     /** @throws */
     run: (argumentParser: ArgumentParser): string => {
       // ターゲットの部屋にはFlagで目標を指定している必要がある
 
       const launchIn = argumentParser.int("launch_in").parseOptional({min: 0})
+      const excludeNukerRooms = argumentParser.list("exclude_nuker_rooms", "room_name").parseOptional({my: true})
 
       const targetRoomNames = argumentParser.list([0, "target room name"], "room_name").parse()
       const allFlags = Array.from(Object.values(Game.flags))
@@ -409,6 +410,9 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       const activeNukers = Array.from(Object.values(Game.rooms))
         .flatMap((room): StructureNuker[] => {
           if (room.controller?.my !== true) {
+            return []
+          }
+          if (excludeNukerRooms != null && excludeNukerRooms.includes(room.name) === true) {
             return []
           }
           const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
@@ -433,8 +437,9 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
 
       const nukeTargetCount = roomWithTargets.reduce((sum, current) => sum + current.targetPositions.length, 0)
+      const excludeRoomDescription = excludeNukerRooms != null ? ` excludes ${excludeNukerRooms.map(roomName => roomLink(roomName)).join(",")}` : ""
       const results: string[] = [
-        `${roomWithTargets.length} target rooms with ${nukeTargetCount} nuke targets`,
+        `${roomWithTargets.length} target rooms with ${nukeTargetCount} nuke targets${excludeRoomDescription}`,
       ]
 
 
