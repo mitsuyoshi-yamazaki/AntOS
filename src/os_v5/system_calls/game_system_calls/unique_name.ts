@@ -6,19 +6,46 @@ import { UniqueId } from "../unique_id"
 
 const resetInterval = 1501
 
-type UniqueNameMemory = {
+type OldUniqueNameMemory = {
   uniqueIdIndex: number
   resetTime: Timestamp
+}
+
+type UniqueNameMemory = {
+  readonly migrated: true
+  creep: {
+    uniqueIdIndex: number
+    resetTime: Timestamp
+  }
+  flagUniqueIdIndex: number
 }
 
 const initializeMemory = (rawMemory: unknown): UniqueNameMemory => {
   const memory = rawMemory as Mutable<UniqueNameMemory>
 
-  if (memory.uniqueIdIndex == null) {
-    memory.uniqueIdIndex = 1
+  if (memory.migrated !== true) {
+    const oldMemory = rawMemory as OldUniqueNameMemory
+
+    return {
+      migrated: true,
+      creep: {
+        ...oldMemory,
+      },
+      flagUniqueIdIndex: 0,
+    }
   }
-  if (memory.resetTime == null) {
-    memory.resetTime = Game.time + resetInterval
+
+  if (memory.migrated !== true) {
+    memory.migrated = true
+  }
+  if (memory.creep == null) {
+    memory.creep = {
+      uniqueIdIndex: 1,
+      resetTime: Game.time + resetInterval,
+    }
+  }
+  if (memory.flagUniqueIdIndex == null) {
+    memory.flagUniqueIdIndex = 0
   }
 
   return memory
@@ -27,7 +54,8 @@ const initializeMemory = (rawMemory: unknown): UniqueNameMemory => {
 let uniqueNameMemory: UniqueNameMemory = {} as UniqueNameMemory
 
 type UniqueName = {
-  generate_unique_creep_name(prefix?: string): string
+  generateUniqueCreepName(prefix?: string): string
+  generateUniqueFlagName(prefix?: string): string
 }
 
 export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName = {
@@ -39,9 +67,9 @@ export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName
   },
 
   startOfTick(): void {
-    if (Game.time >= uniqueNameMemory.resetTime) {
-      uniqueNameMemory.uniqueIdIndex = 0
-      uniqueNameMemory.resetTime = Game.time + resetInterval
+    if (Game.time >= uniqueNameMemory.creep.resetTime) {
+      uniqueNameMemory.creep.uniqueIdIndex = 0
+      uniqueNameMemory.creep.resetTime = Game.time + resetInterval
     }
   },
 
@@ -50,13 +78,23 @@ export const UniqueName: SystemCall<"UniqueName", UniqueNameMemory> & UniqueName
   },
 
   // UniqueName
-  generate_unique_creep_name(prefix?: string): string {
-    const index = uniqueNameMemory.uniqueIdIndex
-    uniqueNameMemory.uniqueIdIndex += 1
+  generateUniqueCreepName(prefix?: string): string {
+    const index = uniqueNameMemory.creep.uniqueIdIndex
+    uniqueNameMemory.creep.uniqueIdIndex += 1
     const shortName = `${prefix ?? ""}${index.toString(UniqueId.radix)}`
 
-    const creep = Game.creeps[shortName]
-    if (creep != null) {
+    if (Game.creeps[shortName] != null) {
+      return UniqueId.generateTrueUniqueId(prefix)
+    }
+    return shortName
+  },
+
+  generateUniqueFlagName(prefix?: string): string {
+    const index = uniqueNameMemory.flagUniqueIdIndex
+    uniqueNameMemory.flagUniqueIdIndex += 1
+    const shortName = `${prefix ?? ""}${index.toString(UniqueId.radix)}`
+
+    if (Game.flags[shortName] != null) {
       return UniqueId.generateTrueUniqueId(prefix)
     }
     return shortName

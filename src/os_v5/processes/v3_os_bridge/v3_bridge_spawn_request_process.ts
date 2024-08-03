@@ -168,7 +168,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
         return
       }
 
-      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generate_unique_creep_name(request.options?.codename)
+      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generateUniqueCreepName(request.options?.codename)
       const options: SpawnOptions = {}
       if (request.options?.memory != null) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,7 +204,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
         return
       }
 
-      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generate_unique_creep_name(request.options?.codename)
+      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generateUniqueCreepName(request.options?.codename)
       const options: SpawnOptions = {}
       if (request.options?.memory != null) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
