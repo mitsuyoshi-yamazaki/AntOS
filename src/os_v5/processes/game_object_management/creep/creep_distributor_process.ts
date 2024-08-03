@@ -25,7 +25,7 @@ ProcessDecoder.register("CreepDistributorProcess", (processId: CreepDistributorP
 export type CreepDistributorProcessApi = {
   countCreepsFor(processId: AnyProcessId): number
   getCreepsFor<M extends SerializableObject>(processId: AnyProcessId): V5Creep<M>[]
-  getSpawnedCreepsFor<M extends SerializableObject>(processId: AnyProcessId): V5SpawnedCreep<M>[]
+  getSpawnedCreepsFor<M extends SerializableObject>(processId: AnyProcessId): { spawned: V5SpawnedCreep<M>[], spawning: V5Creep<M>[] }
   getDeadCreepsFor(processId: AnyProcessId): CreepName[]
   getDeadCreeps(): CreepName[]
   getUnallocatedCreeps(): AnyV5Creep[]
@@ -104,8 +104,20 @@ export class CreepDistributorProcess extends Process<void, ProcessDefaultIdentif
         return [...this.v5Creeps.getValueFor(processId)] as V5Creep<M>[]
       },
 
-      getSpawnedCreepsFor: <M extends SerializableObject>(processId: AnyProcessId): V5SpawnedCreep<M>[] => {
-        return (this.v5Creeps.getValueFor(processId) as V5Creep<M>[]).filter(isSpawnedV5Creep)
+      getSpawnedCreepsFor: <M extends SerializableObject>(processId: AnyProcessId): { spawned: V5SpawnedCreep<M>[], spawning: V5Creep<M>[] } => {
+        const spawned: V5SpawnedCreep<M>[] = []
+        const spawning: V5Creep<M>[] = []
+
+          ;
+        (this.v5Creeps.getValueFor(processId) as V5Creep<M>[]).forEach(creep => {
+          if (isSpawnedV5Creep(creep)) {
+            spawned.push(creep)
+            return
+          }
+          spawning.push(creep)
+        })
+
+        return {spawned, spawning}
       },
 
       getDeadCreepsFor: (processId: AnyProcessId): CreepName[] => {

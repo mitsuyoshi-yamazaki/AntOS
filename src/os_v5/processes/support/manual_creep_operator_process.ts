@@ -102,8 +102,8 @@ export class ManualCreepOperatorProcess extends Process<Dependency, ProcessDefau
   }
 
   public run(dependency: Dependency): void {
-    const creeps = dependency.getSpawnedCreepsFor(this.processId)
-    dependency.registerTrafficManagedCreeps(creeps)
+    const {spawned} = dependency.getSpawnedCreepsFor(this.processId)
+    dependency.registerTrafficManagedCreeps(spawned)
   }
 
 

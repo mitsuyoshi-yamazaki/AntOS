@@ -112,11 +112,12 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
   }
 
   public run(dependency: Dependency): void {
-    const creep = dependency.getSpawnedCreepsFor(this.processId)[0]
-    if (creep == null) {
+    const {spawned} = dependency.getSpawnedCreepsFor(this.processId)
+    if (spawned[0] == null) {
       this.spawnScout(dependency)
       return
     }
+    const creep = spawned[0]
 
     if (this.remainingScoutCount != null && creep.ticksToLive != null && creep.ticksToLive === 1499) {
       this.remainingScoutCount -= 1
