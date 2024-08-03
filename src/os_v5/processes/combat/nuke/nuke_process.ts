@@ -494,7 +494,17 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
               roomName: assign.targetRoomName,
               launchTime,
               interval: 0,
-              nukers: assign.targets.map((target): NukerInfo => ({nukerId: target.nuker.id, position: target.position, launched: false}) )
+              nukers: assign.targets.map((target): NukerInfo => {
+                if (target.nuker.cooldown > launchIn) {
+                  throw `Nuker in ${roomLink(target.nuker.room.name)} will not be ready (cooldown ${target.nuker.cooldown} ticks, planned launch time: ${launchIn})`
+                }
+
+                return {
+                  nukerId: target.nuker.id,
+                  position: target.position,
+                  launched: false,
+                }
+              })
             })
           })
           this.updateNextLaunch()
