@@ -277,28 +277,53 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       const reservedNukerIds = new Set(this.targets.flatMap((target): Id<StructureNuker>[] => {
         return target.nukers.map(nuker => nuker.nukerId)
       }))
-      const nukerRooms = argumentParser.list("room_names", "my_room").parse()
-      const nukers = nukerRooms.map(room => {
-        const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
-        if (nuker == null) {
-          throw `No nuker in ${roomLink(room.name)}`
-        }
-        if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-          throw `Nuker in ${roomLink(room.name)} lack of energy`
-        }
-        if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
-          throw `Nuker in ${roomLink(room.name)} lack of ghodium`
-        }
-        if (reservedNukerIds.has(nuker.id) === true) {
-          throw `Nuker in ${roomLink(room.name)} already reserved`
-        }
-        return nuker
-      })
+
 
       const targetFlags = Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === targetRoomName)
-      if (nukers.length !== targetFlags.length) {
-        throw `Target count mismatch: ${nukers.length} nukers != ${targetFlags.length} flags`
-      }
+
+      const nukers = ((): StructureNuker[] => {
+        const nukerRoomsArg = argumentParser.string("room_names").parseOptional()
+        switch (nukerRoomsArg) {
+        case "all": {
+          const nukersInRange = Array.from(Object.values(Game.rooms))
+            .filter(isMyRoom)
+            .filter(room => Game.map.getRoomLinearDistance(targetRoomName, room.name) <= targetRange)
+            .map(room => room.find<StructureNuker>(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_NUKER}})[0])
+            .filter((nuker): nuker is StructureNuker => nuker != null && nuker.isActive())
+            .filter(nuker => reservedNukerIds.has(nuker.id) !== true)
+
+          if (targetFlags.length !== nukersInRange.length) {
+            throw `Cannot set "all" when number of target (${targetFlags.length}) and non reserved active nuker count (${nukersInRange.length}) are not equal`
+          }
+          return nukersInRange
+        }
+        default:
+          break
+        }
+
+        const nukerRooms = argumentParser.list("room_names", "my_room").parse()
+        const specifiedRoomNukers = nukerRooms.map(room => {
+          const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
+          if (nuker == null) {
+            throw `No nuker in ${roomLink(room.name)}`
+          }
+          if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            throw `Nuker in ${roomLink(room.name)} lack of energy`
+          }
+          if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
+            throw `Nuker in ${roomLink(room.name)} lack of ghodium`
+          }
+          if (reservedNukerIds.has(nuker.id) === true) {
+            throw `Nuker in ${roomLink(room.name)} already reserved`
+          }
+          return nuker
+        })
+        if (specifiedRoomNukers.length !== targetFlags.length) {
+          throw `Target count mismatch: ${specifiedRoomNukers.length} nukers != ${targetFlags.length} flags`
+        }
+        return specifiedRoomNukers
+      })()
+
 
       const delay = argumentParser.int("delay").parse({ min: 10 })
       const interval = argumentParser.int("interval").parse({ min: 0 })
