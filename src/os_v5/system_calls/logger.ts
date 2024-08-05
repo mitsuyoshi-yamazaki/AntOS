@@ -43,7 +43,7 @@ type Logger = {
   log(process: AnyProcess, message: string, shouldShow?: true): void
   notice(process: AnyProcess, message: string): void
   fatal(process: AnyProcess, message: string): void
-  programError(process: AnyProcess, message: string): void
+  programError(process: AnyProcess | string, message: string): void // Program ErrorはProcess以外から発生することがあるため
 }
 
 export const Logger: SystemCall<"Logger", LoggerMemory> & Logger = {
@@ -183,7 +183,7 @@ export const Logger: SystemCall<"Logger", LoggerMemory> & Logger = {
   },
 
   /** プログラムの問題の通知 */
-  programError(process: AnyProcess, message: string): void {
+  programError(process: AnyProcess | string, message: string): void {
     PrimitiveLogger.programError(`${process} ${message}`)
   },
 }
