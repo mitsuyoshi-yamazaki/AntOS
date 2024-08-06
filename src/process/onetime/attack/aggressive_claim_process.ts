@@ -235,7 +235,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
       return
     }
 
-    creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(targetRoom.controller)))
+    creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(targetRoom.controller), {ignoreSwamp: true}))
   }
 
   private runScout(creep: Creep): void {
