@@ -4,7 +4,7 @@ import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_
 import { AlignedProcessInfo, processDescription } from "./utilities"
 import { DependencyGraphNode } from "os_v5/system_calls/process_manager/process_dependency_graph"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
-import { describeSerializableObject } from "os_v5/utility/types"
+import { describeSerializableObject } from "shared/utility/serializable_types"
 
 
 const optionValues = ["description", "graph", "memory"] as const

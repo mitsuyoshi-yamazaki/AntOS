@@ -1,6 +1,6 @@
 import { AnyProcessId, Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { CreepBody, CreepBodyStringRepresentation } from "utility/creep_body_v2"
 import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"
@@ -168,7 +168,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
         return
       }
 
-      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generate(request.options?.codename)
+      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generateUniqueCreepName(request.options?.codename)
       const options: SpawnOptions = {}
       if (request.options?.memory != null) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -204,7 +204,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
         return
       }
 
-      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generate(request.options?.codename)
+      const creepName = request.options?.uniqueCreepName != null ? request.options.uniqueCreepName : SystemCalls.uniqueName.generateUniqueCreepName(request.options?.codename)
       const options: SpawnOptions = {}
       if (request.options?.memory != null) {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

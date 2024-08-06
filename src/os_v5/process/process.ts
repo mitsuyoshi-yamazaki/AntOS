@@ -1,5 +1,5 @@
 import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
-import type { SerializableObject } from "os_v5/utility/types"
+import type { SerializableObject } from "shared/utility/serializable_types"
 import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { BotTypes, coloredProcessType, ProcessTypes } from "./process_type_map"
 

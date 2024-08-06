@@ -1,5 +1,6 @@
 import { AvailableRoomPositions } from "./room_position"
 import { Position as AnyPosition } from "./position"
+import { RoomName } from "./room_name_types"
 export { AnyPosition }
 
 export type Position = {
@@ -21,6 +22,10 @@ export const isEqualLocalPosition = (position1: AnyPosition, position2: AnyPosit
 
 export const positionDistance = (position1: AnyPosition, position2: AnyPosition): number => {
   return Math.max(Math.abs(position1.x - position2.x), Math.abs(position1.y - position2.y))
+}
+
+export const createRoomPosition = (position: Position, roomName: RoomName): RoomPosition => {
+  return new RoomPosition(position.x, position.y, roomName)
 }
 
 

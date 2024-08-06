@@ -40,6 +40,10 @@ export const processTypeDecodingMap = {
   ag: "ManualCreepOperatorProcess",
   ah: "TemplateProcess",
   ai: "InterShardCommunicatorProcess",
+  aj: "ManualRoomPlannerProcess",
+  ak: "SaboteurPositionProcess",
+  al: "FireControlSystemProcess",
+  am: "BootstrapRoomProcess",
 } as const
 
 
@@ -65,7 +69,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "ProblemResolverProcess",  // TODO: 実装したら再度確認
 
   // No dependencies
-  "TestProcess",
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
@@ -90,6 +93,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomManagerProcess",
 
   // Process with dependencies
+  "TestProcess",
   "EnergyHarvestRoomProcess",
   "StaticMonoCreepKeeperRoomProcess",
   "StaticMonoCreepBuildRoomProcess",
@@ -104,6 +108,10 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "NukeProcess",
   "ManualCreepOperatorProcess",
   "TemplateProcess",
+  "ManualRoomPlannerProcess",
+  "SaboteurPositionProcess",
+  "FireControlSystemProcess",
+  "BootstrapRoomProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -148,6 +156,8 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   AttackRoomManagerProcess: "combat",
   ScoutProcess: "combat",
   NukeProcess: "combat",
+  SaboteurPositionProcess: "combat",
+  FireControlSystemProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",
@@ -157,8 +167,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
   RoomPlannerProcess: "economy",
-
-  // Economy - Normalized Process
+  BootstrapRoomProcess: "economy",
   ClaimRoomProcess: "economy",
 
   // Driver
@@ -186,6 +195,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   OnHeapContinuousTaskProcess: "support",
   ManualCreepOperatorProcess: "support",
   TemplateProcess: "support",
+  ManualRoomPlannerProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

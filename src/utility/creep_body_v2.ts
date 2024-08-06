@@ -15,6 +15,7 @@ const bodyPartDecodingMap = reverseConstMapping(bodyPartEncodingMap)
 
 export type CreepBodyStringRepresentation = string & { readonly idType: unique symbol }
 
+// TODO: キャッシュを入れる
 export class CreepBody {
   public get stringRepresentation(): CreepBodyStringRepresentation {
     if (this._stringRepresentation == null) {

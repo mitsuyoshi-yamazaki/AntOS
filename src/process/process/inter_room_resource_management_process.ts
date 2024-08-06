@@ -81,6 +81,7 @@ export class InterRoomResourceManagementProcess implements Process, Procedural {
 
 type StorageSpace = "full" | "empty space"
 type OwnedRoomResource = {
+  readonly controller: StructureController
   readonly storageSpace: StorageSpace
   readonly terminal: StructureTerminal
   readonly storage: StructureStorage
@@ -125,6 +126,7 @@ class ResourceTransferer {
   private readonly ownedRoomResources = new Map<RoomName, OwnedRoomResource>()
   private readonly disabledRoomNames: RoomName[] = []
   private readonly _resourceIncomeDisabledRoomNames: RoomName[] = []
+  private readonly resourceReceivedRooms = new Set<RoomName>()
 
   public constructor() {
     (SystemCalls.systemCall()?.listAllProcesses() ?? []).forEach(processInfo => {
@@ -214,6 +216,7 @@ class ResourceTransferer {
       })
 
       this.ownedRoomResources.set(resources.room.name, {
+        controller: resources.controller,
         storageSpace,
         terminal,
         storage,
@@ -261,7 +264,7 @@ class ResourceTransferer {
         const target = this.resourceInsufficientTarget(roomName, RESOURCE_ENERGY)
         if (target != null) {
           const sendAmount = Math.min(Math.ceil((terminalEnergyAmount - 50000) / 2), target.maxAmount)
-          const log = this.send(resources, RESOURCE_ENERGY, sendAmount, target.resources)
+          const { log } = this.send(resources, RESOURCE_ENERGY, sendAmount, target.resources)
           if (log != null) {
             logs.push(log)
           }
@@ -306,7 +309,10 @@ class ResourceTransferer {
             const energyAmount = resources.terminal.store.getUsedCapacity(RESOURCE_ENERGY)
             const sendAmount = Math.min(excessResource.sendAmount, target.maxAmount, energyAmount)
             if (sendAmount > 0) {
-              const log = this.send(resources, excessResource.resourceType, sendAmount, target.resources)
+              const { sent, log } = this.send(resources, excessResource.resourceType, sendAmount, target.resources)
+              if (excessResource.resourceType !== RESOURCE_ENERGY && sent === true) {
+                this.resourceReceivedRooms.add(target.resources.terminal.room.name)
+              }
               if (log != null) {
                 logs.push(log)
               }
@@ -320,7 +326,7 @@ class ResourceTransferer {
     return logs
   }
 
-  private send(resources: OwnedRoomResource, resourceType: ResourceConstant, amount: number, destinationResource: OwnedRoomResource): string | null {
+  private send(resources: OwnedRoomResource, resourceType: ResourceConstant, amount: number, destinationResource: OwnedRoomResource): { sent: boolean, log: string | null} {
     const destination = destinationResource.terminal.room.name
     const result = resources.terminal.send(resourceType, amount, destination)
     switch (result) {
@@ -339,7 +345,10 @@ class ResourceTransferer {
           }
         }
       }
-      return `Sent ${coloredText(`${amount}`, "info")} ${coloredResourceType(resourceType)} from ${roomLink(resources.terminal.room.name)} to ${roomLink(destination)}`
+      return {
+        sent: true,
+        log: `Sent ${coloredText(`${amount}`, "info")} ${coloredResourceType(resourceType)} from ${roomLink(resources.terminal.room.name)} to ${roomLink(destination)}`,
+      }
     }
 
     case ERR_NOT_OWNER:
@@ -348,7 +357,10 @@ class ResourceTransferer {
     case ERR_TIRED:
     default:
       PrimitiveLogger.programError(`ResourceManager send returns ${result}, ${amount} ${coloredResourceType} from ${roomLink(resources.terminal.room.name)} to ${roomLink(destination)}`)
-      return null
+      return {
+        sent: false,
+        log: null,
+      }
     }
   }
 
@@ -411,6 +423,9 @@ class ResourceTransferer {
         if (this.resourceIncomeDisabledRoomNames.includes(roomName) === true) {
           return
         }
+        if (targetRoomResource.controller.level < 8) {
+          return
+        }
         if (roomName === fromRoomName) {
           return
         }
@@ -421,6 +436,9 @@ class ResourceTransferer {
           return
         }
         if (resourceType === RESOURCE_ENERGY) {
+          return
+        }
+        if (this.resourceReceivedRooms.has(roomName) === true) {
           return
         }
         const maxAmount = targetRoomResource.freeCapacity.terminal

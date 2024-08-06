@@ -16,6 +16,7 @@ import { processLog } from "os/infrastructure/logger"
 import { OperatingSystem } from "os/os"
 import { MoveToTargetTask } from "v5_object_task/creep_task/combined_task/move_to_target_task"
 import { ClaimControllerApiWrapper } from "v5_object_task/creep_task/api_wrapper/claim_controller_api_wrapper"
+import { GameMap } from "game/game_map"
 
 ProcessDecoder.register("AggressiveClaimProcess", state => {
   return AggressiveClaimProcess.decode(state as AggressiveClaimProcessState)
@@ -222,7 +223,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, [], true))
+      creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.getWaypoints(creep.room.name), true))
       return
     }
 
@@ -234,7 +235,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
       return
     }
 
-    creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(targetRoom.controller)))
+    creep.v5task = FleeFromAttackerTask.create(MoveToTargetTask.create(ClaimControllerApiWrapper.create(targetRoom.controller), {ignoreSwamp: true}))
   }
 
   private runScout(creep: Creep): void {
@@ -243,7 +244,7 @@ export class AggressiveClaimProcess implements Process, Procedural {
     }
 
     if (creep.room.name !== this.targetRoomName) {
-      creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, [], true))
+      creep.v5task = FleeFromAttackerTask.create(MoveToRoomTask.create(this.targetRoomName, this.getWaypoints(creep.room.name), true))
       return
     }
 
@@ -284,5 +285,9 @@ export class AggressiveClaimProcess implements Process, Procedural {
       taskIdentifier: this.taskIdentifier,
       parentRoomName: null,
     })
+  }
+
+  private getWaypoints(fromRoomName: RoomName): RoomName[] {
+    return GameMap.getWaypoints(fromRoomName, this.targetRoomName) ?? []
   }
 }

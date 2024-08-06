@@ -1,4 +1,4 @@
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { AnyProcess, AnyProcessId, Process, ProcessId } from "../../process/process"
 import { ProcessTypes, SerializedProcessTypes } from "../../process/process_type_map"

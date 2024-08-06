@@ -40,6 +40,8 @@ declare global {
   }
 
   interface Memory {
+    bios: unknown
+
     os: OSMemory
     cpu_usages: number[]
     cpu: {

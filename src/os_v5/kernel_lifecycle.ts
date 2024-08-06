@@ -1,4 +1,4 @@
-import { AnySerializable } from "./utility/types"
+import { AnySerializable } from "shared/utility/serializable_types"
 
 export interface KernelLifecycle<MemoryType extends AnySerializable> {
   load(memory: MemoryType): void

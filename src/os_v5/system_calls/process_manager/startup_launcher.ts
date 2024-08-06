@@ -1,4 +1,4 @@
-import { EmptySerializable } from "os_v5/utility/types"
+import { EmptySerializable } from "shared/utility/serializable_types"
 import { SystemCall } from "../../system_call"
 
 /**

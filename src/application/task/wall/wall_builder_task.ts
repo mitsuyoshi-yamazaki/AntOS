@@ -260,7 +260,7 @@ export class WallBuilderTask extends Task<WallBuilderTaskOutput, WallBuilderTask
         PrimitiveLogger.log(`${coloredText("[Error]", "error")} ${roomLink(roomResource.room.name)} wall position calculation failed: ${wallPositions}`)
         return null
       }
-      PrimitiveLogger.log(`${coloredText("[Wall builder]", "info")} ${wallPositions.length} walls in ${roomLink(roomResource.room.name)}`)
+      // PrimitiveLogger.log(`${coloredText("[Wall builder]", "info")} ${wallPositions.length} walls in ${roomLink(roomResource.room.name)}`)
       roomPlan.wallPositions = wallPositions
     }
 

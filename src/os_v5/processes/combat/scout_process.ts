@@ -4,7 +4,7 @@ import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { V3BridgeSpawnRequestProcessApi } from "../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepDistributorProcessApi } from "../game_object_management/creep/creep_distributor_process"
-import { CreepTrafficManagerProcessApi } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
+import { CreepTrafficManagerProcessApi } from "@private/os_v5/processes/game_object_management/creep/traffic/creep_traffic_manager_process"
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { Command, runCommands } from "os_v5/standard_io/command"
@@ -112,11 +112,12 @@ export class ScoutProcess extends Process<Dependency, RoomName, void, ScoutProce
   }
 
   public run(dependency: Dependency): void {
-    const creep = dependency.getSpawnedCreepsFor(this.processId)[0]
-    if (creep == null) {
+    const {spawned} = dependency.getSpawnedCreepsFor(this.processId)
+    if (spawned[0] == null) {
       this.spawnScout(dependency)
       return
     }
+    const creep = spawned[0]
 
     if (this.remainingScoutCount != null && creep.ticksToLive != null && creep.ticksToLive === 1499) {
       this.remainingScoutCount -= 1

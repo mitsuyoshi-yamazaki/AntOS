@@ -3,6 +3,9 @@ import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decod
 import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { RoomName } from "shared/utility/room_name_types"
+import { Timestamp } from "shared/utility/timestamp"
+import { ValuedArrayMap } from "shared/utility/valued_collection"
+
 
 /**
 # InterShardCommunicatorProcess
@@ -16,16 +19,28 @@ import { RoomName } from "shared/utility/room_name_types"
   - SpawnRequest
  */
 
-type InterShardCommunicatorProcessApi = {
+// TODO: SystemCall経由でアクセスするようにする
+
+
+type ShardName = string
+
+type V5InterShardMemory = {
+  readonly claimedRoomNames: RoomName[]
+}
+
+export type InterShardCommunicatorProcessApi = {
   addClaimedRoom(roomName: RoomName): void
   removeClaimedRoom(roomName: RoomName): void
 
   setPortalPosition(connectedShardName: string): void
+
+  getClaimedRooms(options?: {recheckNow?: true}): Map<string, RoomName[]>
 }
 
-// こちら側のShardの記録：Portalに近い部屋の名前など
+// こちら側のShardの記録はProcessStateに記録する：Portalに近い部屋の名前など
 type InterShardCommunicatorProcessState = {
-  //
+  readonly s: ShardName[]                         /// Shard names
+  readonly p: { [S: ShardName]: RoomName[] } /// Portal room names
 }
 
 ProcessDecoder.register("InterShardCommunicatorProcess", (processId: InterShardCommunicatorProcessId, state: InterShardCommunicatorProcessState) => InterShardCommunicatorProcess.decode(processId, state))
@@ -39,23 +54,29 @@ export class InterShardCommunicatorProcess extends Process<void, ProcessDefaultI
     processes: [],
   }
 
+  private claimedRooms: Readonly<{ rooms: Map<string, RoomName[]>, checkedTimestamp: Timestamp }> | null = null
+
   private constructor(
     public readonly processId: InterShardCommunicatorProcessId,
+    private readonly runningShardNames: ShardName[],
+    private readonly portalRoomNames: { [S: ShardName]: RoomName[] },
   ) {
     super()
   }
 
   public encode(): InterShardCommunicatorProcessState {
     return {
+      s: this.runningShardNames,
+      p: this.portalRoomNames,
     }
   }
 
   public static decode(processId: InterShardCommunicatorProcessId, state: InterShardCommunicatorProcessState): InterShardCommunicatorProcess {
-    return new InterShardCommunicatorProcess(processId)
+    return new InterShardCommunicatorProcess(processId, state.s, state.p)
   }
 
   public static create(processId: InterShardCommunicatorProcessId): InterShardCommunicatorProcess {
-    return new InterShardCommunicatorProcess(processId)
+    return new InterShardCommunicatorProcess(processId, [], {})
   }
 
   public getDependentData(): void {}
@@ -86,7 +107,31 @@ export class InterShardCommunicatorProcess extends Process<void, ProcessDefaultI
       setPortalPosition: (connectedShardName: string): void => {
         console.log("setPortalPosition() not implemented yet")
       },
+
+      getClaimedRooms: options => this.getClaimedRooms(options?.recheckNow === true),
     }
+  }
+
+
+  // ---- Private ---- //
+  private getClaimedRooms(recheckNow: boolean): Map<string, RoomName[]> {
+    // if (this.claimedRooms != null) {
+    //   if (recheckNow !== true || this.claimedRooms.checkedTimestamp === Game.time) {
+    //     return this.claimedRooms.rooms
+    //   }
+    // }
+
+    // const rooms = new ValuedArrayMap<string, RoomName>()
+
+    // this.runningShardNames.forEach(shardName => {
+    //   InterShardMemoryAccessor.getOtherShardMemory(shardName, )
+    // })
+
+    // this.claimedRooms = {
+    //   rooms,
+    //   checkedTimestamp: Game.time,
+    // }
+    throw "Not implemented yet"
   }
 
 
