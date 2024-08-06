@@ -12,7 +12,7 @@ export class SemanticVersion {
 
   /** @throws */
   public static decode(versionString: string): SemanticVersion {
-    const components = versionString.split(",")
+    const components = versionString.split(".")
     if (components.length !== 3 || components[0] == null || components[1] == null || components[2] == null) {
       throw `Unexpected format (${versionString})`
     }
