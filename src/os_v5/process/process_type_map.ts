@@ -43,6 +43,7 @@ export const processTypeDecodingMap = {
   aj: "ManualRoomPlannerProcess",
   ak: "SaboteurPositionProcess",
   al: "FireControlSystemProcess",
+  am: "BootstrapRoomProcess",
 } as const
 
 
@@ -110,6 +111,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "ManualRoomPlannerProcess",
   "SaboteurPositionProcess",
   "FireControlSystemProcess",
+  "BootstrapRoomProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -165,8 +167,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
   RoomPlannerProcess: "economy",
-
-  // Economy - Normalized Process
+  BootstrapRoomProcess: "economy",
   ClaimRoomProcess: "economy",
 
   // Driver
