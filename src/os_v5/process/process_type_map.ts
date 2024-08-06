@@ -15,7 +15,7 @@ export const processTypeDecodingMap = {
   h: "AttackRoomManagerProcess",
   i: "CreepTrafficManagerProcess",
   // j: "TestTrafficManagerProcess",
-  k: "V3ResourceDistributorProcess",
+  k: "V3ResourceDistributorProcess",  // Deprecated
   l: "DisposeResourceProcess",
   m: "V3BridgeDriverProcess",
   n: "TestTrafficManagerV2Process",
@@ -62,12 +62,6 @@ export type BotTypes = "MitsuyoshiBotProcess"
 
 // Dependency Order
 const processDependencyOrder: Readonly<ProcessTypes[]> = [
-  // Bot
-  "MitsuyoshiBotProcess",
-
-  // Application
-  "ProblemResolverProcess",  // TODO: 実装したら再度確認
-
   // No dependencies
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
@@ -86,7 +80,11 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "CreepPositionAssignerProcess",
   "CreepTrafficManagerProcess",
 
-  // Application with dependencies
+  // Bot
+  "MitsuyoshiBotProcess",
+
+  // Application
+  "ProblemResolverProcess",
   "V3ResourceDistributorProcess",
 
   // Manager Processes
