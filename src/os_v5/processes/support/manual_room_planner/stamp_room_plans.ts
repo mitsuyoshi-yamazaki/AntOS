@@ -73,12 +73,7 @@ const stampRoomPlans = {
   halfSizeRoomPlan01,
 }
 
-export const getStampRoomPlanByName = (name: string): StampRoomPlan | null => {
-  return (stampRoomPlans as {[K: string]: StampRoomPlan})[name] ?? null
-}
-
-
-export const flagColors: Readonly<{ [L in LayoutMark]: [ColorConstant] | [ColorConstant, ColorConstant] | null }> = {
+const flagColors: Readonly<{ [L in LayoutMark]: [ColorConstant] | [ColorConstant, ColorConstant] | null }> = {
   ".": null,
   "-": [COLOR_BROWN],
   i: [COLOR_ORANGE],
@@ -93,28 +88,35 @@ export const flagColors: Readonly<{ [L in LayoutMark]: [ColorConstant] | [ColorC
   "5": [COLOR_GREEN, COLOR_GREY],
 }
 
+export const StampRoomPlan = {
+  flagColors,
 
-export const webColor = (color: ColorConstant): string => {
-  switch (color) {
-  case COLOR_RED:
-    return "red"
-  case COLOR_PURPLE:
-    return "purple"
-  case COLOR_BLUE:
-    return "blue"
-  case COLOR_CYAN:
-    return "cyan"
-  case COLOR_GREEN:
-    return "green"
-  case COLOR_YELLOW:
-    return "yellow"
-  case COLOR_ORANGE:
-    return "orange"
-  case COLOR_BROWN:
-    return "brown"
-  case COLOR_GREY:
-    return "grey"
-  case COLOR_WHITE:
-    return "white"
-  }
+  getStampRoomPlanByName(name: string): StampRoomPlan | null {
+    return (stampRoomPlans as { [K: string]: StampRoomPlan })[name] ?? null
+  },
+
+  getWebColor(color: ColorConstant): string {
+    switch (color) {
+    case COLOR_RED:
+      return "red"
+    case COLOR_PURPLE:
+      return "purple"
+    case COLOR_BLUE:
+      return "blue"
+    case COLOR_CYAN:
+      return "cyan"
+    case COLOR_GREEN:
+      return "green"
+    case COLOR_YELLOW:
+      return "yellow"
+    case COLOR_ORANGE:
+      return "orange"
+    case COLOR_BROWN:
+      return "brown"
+    case COLOR_GREY:
+      return "grey"
+    case COLOR_WHITE:
+      return "white"
+    }
+  },
 }

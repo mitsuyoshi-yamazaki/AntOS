@@ -4,7 +4,7 @@ import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { TerrainCacheProcessApi } from "../../game_object_management/terrain_cache_process"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { getStampRoomPlanByName, StampRoomPlan, flagColors, LayoutMark, webColor } from "./stamp_room_plans"
+import { StampRoomPlan, LayoutMark } from "./stamp_room_plans"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { RoomName } from "shared/utility/room_name_types"
 import { AnyPosition, Position } from "shared/utility/position_v2"
@@ -104,7 +104,7 @@ export class ManualRoomPlannerProcess extends Process<Dependency, ProcessDefault
     run: (argumentParser: ArgumentParser): string => {
       const roomName = argumentParser.roomName([0, "room name"]).parse()
       const planName = argumentParser.string("plan_name").parse()
-      const plan = getStampRoomPlanByName(planName)
+      const plan = StampRoomPlan.getStampRoomPlanByName(planName)
       if (plan == null) {
         throw `No stamp room plan with name ${planName}`
       }
@@ -126,7 +126,7 @@ export class ManualRoomPlannerProcess extends Process<Dependency, ProcessDefault
         const visual = new RoomVisual(roomName)
         return (layoutMark, position, primaryColor): void => {
           visual.text(layoutMark, position.x, position.y, {
-            color: webColor(primaryColor),
+            color: StampRoomPlan.getWebColor(primaryColor),
           })
         }
       }
@@ -138,7 +138,7 @@ export class ManualRoomPlannerProcess extends Process<Dependency, ProcessDefault
 
     plan.forEach((row, j) => {
       row.forEach((layoutMark, i) => {
-        const colors = flagColors[layoutMark]
+        const colors = StampRoomPlan.flagColors[layoutMark]
         if (colors == null) {
           return
         }
