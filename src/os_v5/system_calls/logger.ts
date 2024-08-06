@@ -40,6 +40,7 @@ type Logger = {
   setLogDisabled(processIds: AnyProcessId[]): void
   enabledProcesses(): {process: AnyProcess, duration: Timestamp}[]
 
+  systemLog(sender: string, message: string, shouldNotice?: true): void  /// Process外の、常に表示されるべきシステムログ
   log(process: AnyProcess, message: string, shouldShow?: true): void
   notice(process: AnyProcess, message: string): void
   fatal(process: AnyProcess, message: string): void
@@ -162,6 +163,14 @@ export const Logger: SystemCall<"Logger", LoggerMemory> & Logger = {
   },
 
   // Log
+  systemLog(sender: string, message: string, shouldNotice?: true): void {
+    if (shouldNotice === true) {
+      PrimitiveLogger.notice(`${sender} ${message}`)
+    } else {
+      PrimitiveLogger.log(`${sender} ${message}`, "log")
+    }
+  },
+
   log(process: AnyProcess, message: string, shouldShow?: true): void {
     if (shouldShow === true) {
       PrimitiveLogger.log(`${process} ${message}`, "log")
