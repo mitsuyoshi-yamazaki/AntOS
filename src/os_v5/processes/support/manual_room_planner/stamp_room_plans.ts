@@ -95,6 +95,40 @@ export const StampRoomPlan = {
     return (stampRoomPlans as { [K: string]: StampRoomPlan })[name] ?? null
   },
 
+  getStructureTypeOf(flag: Flag): BuildableStructureConstant | "none" | null {  // "none" は将来の拡張予約
+    switch (flag.color) {
+    case COLOR_BROWN:
+      return STRUCTURE_ROAD
+    case COLOR_ORANGE:
+      return STRUCTURE_LINK
+    case COLOR_BLUE:
+      return STRUCTURE_LAB
+    case COLOR_RED:
+      return STRUCTURE_TOWER
+    case COLOR_GREY:
+      return STRUCTURE_SPAWN
+    case COLOR_WHITE:
+      return STRUCTURE_EXTENSION
+    case COLOR_GREEN:
+      switch (flag.secondaryColor) {
+      case COLOR_GREEN:
+        return STRUCTURE_STORAGE
+      case COLOR_PURPLE:
+        return STRUCTURE_TERMINAL
+      case COLOR_RED:
+        return STRUCTURE_NUKER
+      case COLOR_BLUE:
+        return STRUCTURE_OBSERVER
+      case COLOR_GREY:
+        return STRUCTURE_POWER_SPAWN
+      default:
+        return null
+      }
+    default:
+      return null
+    }
+  },
+
   getWebColor(color: ColorConstant): string {
     switch (color) {
     case COLOR_RED:
