@@ -274,11 +274,32 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
   // Process Control
   suspend(process: AnyProcess): boolean {
-    return processStore.suspend(process.processId)
+    const suspendedProcessIds = processStore.suspend(process.processId)
+    if (suspendedProcessIds.includes(process.processId) !== true) {
+      return false
+    }
+
+    suspendedProcessIds.forEach(suspendedProcessId => {
+      notificationManagerDelegate({
+        eventName: "pm_process_suspended",
+        suspendedProcessId,
+      })
+    })
+
+    return true
   },
 
   resume(process: AnyProcess): boolean {
-    return processStore.resume(process.processId)
+    if (processStore.resume(process.processId) !== true) {
+      return false
+    }
+
+    notificationManagerDelegate({
+      eventName: "pm_process_resumed",
+      resumedProcessId: process.processId,
+    })
+
+    return true
   },
 
   killProcess(process: AnyProcess): void {

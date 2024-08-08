@@ -69,17 +69,21 @@ export class ProcessStore {
     dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
   }
 
-  public suspend(processId: AnyProcessId): boolean {
+  public suspend(processId: AnyProcessId): AnyProcessId[] {
     if (this.processMap.has(processId) !== true) {
       this.programError("suspend", `Process ${processId} not found in the process ID map`)
-      return false
+      return []
     }
+
+    const suspendedProcessIds: AnyProcessId[] = [processId]
     this.suspendedProcessIds.add(processId)
 
     const dependingProcessIds = this.dependencyGraph.getDependingProcessIds(processId)
+    suspendedProcessIds.push(...dependingProcessIds)
+
     dependingProcessIds.forEach(dependingProcessId => this.missingDependencyProcessIds.add(dependingProcessId))
 
-    return true
+    return suspendedProcessIds
   }
 
   public resume(processId: AnyProcessId): boolean {
