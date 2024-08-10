@@ -68,6 +68,7 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
 }
 
 
+let finishLoading = false
 let processManagerMemory: ProcessManagerMemory = {} as ProcessManagerMemory
 const processStore = new ProcessStore()
 const processExecutionLogs: ProcessExecutionLog[] = []
@@ -110,6 +111,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     })
     processStore.sortProcessList()
     processStore.setSuspendedProcessIds(processManagerMemory.suspendedProcessIds as AnyProcessId[])
+
+    finishLoading = true
   },
 
   startOfTick(): void {
@@ -215,6 +218,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     // 依存状況は依存先をkillする際に辿らなければならないため、Process単位で接続している必要がある
     // 依存元はProcessではなくデータに依存しているが、そのデータは依存先Processが作っている
 
+    if (finishLoading !== true) {
+      PrimitiveLogger.programError(`ProcessManager.addProcess() is called during load (${(new Error()).stack})`)
+    }
+
     const process = constructor(createNewProcessId())
 
     const processWithSameIdentifier: AnyProcess | null = processStore.getProcessByIdentifier(process.processType, process.identifier)
@@ -254,6 +261,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   },
 
   getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+    if (finishLoading !== true) {
+      PrimitiveLogger.programError(`ProcessManager.getProcess() is called during load (${(new Error()).stack})`)
+    }
+
     return processStore.getProcessById(processId)
   },
 
