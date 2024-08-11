@@ -44,6 +44,7 @@ export const processTypeDecodingMap = {
   ak: "SaboteurPositionProcess",
   al: "FireControlSystemProcess",
   am: "BootstrapRoomProcess",
+  an: "DetectNukeProcess",
 } as const
 
 
@@ -110,6 +111,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "SaboteurPositionProcess",
   "FireControlSystemProcess",
   "BootstrapRoomProcess",
+  "DetectNukeProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -156,6 +158,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   NukeProcess: "combat",
   SaboteurPositionProcess: "combat",
   FireControlSystemProcess: "combat",
+  DetectNukeProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",
