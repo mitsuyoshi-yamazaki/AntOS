@@ -3,7 +3,7 @@ import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Mutable } from "shared/utility/types"
 import { AnyProcess, AnyProcessId, Process, processDefaultIdentifier, ProcessError, ProcessId } from "../../process/process"
-import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
+import { deprecatedProcessTypeDecodingMap, processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "shared/utility/serializable_types"
 import { UniqueId } from "../unique_id"
@@ -112,7 +112,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       try {
         const processType = processTypeDecodingMap[processState.t]
         if (processType == null) {
-          PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
+          const deprecatedProcessType = (deprecatedProcessTypeDecodingMap as {[K: string]: string})[processState.t]
+          if (deprecatedProcessType != null) {
+            PrimitiveLogger.programError(`ProcessManager.restoreProcesses removed depreacated process ${deprecatedProcessType}`)
+          } else {
+            PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
+          }
           return
         }
         const process = ProcessDecoder.decode(processType, processState.i, processState)

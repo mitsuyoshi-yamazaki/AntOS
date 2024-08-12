@@ -15,7 +15,7 @@ export const processTypeDecodingMap = {
   h: "AttackRoomManagerProcess",
   i: "CreepTrafficManagerProcess",
   // j: "TestTrafficManagerProcess",
-  // k: "V3ResourceDistributorProcess",  // Deprecated
+  // k: "V3ResourceDistributorProcess",
   l: "DisposeResourceProcess",
   m: "V3BridgeDriverProcess",
   n: "TestTrafficManagerV2Process",
@@ -47,6 +47,10 @@ export const processTypeDecodingMap = {
   an: "DetectNukeProcess",
 } as const
 
+export const deprecatedProcessTypeDecodingMap = {
+  j: "TestTrafficManagerProcess",
+  k: "V3ResourceDistributorProcess",
+} as const
 
 export const processTypeEncodingMap = reverseConstMapping(processTypeDecodingMap)
 
