@@ -103,7 +103,8 @@ export abstract class Process<
   abstract runtimeDescription(dependency: Dependency): string
 
   /** @throws */
-  didLaunch?(): void      /// 起動完了：Process 側で起動処理がある場合、ここで例外を出せば Process の追加処理が完了しない
+  didLaunch?(): void      /// 起動完了：Process側で起動処理がある場合、ここで例外を出せばProcessの追加処理が完了しない
+  didAdd?(state: "added" | "restored"): void         /// ProcessがProcessManagerへ追加された後に呼び出される。子Processの起動を行う
   willTerminate?(): void  /// 停止
   abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void

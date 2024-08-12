@@ -106,13 +106,45 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   load(memory: ProcessManagerMemory): void {
     processManagerMemory = initializeMemory(memory)
 
-    restoreProcesses(processManagerMemory.processes).forEach(process => {
-      processStore.add(process, {skipSort: true})
+    const didAdds: [string, () => void][] = []
+
+    processManagerMemory.processes.forEach(processState => {
+      try {
+        const processType = processTypeDecodingMap[processState.t]
+        if (processType == null) {
+          PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
+          return
+        }
+        const process = ProcessDecoder.decode(processType, processState.i, processState)
+        if (process == null) {
+          return
+        }
+        processStore.add(process, { skipSort: true })
+
+        if (process.didAdd != null) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          didAdds.push([`${process}`, () => process.didAdd!("restored")])
+        }
+
+      } catch (error) {
+        if (error instanceof Error) {
+          PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}\n${error.stack ?? ""}`)
+        } else {
+          PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+        }
+      }
     })
+
     processStore.sortProcessList()
     processStore.setSuspendedProcessIds(processManagerMemory.suspendedProcessIds as AnyProcessId[])
 
     finishLoading = true
+
+    didAdds.forEach(([processDescription, didAdd]) => {
+      ErrorMapper.wrapLoop((): void => {
+        didAdd()
+      }, `${processDescription} didAdd("restored")`)()
+    })
   },
 
   startOfTick(): void {
@@ -256,6 +288,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       eventName: processManagerProcessDidLaunchNotification,
       launchedProcessId: process.processId,
     })
+
+    ErrorMapper.wrapLoop((): void => {
+      if (process.didAdd != null) {
+        process.didAdd("added")
+      }
+    }, `${process} didAdd("added")`)()
 
     return process
   },
@@ -403,31 +441,6 @@ export const setNotificationManagerDelegate = (delegate: (notification: ProcessM
 
 const createNewProcessId = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
   return UniqueId.generate() as ProcessId<D, I, M, S, P>
-}
-
-const restoreProcesses = (processStates: ProcessState[]): AnyProcess[] => {
-  return processStates.flatMap((processState): AnyProcess[] => {
-    try {
-      const processType = processTypeDecodingMap[processState.t]
-      if (processType == null) {
-        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
-        return []
-      }
-      const process = ProcessDecoder.decode(processType, processState.i, processState)
-      if (process == null) {
-        return []
-      }
-      return [process]
-
-    } catch (error) {
-      if (error instanceof Error) {
-        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}\n${error.stack ?? ""}`)
-      } else {
-        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
-      }
-      return []
-    }
-  })
 }
 
 const storeProcesses = (processes: AnyProcess[]): ProcessState[] => {
