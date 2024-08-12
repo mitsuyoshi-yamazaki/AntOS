@@ -300,6 +300,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       }
     }, `${process} didAdd("added")`)()
 
+    PrimitiveLogger.log(`Launched ${process}`)
+
     return process
   },
 
@@ -367,6 +369,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       eventName: processManagerProcessDidKillNotification,
       killedProcessId: process.processId,
     })
+
+    PrimitiveLogger.log(`Killed ${process}`)
   },
 
 
