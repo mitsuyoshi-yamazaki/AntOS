@@ -45,6 +45,7 @@ export const processTypeDecodingMap = {
   al: "FireControlSystemProcess",
   am: "BootstrapRoomProcess",
   an: "DetectNukeProcess",
+  ao: "V3BridgeBotProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -63,6 +64,7 @@ export const isProcessType = (value: string): value is ProcessTypes => {
 }
 
 export type BotTypes = "MitsuyoshiBotProcess"
+  | "V3BridgeBotProcess"
 
 
 // Dependency Order
@@ -87,6 +89,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
 
   // Bot
   "MitsuyoshiBotProcess",
+  "V3BridgeBotProcess",
 
   // Application
 
@@ -150,6 +153,7 @@ export type ProcessCategory = "bot" | "application" | "combat" | "economy" | "dr
 export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = {
   // Bot
   MitsuyoshiBotProcess: "bot",
+  V3BridgeBotProcess: "bot",
 
   // Application
 

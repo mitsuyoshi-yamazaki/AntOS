@@ -1,3 +1,4 @@
+import type { MyRoom } from "shared/utility/room"
 import type { SemanticVersion } from "shared/utility/semantic_version"
 
 export type BotApi = {
@@ -6,4 +7,6 @@ export type BotApi = {
     readonly identifier: string
     readonly version: SemanticVersion
   }
+
+  getManagingRooms(): MyRoom[]
 }

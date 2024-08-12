@@ -1,6 +1,7 @@
 // ---- Processes ---- //
 // Bot
 import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "@private/os_v5/processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
+import { V3BridgeBotProcess } from "../../processes/bot/v3_bridge_bot_process"
 
 // Application
 import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
@@ -151,6 +152,7 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
     ["PathManagerProcess", PathManagerProcess],
     ["RoomMapProcess", RoomMapProcess],
     ["InterShardCommunicatorProcess", InterShardCommunicatorProcess],
+    ["V3BridgeBotProcess", V3BridgeBotProcess],
   ]
 
   driverTypes.forEach(([processType, driverProcessType]) => {
