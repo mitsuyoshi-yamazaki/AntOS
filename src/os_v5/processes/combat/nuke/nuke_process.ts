@@ -91,6 +91,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       this.statusCommand,
       this.showNukersCommand,
       this.addTargetCommand,
+      this.removeTargetCommand,
       this.checkAssignableNukersCommand,
     ])
   }
@@ -362,6 +363,41 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       this.updateNextLaunch()
 
       return `${roomLink(targetRoomName)} is added to target list`
+    }
+  }
+
+  private readonly removeTargetCommand: Command = {
+    command: "remove_target",
+    help: (): string => "remove_target {target room name}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const targetRoomName = argumentParser.roomName([0, "target room name"]).parse()
+
+      const index = this.targets.findIndex(target => target.roomName === targetRoomName)
+      if (index < 0) {
+        throw `${roomLink(targetRoomName)} is not in the target list`
+      }
+
+      const target = this.targets.splice(index, 1)[0]
+      if (target == null) {
+        throw `No target information retrieved (index: ${index}, target length: ${this.targets.length})`
+      }
+
+      const statuses: string[] = [
+        `Removed ${roomLink(targetRoomName)}`,
+      ]
+
+      statuses.push(`- ${roomLink(target.roomName)}: ${target.nukers.length} nukes in ${target.launchTime - Game.time} ticks, interval: ${target.interval}`)
+      statuses.push(...target.nukers.map(nukerInfo => {
+        const nuker = Game.getObjectById(nukerInfo.nukerId)
+        if (nuker == null) {
+          return `  - Nuker destroyed, launched: ${nukerInfo.launched}`
+        }
+        return `  - ${roomLink(nuker.room.name)}, launched: ${nukerInfo.launched}`
+      }))
+
+      return statuses.join("\n")
     }
   }
 
