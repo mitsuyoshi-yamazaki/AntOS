@@ -46,6 +46,7 @@ export const processTypeDecodingMap = {
   am: "BootstrapRoomProcess",
   an: "DetectNukeProcess",
   ao: "V3BridgeBotProcess",
+  ap: "SellExcessResourceProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -118,6 +119,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "BootstrapRoomProcess",
   "DetectNukeProcess",
   "ProblemResolverProcess",
+  "SellExcessResourceProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -176,6 +178,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   BootstrapRoomProcess: "economy",
   ClaimRoomProcess: "economy",
   ProblemResolverProcess: "economy",
+  SellExcessResourceProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
