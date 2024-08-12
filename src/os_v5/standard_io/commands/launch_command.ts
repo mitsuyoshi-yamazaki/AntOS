@@ -3,7 +3,6 @@
 import { MitsuyoshiBotProcess, MitsuyoshiBotProcessId } from "@private/os_v5/processes/bot/mitsuyoshi_bot/mitsuyoshi_bot_process"
 
 // Application
-import { V3ResourceDistributorProcess } from "../../processes/application/v3_resource_distributor_process"
 import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
 
 // Combat
@@ -164,7 +163,6 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
 ;
 ((): void => {
   const independentProcessTypes: [ProcessTypes, IndependentProcessConstructor][] = [
-    ["V3ResourceDistributorProcess", V3ResourceDistributorProcess],
     ["GenericRoomManagerProcess", GenericRoomManagerProcess],
     ["NukeProcess", NukeProcess],
     ["ManualCreepOperatorProcess", ManualCreepOperatorProcess],

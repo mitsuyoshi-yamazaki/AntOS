@@ -15,7 +15,7 @@ export const processTypeDecodingMap = {
   h: "AttackRoomManagerProcess",
   i: "CreepTrafficManagerProcess",
   // j: "TestTrafficManagerProcess",
-  k: "V3ResourceDistributorProcess",  // Deprecated
+  // k: "V3ResourceDistributorProcess",  // Deprecated
   l: "DisposeResourceProcess",
   m: "V3BridgeDriverProcess",
   n: "TestTrafficManagerV2Process",
@@ -85,8 +85,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "MitsuyoshiBotProcess",
 
   // Application
-  "ProblemResolverProcess",
-  "V3ResourceDistributorProcess",
 
   // Manager Processes
   "GenericRoomManagerProcess",
@@ -112,6 +110,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "FireControlSystemProcess",
   "BootstrapRoomProcess",
   "DetectNukeProcess",
+  "ProblemResolverProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -149,8 +148,6 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   MitsuyoshiBotProcess: "bot",
 
   // Application
-  V3ResourceDistributorProcess: "application",
-  ProblemResolverProcess: "application",
 
   // Combat
   AttackRoomManagerProcess: "combat",
@@ -170,6 +167,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   RoomPlannerProcess: "economy",
   BootstrapRoomProcess: "economy",
   ClaimRoomProcess: "economy",
+  ProblemResolverProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
