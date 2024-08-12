@@ -1,16 +1,18 @@
-import { ProcessDependencies, ProcessId, ReadonlySharedMemory, processDefaultIdentifier, ProcessDefaultIdentifier } from "os_v5/process/process"
+// Child Processes
+import { DetectNukeProcess, DetectNukeProcessId } from "../combat/defence/detect_nuke_process"
+import { } from "../economy/trade/sell_excess_resource_process"
+
+// Import
+import { BotSpecifier, ProcessDefaultIdentifier, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { V3BridgeDriverProcessApi } from "../v3_os_bridge/v3_bridge_driver_process"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { DetectNukeProcess, DetectNukeProcessId } from "../combat/defence/detect_nuke_process"
 import { BotApi } from "./types"
 import { ApplicationProcess } from "os_v5/process/application_process"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { MyRoom } from "shared/utility/room"
-import { RoomName } from "shared/utility/room_name_types"
-import { Timestamp } from "shared/utility/timestamp"
 
 type Dependency = V3BridgeDriverProcessApi
 
@@ -37,14 +39,14 @@ export class V3BridgeBotProcess extends ApplicationProcess<Dependency, ProcessDe
   }
 
   public readonly version = new SemanticVersion(1, 0, 0)
-
-  private v3RoomNames: RoomName[] = []
-  private v3RoomCheckTime: Timestamp = Game.time
+  private readonly childProcessIdentifier: string
 
   private constructor(
     public readonly processId: V3BridgeBotProcessId,
   ) {
     super()
+
+    this.childProcessIdentifier = `${this.applicationName}.${this.identifier}`
   }
 
   public encode(): V3BridgeBotProcessState {
@@ -61,10 +63,13 @@ export class V3BridgeBotProcess extends ApplicationProcess<Dependency, ProcessDe
   }
 
   public didAdd(state: "added" | "restored"): void {
+    const specifier: BotSpecifier = { processType: "V3BridgeBotProcess", identifier: this.identifier }
+
     switch (state) {
     case "added":
       // launched
-      SystemCalls.processManager.addProcess((processId: DetectNukeProcessId) => DetectNukeProcess.create(processId, { processType: "V3BridgeBotProcess", identifier: this.identifier }))
+      SystemCalls.processManager.addProcess((processId: DetectNukeProcessId) => DetectNukeProcess.create(processId, this.childProcessIdentifier, specifier))
+      // SystemCalls.processManager.addProcess((processId: DetectNukeProcessId) => DetectNukeProcess.create(processId, specifier))
       break
 
     case "restored":
@@ -102,11 +107,6 @@ export class V3BridgeBotProcess extends ApplicationProcess<Dependency, ProcessDe
   }
 
   public run(dependency: Dependency): V3BridgeBotProcessApi {
-    if (Game.time >= this.v3RoomCheckTime) {
-      this.v3RoomNames = this.getV3Rooms(dependency).map(room => room.name)
-      this.v3RoomCheckTime = Game.time + 181
-    }
-
     return {
       botInfo: {
         name: this.applicationName,

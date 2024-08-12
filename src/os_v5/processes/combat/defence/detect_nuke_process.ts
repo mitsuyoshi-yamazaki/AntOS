@@ -19,6 +19,7 @@ type NukeInfo = {
 type DetectNukeProcessState = {
   readonly id: string   /// Process identifier
   readonly b: BotTypes  /// Bot process type
+  readonly bi: string   /// Bot process identifier
   readonly n: {[R: RoomName]: NukeInfo} /// Nuke info
 }
 
@@ -38,29 +39,38 @@ export class DetectNukeProcess extends Process<Dependency, string, void, DetectN
 
   private constructor(
     public readonly processId: DetectNukeProcessId,
-    public readonly identifier: string, /// このProcessのIdentifierであると同時に、親BotのIdentifierでもある
-    private readonly botProcessType: BotTypes,
+    public readonly identifier: string,
+    private readonly botSpecifier: BotSpecifier,
     private nukeInfo: { [R: RoomName]: NukeInfo },
   ) {
     super()
 
-    this.dependencies.processes.push({processType: botProcessType, identifier})
+    this.dependencies.processes.push(this.botSpecifier)
   }
 
   public encode(): DetectNukeProcessState {
     return {
       id: this.identifier,
-      b: this.botProcessType,
+      b: this.botSpecifier.processType,
+      bi: this.botSpecifier.identifier,
       n: this.nukeInfo,
     }
   }
 
   public static decode(processId: DetectNukeProcessId, state: DetectNukeProcessState): DetectNukeProcess {
-    return new DetectNukeProcess(processId, state.id, state.b, state.n)
+    const botSpecifier: BotSpecifier = {
+      processType: state.b,
+      identifier: state.bi,
+    }
+    return new DetectNukeProcess(
+      processId,
+      state.id,
+      botSpecifier,
+      state.n)
   }
 
-  public static create(processId: DetectNukeProcessId, botSpecifier: BotSpecifier): DetectNukeProcess {
-    return new DetectNukeProcess(processId, botSpecifier.identifier, botSpecifier.processType, {})
+  public static create(processId: DetectNukeProcessId, identifier: string, botSpecifier: BotSpecifier): DetectNukeProcess {
+    return new DetectNukeProcess(processId, botSpecifier.identifier, botSpecifier, {})
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
