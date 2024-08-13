@@ -2,9 +2,27 @@ import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory, BotSpeci
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { BotApi } from "os_v5/processes/bot/types"
 import { BotTypes } from "os_v5/process/process_type_map"
+import { Timestamp } from "shared/utility/timestamp"
 
 
 // 「余った資源を処分する」という問題の具体Process
+//   - これはv3用なので、（v5系では考慮すべき）botとの連携は考慮する必要はない
+// このProcessを稼働中であるということは親はどのように確認するのか
+// 半共用資源であるterminalを借用するにはどうすれば良いか
+// - 基本的には他と資源を共用するという意味で、性質はSpawnと同じ
+//   - botに集計させる?
+//   - room keeperのafterTickで行う？
+//     - bot run
+//     - room keeper run
+//     - 使用者 run
+//       - 部屋の資源をどのように集めるか？botに問い合わせる？
+//     - bot after tick
+//     - room keeper after tick
+//       - 資源の利用をprioritize & execute
+//   - 複数の担当者（room keeper, bot, terminal使用者）が集まって協議するような場をどのように設けるか
+// - botからのコマンドをどこで渡すか
+//   - 具象Processは複数あるが、どこに渡すのか
+//     - ちゃんと制御することを考えると、botの側で何にどう制御させているか覚えている必要がないか
 
 
 type Dependency = BotApi
@@ -26,6 +44,8 @@ export class SellExcessResourceProcess extends Process<Dependency, string, void,
     processes: [
     ],
   }
+
+  private suspendUntil: Timestamp = Game.time + 9
 
   private constructor(
     public readonly processId: SellExcessResourceProcessId,
@@ -75,5 +95,10 @@ export class SellExcessResourceProcess extends Process<Dependency, string, void,
   }
 
   public run(): void {
+    if (Game.time < this.suspendUntil) {
+      return
+    }
+    this.suspendUntil = Game.time + 211
+
   }
 }

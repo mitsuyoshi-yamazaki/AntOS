@@ -1,6 +1,6 @@
 // Child Processes
 import { DetectNukeProcess, DetectNukeProcessId } from "../combat/defence/detect_nuke_process"
-import { } from "../economy/trade/sell_excess_resource_process"
+import { SellExcessResourceProcess, SellExcessResourceProcessId } from "../economy/trade/sell_excess_resource_process"
 
 // Import
 import { BotSpecifier, ProcessDefaultIdentifier, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
@@ -69,11 +69,14 @@ export class V3BridgeBotProcess extends ApplicationProcess<Dependency, ProcessDe
     case "added":
       // launched
       SystemCalls.processManager.addProcess((processId: DetectNukeProcessId) => DetectNukeProcess.create(processId, this.childProcessIdentifier, specifier))
-      // SystemCalls.processManager.addProcess((processId: DetectNukeProcessId) => DetectNukeProcess.create(processId, specifier))
+      SystemCalls.processManager.addProcess((processId: SellExcessResourceProcessId) => SellExcessResourceProcess.create(processId, this.childProcessIdentifier, specifier))
       break
 
     case "restored":
       // migration
+      if (SystemCalls.processManager.getProcessByIdentifier("SellExcessResourceProcess", this.childProcessIdentifier) == null) {
+        SystemCalls.processManager.addProcess((processId: SellExcessResourceProcessId) => SellExcessResourceProcess.create(processId, this.childProcessIdentifier, specifier))
+      }
       break
 
     default: {

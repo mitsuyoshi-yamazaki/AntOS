@@ -1,7 +1,5 @@
-import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory, BotSpecifier } from "os_v5/process/process"
+import { ProcessDependencies, ProcessId, ReadonlySharedMemory, BotSpecifier, Process } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
-import { ObjectParserCommand, runCommandsWith } from "os_v5/standard_io/command"
-import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { BotTypes } from "os_v5/process/process_type_map"
 import { BotApi } from "os_v5/processes/bot/types"
 import { RoomName } from "shared/utility/room_name_types"
@@ -10,7 +8,6 @@ import { strictEntries } from "shared/utility/strict_entries"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
 type Dependency = BotApi
-type Command = ObjectParserCommand<Dependency, string>
 
 type NukeInfo = {
   readonly l: Timestamp /// Landing time
@@ -70,7 +67,7 @@ export class DetectNukeProcess extends Process<Dependency, string, void, DetectN
   }
 
   public static create(processId: DetectNukeProcessId, identifier: string, botSpecifier: BotSpecifier): DetectNukeProcess {
-    return new DetectNukeProcess(processId, botSpecifier.identifier, botSpecifier, {})
+    return new DetectNukeProcess(processId, identifier, botSpecifier, {})
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {
@@ -94,13 +91,6 @@ export class DetectNukeProcess extends Process<Dependency, string, void, DetectN
 
   public runtimeDescription(): string {
     return this.staticDescription()
-  }
-
-  /** @throws */
-  public didReceiveMessage(argumentParser: ArgumentParser, dependency: Dependency): string {
-    return runCommandsWith(argumentParser, dependency, [
-      this.detectCommand,
-    ])
   }
 
   public run(dependency: Dependency): void {
@@ -129,18 +119,5 @@ export class DetectNukeProcess extends Process<Dependency, string, void, DetectN
         l: closestLandingTime,
       }
     })
-  }
-
-
-  // ---- Command Runner ---- //
-  private readonly detectCommand: Command = {
-    command: "detect",
-    help: (): string => "detect",
-
-    /** @throws */
-    run:(argumentParser: ArgumentParser, dependency: Dependency): string => {
-      this.findNukes(dependency)
-      return "ok"
-    }
   }
 }
