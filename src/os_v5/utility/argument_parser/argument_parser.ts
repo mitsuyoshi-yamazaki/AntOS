@@ -98,6 +98,10 @@ export class ArgumentParser {
 
 
   // ---- Option Arguments ---- //
+  public options(): string[] {
+    return Array.from(this.optionArguments)
+  }
+
   public hasOption(option: string): boolean {
     return this.optionArguments.has(option)
   }

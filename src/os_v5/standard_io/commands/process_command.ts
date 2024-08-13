@@ -7,12 +7,6 @@ import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser
 import { describeSerializableObject } from "shared/utility/serializable_types"
 
 
-const optionValues = ["description", "graph", "memory"] as const
-type Option = typeof optionValues[number]
-const isOption = (value: string): value is Option => {
-  return (optionValues as Readonly<string[]>).includes(value)
-}
-
 const helpText = `
 process {arg} option={option}
 - arg: process ID or part of process type name (filter)
@@ -32,25 +26,29 @@ export const ProcessCommand: Command = {
   /** @throws */
   run(argumentParser: ArgumentParser): string {
     const filteringWord = argumentParser.string([0, "process ID / filtering term (process type)"]).parseOptional()
-    const option: Option = argumentParser.typedString("option", "Option", isOption).parseOptional() ?? "description"
+    const options = argumentParser.options()
 
-    if (option === "description") {
+    if (options.length <= 0) {
       return listProcessDescription(filteringWord)
     }
 
     const process = argumentParser.process([0, "process ID"]).parse()
 
-    switch (option) {
-    case "graph":
-      return processDependencyGraph(process.processId)
-    case "memory":
+    if (argumentParser.hasOption("m")) {
       return showMemory(process)
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = option
-      throw `Invalid option ${option}`
     }
+
+    if (argumentParser.hasOption("g")) {
+      if (argumentParser.hasOption("r")) {
+        // 指定のProcessが依存しているProcessの表示
+        throw "Not implemented yet" // TODO:
+      } else {
+        // 指定のProcessに依存しているProcessの表示
+        return processDependencyGraph(process.processId)
+      }
     }
+
+    throw `Unknown options ${options}`
   },
 }
 
@@ -93,8 +91,8 @@ const getFilteredProcessRunningStates = (filteringWord: string | null): ({ proce
 
 // ---- Graph ---- //
 /** @throws */
-const processDependencyGraph = (processId: string | null): string => {
-  const graph = ProcessManager.getDependingProcessGraphRecursively(processId as AnyProcessId)
+const processDependencyGraph = (processId: AnyProcessId): string => {
+  const graph = ProcessManager.getDependingProcessGraphRecursively(processId)
   if (graph == null) {
     throw `No Process with ID ${processId}`
   }
