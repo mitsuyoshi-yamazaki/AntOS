@@ -3,13 +3,13 @@ import { DetectNukeProcess, DetectNukeProcessId } from "../combat/defence/detect
 import { SellExcessResourceProcess, SellExcessResourceProcessId } from "../economy/trade/sell_excess_resource_process"
 
 // Import
-import { BotSpecifier, ProcessDefaultIdentifier, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
+import { AnyProcess, BotSpecifier, ProcessDefaultIdentifier, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { V3BridgeDriverProcessApi } from "../v3_os_bridge/v3_bridge_driver_process"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { BotApi } from "./types"
+import { BotApi, ProcessOrder } from "./types"
 import { ApplicationProcess } from "os_v5/process/application_process"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { MyRoom } from "shared/utility/room"
@@ -119,6 +119,10 @@ export class V3BridgeBotProcess extends ApplicationProcess<Dependency, ProcessDe
 
       getManagingRooms: (): MyRoom[] => {
         return this.getV3Rooms(dependency)
+      },
+
+      registerChildProcess: (process: AnyProcess): ProcessOrder => {
+        return {}
       },
     }
   }
