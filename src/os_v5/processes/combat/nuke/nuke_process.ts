@@ -1,7 +1,7 @@
 import { Process, ProcessDependencies, ProcessId, processDefaultIdentifier, ProcessDefaultIdentifier } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
-import { Position } from "shared/utility/position_v2"
+import { describePosition, Position } from "shared/utility/position_v2"
 import { Timestamp } from "shared/utility/timestamp"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Command, runCommands } from "os_v5/standard_io/command"
@@ -88,8 +88,11 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
   /** @throws */
   public didReceiveMessage(argumentParser: ArgumentParser): string {
     return runCommands(argumentParser, [
+      this.statusCommand,
       this.showNukersCommand,
       this.addTargetCommand,
+      this.removeTargetCommand,
+      this.checkAssignableNukersCommand,
     ])
   }
 
@@ -230,6 +233,31 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
 
 
   // ---- Command Runner ---- //
+  private readonly statusCommand: Command = {
+    command: "status",
+    help: (): string => "stasut ",
+
+    /** @throws */
+    run: (): string => {
+      const statuses: string[] = [
+        `${this.targets.length} targets:`,
+      ]
+
+      this.targets.forEach(target => {
+        statuses.push(`- ${roomLink(target.roomName)}: ${target.nukers.length} nukes in ${target.launchTime - Game.time} ticks, interval: ${target.interval}`)
+        statuses.push(...target.nukers.map(nukerInfo => {
+          const nuker = Game.getObjectById(nukerInfo.nukerId)
+          if (nuker == null) {
+            return `  - Nuker destroyed, launched: ${nukerInfo.launched}`
+          }
+          return `  - ${roomLink(nuker.room.name)}, launched: ${nukerInfo.launched}`
+        }))
+      })
+
+      return statuses.join("\n")
+    }
+  }
+
   private readonly addTargetCommand: Command = {
     command: "add_target",
     help: (): string => "add_target {target room name} delay={int} interval={int}, room_names={nuker room names}",
@@ -250,28 +278,53 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       const reservedNukerIds = new Set(this.targets.flatMap((target): Id<StructureNuker>[] => {
         return target.nukers.map(nuker => nuker.nukerId)
       }))
-      const nukerRooms = argumentParser.list("room_names", "my_room").parse()
-      const nukers = nukerRooms.map(room => {
-        const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
-        if (nuker == null) {
-          throw `No nuker in ${roomLink(room.name)}`
-        }
-        if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-          throw `Nuker in ${roomLink(room.name)} lack of energy`
-        }
-        if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
-          throw `Nuker in ${roomLink(room.name)} lack of ghodium`
-        }
-        if (reservedNukerIds.has(nuker.id) === true) {
-          throw `Nuker in ${roomLink(room.name)} already reserved`
-        }
-        return nuker
-      })
+
 
       const targetFlags = Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === targetRoomName)
-      if (nukers.length !== targetFlags.length) {
-        throw `Target count mismatck: ${nukers.length} nukers != ${targetFlags.length} flags`
-      }
+
+      const nukers = ((): StructureNuker[] => {
+        const nukerRoomsArg = argumentParser.string("room_names").parseOptional()
+        switch (nukerRoomsArg) {
+        case "all": {
+          const nukersInRange = Array.from(Object.values(Game.rooms))
+            .filter(isMyRoom)
+            .filter(room => Game.map.getRoomLinearDistance(targetRoomName, room.name) <= targetRange)
+            .map(room => room.find<StructureNuker>(FIND_MY_STRUCTURES, {filter: {structureType: STRUCTURE_NUKER}})[0])
+            .filter((nuker): nuker is StructureNuker => nuker != null && nuker.isActive())
+            .filter(nuker => reservedNukerIds.has(nuker.id) !== true)
+
+          if (targetFlags.length !== nukersInRange.length) {
+            throw `Cannot set "all" when number of target (${targetFlags.length}) and non reserved active nuker count (${nukersInRange.length}) are not equal`
+          }
+          return nukersInRange
+        }
+        default:
+          break
+        }
+
+        const nukerRooms = argumentParser.list("room_names", "my_room").parse()
+        const specifiedRoomNukers = nukerRooms.map(room => {
+          const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
+          if (nuker == null) {
+            throw `No nuker in ${roomLink(room.name)}`
+          }
+          if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+            throw `Nuker in ${roomLink(room.name)} lack of energy`
+          }
+          if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
+            throw `Nuker in ${roomLink(room.name)} lack of ghodium`
+          }
+          if (reservedNukerIds.has(nuker.id) === true) {
+            throw `Nuker in ${roomLink(room.name)} already reserved`
+          }
+          return nuker
+        })
+        if (specifiedRoomNukers.length !== targetFlags.length) {
+          throw `Target count mismatch: ${specifiedRoomNukers.length} nukers != ${targetFlags.length} flags`
+        }
+        return specifiedRoomNukers
+      })()
+
 
       const delay = argumentParser.int("delay").parse({ min: 10 })
       const interval = argumentParser.int("interval").parse({ min: 0 })
@@ -281,7 +334,7 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       let launchTime = delay
       nukers.forEach((nuker, index) => {
         if (nuker.cooldown > launchTime) {
-          throw `${ordinalNumber(index + 1)} nuker will not be ready (cooldown ${nuker.cooldown} ticks)`
+          throw `${ordinalNumber(index + 1)} nuker in ${roomLink(nuker.room.name)} will not be ready (cooldown ${nuker.cooldown} ticks, planned launch time: ${launchTime})`
         }
         launchTime += interval
       })
@@ -310,6 +363,41 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       this.updateNextLaunch()
 
       return `${roomLink(targetRoomName)} is added to target list`
+    }
+  }
+
+  private readonly removeTargetCommand: Command = {
+    command: "remove_target",
+    help: (): string => "remove_target {target room name}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      const targetRoomName = argumentParser.roomName([0, "target room name"]).parse()
+
+      const index = this.targets.findIndex(target => target.roomName === targetRoomName)
+      if (index < 0) {
+        throw `${roomLink(targetRoomName)} is not in the target list`
+      }
+
+      const target = this.targets.splice(index, 1)[0]
+      if (target == null) {
+        throw `No target information retrieved (index: ${index}, target length: ${this.targets.length})`
+      }
+
+      const statuses: string[] = [
+        `Removed ${roomLink(targetRoomName)}`,
+      ]
+
+      statuses.push(`- ${roomLink(target.roomName)}: ${target.nukers.length} nukes in ${target.launchTime - Game.time} ticks, interval: ${target.interval}`)
+      statuses.push(...target.nukers.map(nukerInfo => {
+        const nuker = Game.getObjectById(nukerInfo.nukerId)
+        if (nuker == null) {
+          return `  - Nuker destroyed, launched: ${nukerInfo.launched}`
+        }
+        return `  - ${roomLink(nuker.room.name)}, launched: ${nukerInfo.launched}`
+      }))
+
+      return statuses.join("\n")
     }
   }
 
@@ -350,31 +438,12 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           }
         }
 
-        const energyAmount = nuker.store.getUsedCapacity(RESOURCE_ENERGY)
-        const energyCapacity = nuker.store.getCapacity(RESOURCE_ENERGY)
-        const ghodiumAmount = nuker.store.getUsedCapacity(RESOURCE_GHODIUM)
-        const ghodiumCapacity = nuker.store.getCapacity(RESOURCE_GHODIUM)
-
-        let order = 0
-        const descriptions: string[] = [
-          `${roomLink(room.name)}`,
-        ]
-
-        if (energyAmount < energyCapacity || ghodiumAmount < ghodiumCapacity) {
-          order += 1
-          descriptions.push(`${resourceDescription(RESOURCE_ENERGY, energyAmount, energyCapacity)}, ${resourceDescription(RESOURCE_GHODIUM, ghodiumAmount, ghodiumCapacity)}`)
-        }
-
-        if (nuker.cooldown > 0) {
-          order += 1
-          descriptions.push(`cooldown: ${nuker.cooldown}`)
-        }
-
         const prefix = reservedNukerIds.has(nuker.id) ? "- [reserved] " : "- "
+        const { order, description } = nukerDescription(nuker)
 
         return {
           order,
-          description: prefix + descriptions.join(", "),
+          description: prefix + description,
         }
       })
 
@@ -383,8 +452,163 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       return `${roomInfo.length} rooms in range of ${roomLink(targetRoomName)}:\n${roomInfo.map(x => x.description).join("\n")}`
     }
   }
+
+  private readonly checkAssignableNukersCommand: Command = {
+    command: "check_assignable_nukers",
+    help: (): string => "check_assignable_nukers {target room names} launch_in={time?} exclude_nuker_rooms={room names?}",
+
+    /** @throws */
+    run: (argumentParser: ArgumentParser): string => {
+      // ターゲットの部屋にはFlagで目標を指定している必要がある
+
+      const launchIn = argumentParser.int("launch_in").parseOptional({min: 0})
+      const excludeNukerRooms = argumentParser.list("exclude_nuker_rooms", "room_name").parseOptional({my: true})
+
+      const targetRoomNames = argumentParser.list([0, "target room name"], "room_name").parse()
+      const allFlags = Array.from(Object.values(Game.flags))
+
+      const targetRange = GameConstants.structure.nuke.targetRange
+      const activeNukers = Array.from(Object.values(Game.rooms))
+        .flatMap((room): StructureNuker[] => {
+          if (room.controller?.my !== true) {
+            return []
+          }
+          if (excludeNukerRooms != null && excludeNukerRooms.includes(room.name) === true) {
+            return []
+          }
+          const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
+          if (nuker == null || nuker.isActive() !== true) {
+            return []
+          }
+          return [nuker]
+        })
+
+
+      const reservedNukerIds = new Set<Id<StructureNuker>>(this.targets.flatMap((target): Id<StructureNuker>[] => {
+        return target.nukers.map(nuker => nuker.nukerId)
+      }))
+
+      const roomWithTargets = targetRoomNames.map((roomName): { roomName: RoomName, targetPositions: RoomPosition[], nukersInRange: StructureNuker[] } => ({
+        roomName,
+        targetPositions: allFlags.filter(flag => flag.pos.roomName === roomName).map(flag => flag.pos),
+        nukersInRange: activeNukers
+          .filter(nuker => Game.map.getRoomLinearDistance(nuker.room.name, roomName) <= targetRange && reservedNukerIds.has(nuker.id) !== true)
+          .sort((lhs, rhs) => nukerDescription(lhs).order - nukerDescription(rhs).order),
+      }))
+      roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
+
+
+      const nukeTargetCount = roomWithTargets.reduce((sum, current) => sum + current.targetPositions.length, 0)
+      const excludeRoomDescription = excludeNukerRooms != null ? ` excludes ${excludeNukerRooms.map(roomName => roomLink(roomName)).join(",")}` : ""
+      const results: string[] = [
+        `${roomWithTargets.length} target rooms with ${nukeTargetCount} nuke targets${excludeRoomDescription}`,
+      ]
+
+
+      let fullyAssigned = true
+      const assignMap: { targetRoomName: RoomName, targets: { position: Position, nuker: StructureNuker }[] }[] = []
+      let nextTargetRoom = roomWithTargets.shift()
+
+      while (nextTargetRoom != null) {
+        const targetRoom = nextTargetRoom
+        const assignedTargets: { position: Position, nuker: StructureNuker }[] = []
+
+        results.push(`- ${roomLink(targetRoom.roomName)}: ${targetRoom.targetPositions.length} targets`)
+
+        targetRoom.targetPositions.forEach(targetPosition => {
+          const assignedNuker = targetRoom.nukersInRange.shift()
+          if (assignedNuker != null) {
+            reservedNukerIds.add(assignedNuker.id)
+            const {description} = nukerDescription(assignedNuker)
+            results.push(`  - ${describePosition(targetPosition)}: ${description}`)
+
+            assignedTargets.push({
+              position: { x: targetPosition.x, y: targetPosition.y } as Position,
+              nuker: assignedNuker,
+            })
+
+          } else {
+            results.push(`  - ${describePosition(targetPosition)}: no available nukers`)
+            fullyAssigned = false
+          }
+
+        })
+
+        assignMap.push({
+          targetRoomName: targetRoom.roomName,
+          targets: assignedTargets,
+        })
+
+        roomWithTargets.forEach(t => {
+          t.nukersInRange = t.nukersInRange.filter(nuker => reservedNukerIds.has(nuker.id) !== true)
+        })
+
+        roomWithTargets.sort((lhs, rhs) => (lhs.nukersInRange.length - lhs.targetPositions.length) - (rhs.nukersInRange.length - rhs.targetPositions.length))
+        nextTargetRoom = roomWithTargets.shift()
+      }
+
+      if (launchIn != null) {
+        if (fullyAssigned === true) {
+          const launchTime = Game.time + launchIn
+
+          assignMap.forEach(assign => {
+            this.targets.push({
+              roomName: assign.targetRoomName,
+              launchTime,
+              interval: 0,
+              nukers: assign.targets.map((target): NukerInfo => {
+                if (target.nuker.cooldown > launchIn) {
+                  throw `Nuker in ${roomLink(target.nuker.room.name)} will not be ready (cooldown ${target.nuker.cooldown} ticks, planned launch time: ${launchIn})`
+                }
+
+                return {
+                  nukerId: target.nuker.id,
+                  position: target.position,
+                  launched: false,
+                }
+              })
+            })
+          })
+          this.updateNextLaunch()
+
+          results.unshift(`Fully assigned ${assignMap.length} targets and will launch in ${launchIn}`)
+        } else {
+          results.unshift("Not fully assigned")
+        }
+      }
+
+      return results.join("\n")
+    }
+  }
 }
 
 const resourceDescription = (resourceType: ResourceConstant, amount: number, capacity: number): string => {
   return `${coloredResourceType(resourceType)}: ${shortenedNumber(amount)}/${shortenedNumber(capacity)}`
+}
+
+const nukerDescription = (nuker: StructureNuker): {order: number, description: string} => {
+  const energyAmount = nuker.store.getUsedCapacity(RESOURCE_ENERGY)
+  const energyCapacity = nuker.store.getCapacity(RESOURCE_ENERGY)
+  const ghodiumAmount = nuker.store.getUsedCapacity(RESOURCE_GHODIUM)
+  const ghodiumCapacity = nuker.store.getCapacity(RESOURCE_GHODIUM)
+
+  let order = 0
+  const descriptions: string[] = [
+    `${roomLink(nuker.room.name)}`,
+  ]
+
+  if (energyAmount < energyCapacity || ghodiumAmount < ghodiumCapacity) {
+    order += 1
+    descriptions.push(`${resourceDescription(RESOURCE_ENERGY, energyAmount, energyCapacity)}, ${resourceDescription(RESOURCE_GHODIUM, ghodiumAmount, ghodiumCapacity)}`)
+  }
+
+  if (nuker.cooldown > 0) {
+    order += 1
+    descriptions.push(`cooldown: ${nuker.cooldown}`)
+  }
+
+  return {
+    order,
+    description: descriptions.join(", "),
+  }
 }

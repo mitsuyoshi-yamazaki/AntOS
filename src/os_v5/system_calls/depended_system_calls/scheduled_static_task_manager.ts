@@ -1,7 +1,7 @@
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { AnyProcessId } from "os_v5/process/process"
 import { SystemCall } from "os_v5/system_call"
-import { EmptySerializable } from "os_v5/utility/types"
+import { EmptySerializable } from "shared/utility/serializable_types"
 import { ValuedArrayMap } from "shared/utility/valued_collection"
 import { ProcessManagerProcessDidKillNotification, processManagerProcessDidKillNotification } from "../process_manager/process_manager_notification"
 import { NotificationReceiver, PrimitiveNotificationManager } from "./notification_manager"

@@ -19,11 +19,7 @@ export const memhack = {
 
   afterTick() {
     if (memhackMemory) {
-      // if (Game.serialization.canSkip() !== true) {
-        RawMemory._parsed = Memory
-      // }
+      RawMemory._parsed = Memory
     }
-
-    // Game.serialization.tickFinished()
   },
 }

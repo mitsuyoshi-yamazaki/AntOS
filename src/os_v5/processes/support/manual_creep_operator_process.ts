@@ -2,13 +2,14 @@ import { Process, ProcessDefaultIdentifier, processDefaultIdentifier, ProcessDep
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { V3BridgeSpawnRequestProcessApi } from "../v3_os_bridge/v3_bridge_spawn_request_process"
 import { CreepDistributorProcessApi } from "../game_object_management/creep/creep_distributor_process"
-import { AnyTrafficManagedCreep, CreepMoveOptions, CreepTrafficManagerProcessApi, TrafficManagedCreep } from "@private/os_v5/processes/game_object_management/creep/creep_traffic_manager_process"
+import { AnyTrafficManagedCreep, CreepTrafficManagerProcessApi, TrafficManagedCreep } from "@private/os_v5/processes/game_object_management/creep/traffic/creep_traffic_manager_process"
+import { CreepMoveOptions } from "@private/os_v5/processes/game_object_management/creep/traffic/traffic_managed"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { ObjectParserCommand, runCommandsWith } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { describePosition } from "shared/utility/position_v2"
-import { EmptySerializable } from "os_v5/utility/types"
+import { EmptySerializable } from "shared/utility/serializable_types"
 
 
 type MyCreepMemory = {
@@ -101,8 +102,8 @@ export class ManualCreepOperatorProcess extends Process<Dependency, ProcessDefau
   }
 
   public run(dependency: Dependency): void {
-    const creeps = dependency.getSpawnedCreepsFor(this.processId)
-    dependency.registerTrafficManagedCreeps(creeps)
+    const {spawned} = dependency.getSpawnedCreepsFor(this.processId)
+    dependency.registerTrafficManagedCreeps(spawned)
   }
 
 
@@ -190,7 +191,7 @@ export class ManualCreepOperatorProcess extends Process<Dependency, ProcessDefau
 
       const options: CreepMoveOptions = {}
       if (range != null) {
-        options.minRange = range
+        options.range = range
       }
 
       const result = creep.trafficManager.moveTo(destination, options)

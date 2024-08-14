@@ -1,7 +1,7 @@
 import { OperatingSystem } from "os/os"
 import { World35587255ScoutRoomProcess } from "process/temporary/world_35587255_scout_room_process"
 import { describePosition } from "prototype/room_position"
-import { isOwnedRoomTypes, OwnedRoomInfo } from "room_resource/room_info"
+import { isOwnedRoomTypes, OwnedRoomInfo, RemoteRoomInfo } from "room_resource/room_info"
 import { OwnedRoomResource } from "room_resource/room_resource/owned_room_resource"
 import { coloredResourceType, coloredText, roomLink, shortenedNumber } from "utility/log"
 import { powerName } from "shared/utility/power"
@@ -10,6 +10,7 @@ import type { RoomName } from "shared/utility/room_name_types"
 import { KeywordArguments } from "../../../../shared/utility/argument_parser/keyword_argument_parser"
 import { ListArguments } from "../../../../shared/utility/argument_parser/list_argument_parser"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
+import { strictEntries } from "shared/utility/strict_entries"
 
 const numberAccessorCommands = [
   "mineral_max_amount",
@@ -31,6 +32,7 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     "set_remote_room_path_cache_enabled",
     "change_room_type",
     "toggle_remote",
+    "remote",
     "toggle_auto_attack",
     "show_labs",
     "clear_research_labs",
@@ -61,6 +63,8 @@ export function execRoomConfigCommand(roomResource: OwnedRoomResource, args: str
     return changeRoomType(roomResource, args)
   case "toggle_remote":
     return toggleRemoteRoom(roomResource, args)
+  case "remote":
+    return remote(roomResource, args)
   case "toggle_auto_attack":
     return toggleAutoAttack(roomResource, args)
   case "show_labs":
@@ -330,6 +334,20 @@ function toggleAutoAttack(roomResource: OwnedRoomResource, args: string[]): stri
   }
 
   return describeBoolean(enabled)
+}
+
+/** @throws */
+function remote(roomResource: OwnedRoomResource, args: string[]): string {
+  const descriptions: string[] = [
+    `Room ${roomLink(roomResource.room.name)}:`,
+  ]
+
+    ;
+  (strictEntries(roomResource.roomInfo.remoteRoomInfo) as [RoomName, RemoteRoomInfo][]).forEach(([roomName, roomInfo]) => {
+    descriptions.join(`- ${roomLink(roomName)} enabled: ${roomInfo.enabled}, constructionFinished: ${roomInfo.constructionFinished}`)
+  })
+
+  return descriptions.join("\n")
 }
 
 /** @throws */

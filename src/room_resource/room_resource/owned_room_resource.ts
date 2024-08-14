@@ -6,6 +6,8 @@ import { Timestamp } from "shared/utility/timestamp"
 import type { TaskIdentifier } from "v5_task/task"
 import { NormalRoomResource } from "./normal_room_resource"
 import { OwnedRoomInfoAccessor } from "../room_info_accessor"
+import { MyRoom } from "shared/utility/room"
+import { MyController } from "shared/utility/structure_controller"
 
 export type ResearchLabs = {
   inputLab1: StructureLab
@@ -27,6 +29,8 @@ export interface RunningCreepInfo {
  * 寿命は1tick
  */
 export class OwnedRoomResource extends NormalRoomResource {
+  public readonly room: MyRoom
+
   /** Decayed structureは含めない */
   public readonly damagedStructures: AnyStructure[]
   public readonly activeStructures: {
@@ -53,7 +57,7 @@ export class OwnedRoomResource extends NormalRoomResource {
   public roomInfoAccessor: OwnedRoomInfoAccessor
 
   public constructor(
-    public readonly controller: StructureController,
+    public readonly controller: MyController,
 
     /** この部屋にいるMy creepsだけではなく、この部屋を親とするcreepsのリスト */
     private readonly ownedCreepInfo: OwnedRoomCreepInfo[],
@@ -61,6 +65,8 @@ export class OwnedRoomResource extends NormalRoomResource {
     public readonly roomInfo: OwnedRoomInfo,
   ) {
     super(controller, roomInfo)
+
+    this.room = controller.room
 
     this.roomInfoAccessor = new OwnedRoomInfoAccessor(controller.room, roomInfo, controller, this.sources, this.mineral?.mineralType ?? null)
 

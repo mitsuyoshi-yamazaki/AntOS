@@ -6,6 +6,8 @@ type UniqueIdMemory = {
   uniqueIdIndex: number
 }
 
+const shardId = (Game.shard.name[0] ?? "") + (Game.shard.name[Game.shard.name.length - 1] ?? "")
+
 const initializeMemory = (memory: UniqueIdMemory): UniqueIdMemory => {
   const mutableMemroy = memory as Mutable<UniqueIdMemory>
 
@@ -23,6 +25,7 @@ type UniqueId = {
   readonly radix: number
 
   generate(): string
+  generateShardUniqueId(prefix?: string): string
   generateTrueUniqueId(prefix?: string): string
   generateTickUniqueId(): string  /// `${Game.time}${tickUniqueIndex}` // Memoryに格納したindexを消費しない
   generateFromInteger(idIndex: number): string
@@ -52,6 +55,15 @@ export const UniqueId: SystemCall<"UniqueId", UniqueIdMemory> & UniqueId = {
     const idIndex = uniqueIdMemory.uniqueIdIndex
     uniqueIdMemory.uniqueIdIndex += 1
     return this.generateFromInteger(idIndex)
+  },
+
+  generateShardUniqueId(prefix?: string): string {
+    return [
+      shardId,
+      prefix == null ? "" : prefix,
+      `${Game.time}`,
+      this.generate(),
+    ].join()
   },
 
   generateTrueUniqueId(prefix?: string): string {

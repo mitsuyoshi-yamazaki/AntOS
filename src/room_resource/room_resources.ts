@@ -10,6 +10,8 @@ import { buildNormalRoomInfo, buildOwnedRoomInfo, OwnedRoomInfo, ResourceInsuffi
 import { PrimitiveLogger } from "os/infrastructure/primitive_logger"
 import { roomLink } from "utility/log"
 import { Environment } from "utility/environment"
+import { isMyRoom } from "shared/utility/room"
+import { MyController } from "shared/utility/structure_controller"
 
 interface RoomResourcesInterface {
   // ---- Lifecycle ---- //
@@ -46,7 +48,7 @@ export const RoomResources: RoomResourcesInterface = {
     enumerateCreeps()
 
     Object.entries(Game.rooms).forEach(([roomName, room]) => {
-      if (room.controller != null && room.controller.my === true && Memory.v3.rooms.includes(roomName) === true && Memory.ignoreRooms.includes(roomName) !== true) {
+      if (room.controller != null && isMyRoom(room) && Memory.v3.rooms.includes(roomName) === true && Memory.ignoreRooms.includes(roomName) !== true) {
         const creepInfo: OwnedRoomCreepInfo[] = (allCreeps.get(roomName) ?? []).map(creep => {
           return {
             creep,
@@ -195,7 +197,7 @@ function buildNormalRoomResource(controller: StructureController): NormalRoomRes
   return new NormalRoomResource(controller, roomInfo)
 }
 
-function buildOwnedRoomResource(controller: StructureController, creepInfo: OwnedRoomCreepInfo[]): OwnedRoomResource {
+function buildOwnedRoomResource(controller: MyController, creepInfo: OwnedRoomCreepInfo[]): OwnedRoomResource {
   const roomInfo = ((): OwnedRoomInfo => {
     const stored = Memory.v6RoomInfo[controller.room.name]
     if (stored != null) {

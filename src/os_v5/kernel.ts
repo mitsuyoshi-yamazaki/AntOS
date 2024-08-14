@@ -5,7 +5,7 @@ import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { StandardIO } from "./standard_io/standard_io"
 import { KernelLifecycle } from "./kernel_lifecycle"
-import { AnySerializable } from "./utility/types"
+import { AnySerializable } from "shared/utility/serializable_types"
 import { Timestamp } from "shared/utility/timestamp"
 import { KernelMemory } from "./memory"
 import { SystemCall } from "./system_call"
@@ -32,7 +32,7 @@ export const Kernel: KernelLifecycle<KernelMemory> & Kernel = {
   [Symbol.toStringTag]: "Kernel",
 
   name: "AntOS",
-  version: new SemanticVersion(5, 11, 3),
+  version: new SemanticVersion(5, 14, 3),
   launchedAt: {
     time: Game.time,
     datetime: new Date(),

@@ -1,5 +1,5 @@
 import { KernelLifecycle } from "./kernel_lifecycle"
-import { AnySerializable } from "./utility/types"
+import { AnySerializable } from "shared/utility/serializable_types"
 
 /**
 # SystemCall

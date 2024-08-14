@@ -13,6 +13,8 @@ import { MoveToTask } from "v5_object_task/creep_task/meta_task/move_to_task"
 import { decodeRoomPosition } from "prototype/room_position"
 import { CommodityConstant, DepositConstant, MineralBaseCompoundsConstant, MineralBoostConstant, MineralConstant } from "shared/utility/resource"
 import { WithdrawResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/withdraw_resource_api_wrapper"
+import { decodeCreepTask as v5DecodeCreepTask } from "v5_object_task/creep_task/creep_task_decoder"
+import { CreepTask } from "v5_object_task/creep_task/creep_task"
 
 /** @throws */
 export function execCreepCommand(creep: Creep, args: string[]): string {
@@ -51,7 +53,18 @@ const moveTo = (creep: Creep, args: string[]): string => {
   const position = listArguments.localPosition(0, "position").parse()
   const roomPosition = decodeRoomPosition(position, creep.room.name)
 
-  creep.memory.t = MoveToTask.create(roomPosition, 0).encode()
+  const currentTask = v5DecodeCreepTask(creep)
+
+  if (currentTask == null) {
+    creep.memory.t = MoveToTask.create(roomPosition, 0).encode()
+  } else {
+    const tasks: CreepTask[] = [
+      MoveToTask.create(roomPosition, 0),
+      currentTask,
+    ]
+    creep.memory.t = SequentialTask.create(tasks, {ignoreFailure: true, finishWhenSucceed: false}).encode()
+  }
+
   return `${creep.name} move to ${roomPosition}`
 }
 

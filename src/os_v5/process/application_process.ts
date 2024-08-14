@@ -1,4 +1,4 @@
-import type { SerializableObject } from "os_v5/utility/types"
+import type { SerializableObject } from "shared/utility/serializable_types"
 import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import type { SemanticVersion } from "shared/utility/semantic_version"
 import { Process } from "./process"

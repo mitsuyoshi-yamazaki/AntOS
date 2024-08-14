@@ -223,7 +223,6 @@ export class Season1244215GenericDismantleProcess implements Process, Procedural
           }
         }
       }
-      creep.say("nth to do")
       return
     }
 

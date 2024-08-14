@@ -12,4 +12,15 @@ export type ProcessManagerProcessDidKillNotification = Notification & {
   readonly eventName: "pm_process_killed"
   readonly killedProcessId: AnyProcessId
 }
-export type ProcessManagerNotification = ProcessManagerProcessDidLaunchNotification | ProcessManagerProcessDidKillNotification
+export type ProcessManagerProcessDidSuspendNotification = Notification & {
+  readonly eventName: "pm_process_suspended"
+  readonly suspendedProcessId: AnyProcessId
+}
+export type ProcessManagerProcessDidResumedNotification = Notification & {
+  readonly eventName: "pm_process_resumed"
+  readonly resumedProcessId: AnyProcessId
+}
+export type ProcessManagerNotification = ProcessManagerProcessDidLaunchNotification
+  | ProcessManagerProcessDidKillNotification
+  | ProcessManagerProcessDidSuspendNotification
+  | ProcessManagerProcessDidResumedNotification

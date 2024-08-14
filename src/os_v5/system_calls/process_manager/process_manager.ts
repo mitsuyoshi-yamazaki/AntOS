@@ -2,10 +2,10 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Mutable } from "shared/utility/types"
-import { AnyProcess, AnyProcessId, Process, ProcessError, ProcessId } from "../../process/process"
-import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
+import { AnyProcess, AnyProcessId, Process, processDefaultIdentifier, ProcessError, ProcessId } from "../../process/process"
+import { deprecatedProcessTypeDecodingMap, processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { UniqueId } from "../unique_id"
 import { SharedMemory } from "./shared_memory"
 import { ProcessStore } from "./process_store"
@@ -14,6 +14,7 @@ import { ProcessManagerError } from "./process_manager_error"
 import { DependencyGraphNode } from "./process_dependency_graph"
 import { ProcessExecutionLog } from "./process_execution_log"
 import { ProcessManagerNotification, processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "./process_manager_notification"
+import { DriverProcessConstructor } from "os_v5/process/process_constructor"
 
 
 /**
@@ -67,6 +68,7 @@ const initializeMemory = (memory: ProcessManagerMemory): ProcessManagerMemory =>
 }
 
 
+let finishLoading = false
 let processManagerMemory: ProcessManagerMemory = {} as ProcessManagerMemory
 const processStore = new ProcessStore()
 const processExecutionLogs: ProcessExecutionLog[] = []
@@ -104,11 +106,50 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
   load(memory: ProcessManagerMemory): void {
     processManagerMemory = initializeMemory(memory)
 
-    restoreProcesses(processManagerMemory.processes).forEach(process => {
-      processStore.add(process, {skipSort: true})
+    const didAdds: [string, () => void][] = []
+
+    processManagerMemory.processes.forEach(processState => {
+      try {
+        const processType = processTypeDecodingMap[processState.t]
+        if (processType == null) {
+          const deprecatedProcessType = (deprecatedProcessTypeDecodingMap as {[K: string]: string})[processState.t]
+          if (deprecatedProcessType != null) {
+            PrimitiveLogger.programError(`ProcessManager.restoreProcesses removed depreacated process ${deprecatedProcessType}`)
+          } else {
+            PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
+          }
+          return
+        }
+        const process = ProcessDecoder.decode(processType, processState.i, processState)
+        if (process == null) {
+          return
+        }
+        processStore.add(process, { skipSort: true })
+
+        if (process.didAdd != null) {
+          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+          didAdds.push([`${process}`, () => process.didAdd!("restored")])
+        }
+
+      } catch (error) {
+        if (error instanceof Error) {
+          PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}\n${error.stack ?? ""}`)
+        } else {
+          PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
+        }
+      }
     })
+
     processStore.sortProcessList()
     processStore.setSuspendedProcessIds(processManagerMemory.suspendedProcessIds as AnyProcessId[])
+
+    finishLoading = true
+
+    didAdds.forEach(([processDescription, didAdd]) => {
+      ErrorMapper.wrapLoop((): void => {
+        didAdd()
+      }, `${processDescription} didAdd("restored")`)()
+    })
   },
 
   startOfTick(): void {
@@ -214,6 +255,10 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     // 依存状況は依存先をkillする際に辿らなければならないため、Process単位で接続している必要がある
     // 依存元はProcessではなくデータに依存しているが、そのデータは依存先Processが作っている
 
+    if (finishLoading !== true) {
+      PrimitiveLogger.programError(`ProcessManager.addProcess() is called during load (${(new Error()).stack})`)
+    }
+
     const process = constructor(createNewProcessId())
 
     const processWithSameIdentifier: AnyProcess | null = processStore.getProcessByIdentifier(process.processType, process.identifier)
@@ -227,12 +272,17 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     }
 
     const { missingDependencies } = processStore.checkDependencies(process.dependencies.processes)
-    if (missingDependencies.length > 0) {
-      throw new ProcessManagerError({
-        case: "lack of dependencies",
-        missingDependencies: missingDependencies
-      })
-    }
+    missingDependencies.forEach(dependency => {
+      const constructor = launchableDrivers.get(dependency.processType)
+      if (constructor == null || dependency.identifier !== processDefaultIdentifier) {
+        throw new ProcessManagerError({
+          case: "lack of dependencies",
+          missingDependencies: missingDependencies
+        })
+      }
+
+      this.addProcess((processId: AnyProcessId) => constructor.create(processId))
+    })
 
     if (process.didLaunch != null) {
       process.didLaunch()
@@ -244,10 +294,22 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       launchedProcessId: process.processId,
     })
 
+    ErrorMapper.wrapLoop((): void => {
+      if (process.didAdd != null) {
+        process.didAdd("added")
+      }
+    }, `${process} didAdd("added")`)()
+
+    PrimitiveLogger.log(`Launched ${process}`)
+
     return process
   },
 
   getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null {
+    if (finishLoading !== true) {
+      PrimitiveLogger.programError(`ProcessManager.getProcess() is called during load (${(new Error()).stack})`)
+    }
+
     return processStore.getProcessById(processId)
   },
 
@@ -268,11 +330,32 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 
   // Process Control
   suspend(process: AnyProcess): boolean {
-    return processStore.suspend(process.processId)
+    const suspendedProcessIds = processStore.suspend(process.processId)
+    if (suspendedProcessIds.includes(process.processId) !== true) {
+      return false
+    }
+
+    suspendedProcessIds.forEach(suspendedProcessId => {
+      notificationManagerDelegate({
+        eventName: "pm_process_suspended",
+        suspendedProcessId,
+      })
+    })
+
+    return true
   },
 
   resume(process: AnyProcess): boolean {
-    return processStore.resume(process.processId)
+    if (processStore.resume(process.processId) !== true) {
+      return false
+    }
+
+    notificationManagerDelegate({
+      eventName: "pm_process_resumed",
+      resumedProcessId: process.processId,
+    })
+
+    return true
   },
 
   killProcess(process: AnyProcess): void {
@@ -286,6 +369,8 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
       eventName: processManagerProcessDidKillNotification,
       killedProcessId: process.processId,
     })
+
+    PrimitiveLogger.log(`Killed ${process}`)
   },
 
 
@@ -349,6 +434,12 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
 }
 
 
+let launchableDrivers = new Map<ProcessTypes, DriverProcessConstructor>()
+export const setLaunchableDriverTypes = (drivers: [ProcessTypes, DriverProcessConstructor][]): void => {
+  launchableDrivers = new Map(drivers)
+}
+
+
 let notificationManagerDelegate: (notification: ProcessManagerNotification) => void = (): void => {
   console.log("notificationManagerDelegate called before initialized")
 }
@@ -359,31 +450,6 @@ export const setNotificationManagerDelegate = (delegate: (notification: ProcessM
 
 const createNewProcessId = <D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(): ProcessId<D, I, M, S, P> => {
   return UniqueId.generate() as ProcessId<D, I, M, S, P>
-}
-
-const restoreProcesses = (processStates: ProcessState[]): AnyProcess[] => {
-  return processStates.flatMap((processState): AnyProcess[] => {
-    try {
-      const processType = processTypeDecodingMap[processState.t]
-      if (processType == null) {
-        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: no process type of encoded value: ${processState.t}`)
-        return []
-      }
-      const process = ProcessDecoder.decode(processType, processState.i, processState)
-      if (process == null) {
-        return []
-      }
-      return [process]
-
-    } catch (error) {
-      if (error instanceof Error) {
-        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}\n${error.stack ?? ""}`)
-      } else {
-        PrimitiveLogger.programError(`ProcessManager.restoreProcesses failed: ${error}`)
-      }
-      return []
-    }
-  })
 }
 
 const storeProcesses = (processes: AnyProcess[]): ProcessState[] => {

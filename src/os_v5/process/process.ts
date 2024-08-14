@@ -1,5 +1,5 @@
 import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_calls/deferred_task"
-import type { SerializableObject } from "os_v5/utility/types"
+import type { SerializableObject } from "shared/utility/serializable_types"
 import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { BotTypes, coloredProcessType, ProcessTypes } from "./process_type_map"
 
@@ -103,7 +103,8 @@ export abstract class Process<
   abstract runtimeDescription(dependency: Dependency): string
 
   /** @throws */
-  didLaunch?(): void      /// 起動完了：Process 側で起動処理がある場合、ここで例外を出せば Process の追加処理が完了しない
+  didLaunch?(): void      /// 起動完了：Process側で起動処理がある場合、ここで例外を出せばProcessの追加処理が完了しない
+  didAdd?(state: "added" | "restored"): void         /// ProcessがProcessManagerへ追加された後に呼び出される。子Processの起動を行う
   willTerminate?(): void  /// 停止
   abstract run(dependency: Dependency): ProcessMemory
   runAfterTick?(dependency: Dependency): void

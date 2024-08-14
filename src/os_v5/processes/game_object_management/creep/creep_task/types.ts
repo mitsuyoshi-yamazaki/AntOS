@@ -1,6 +1,6 @@
 import { AnyV5Creep } from "os_v5/utility/game_object/creep"
 import { canExecuteAction, CreepActions } from "os_v5/utility/game_object/creep_action"
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { reverseConstMapping, ReversedMapping } from "shared/utility/strict_entries"
 
 

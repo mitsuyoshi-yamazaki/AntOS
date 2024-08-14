@@ -1,4 +1,4 @@
-import { SerializableObject } from "os_v5/utility/types"
+import { SerializableObject } from "shared/utility/serializable_types"
 import { AnyTask, TaskState, taskTypeDecodingMap, TaskTypes } from "./types"
 import { Tasks } from "./tasks/tasks"
 

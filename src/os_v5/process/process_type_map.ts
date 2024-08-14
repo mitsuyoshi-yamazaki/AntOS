@@ -15,7 +15,7 @@ export const processTypeDecodingMap = {
   h: "AttackRoomManagerProcess",
   i: "CreepTrafficManagerProcess",
   // j: "TestTrafficManagerProcess",
-  k: "V3ResourceDistributorProcess",
+  // k: "V3ResourceDistributorProcess",
   l: "DisposeResourceProcess",
   m: "V3BridgeDriverProcess",
   n: "TestTrafficManagerV2Process",
@@ -40,8 +40,19 @@ export const processTypeDecodingMap = {
   ag: "ManualCreepOperatorProcess",
   ah: "TemplateProcess",
   ai: "InterShardCommunicatorProcess",
+  aj: "ManualRoomPlannerProcess",
+  ak: "SaboteurPositionProcess",
+  al: "FireControlSystemProcess",
+  am: "BootstrapRoomProcess",
+  an: "DetectNukeProcess",
+  ao: "V3BridgeBotProcess",
+  ap: "SellExcessResourceProcess",
 } as const
 
+export const deprecatedProcessTypeDecodingMap = {
+  j: "TestTrafficManagerProcess",
+  k: "V3ResourceDistributorProcess",
+} as const
 
 export const processTypeEncodingMap = reverseConstMapping(processTypeDecodingMap)
 
@@ -54,18 +65,12 @@ export const isProcessType = (value: string): value is ProcessTypes => {
 }
 
 export type BotTypes = "MitsuyoshiBotProcess"
+  | "V3BridgeBotProcess"
 
 
 // Dependency Order
 const processDependencyOrder: Readonly<ProcessTypes[]> = [
-  // Bot
-  "MitsuyoshiBotProcess",
-
-  // Application
-  "ProblemResolverProcess",  // TODO: 実装したら再度確認
-
   // No dependencies
-  "TestProcess",
   "RoomPathfindingProcess",
   "CreepDistributorProcess",
   "AttackRoomManagerProcess", // TODO: 実装したら再度確認
@@ -83,13 +88,17 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "CreepPositionAssignerProcess",
   "CreepTrafficManagerProcess",
 
-  // Application with dependencies
-  "V3ResourceDistributorProcess",
+  // Bot
+  "MitsuyoshiBotProcess",
+  "V3BridgeBotProcess",
+
+  // Application
 
   // Manager Processes
   "GenericRoomManagerProcess",
 
   // Process with dependencies
+  "TestProcess",
   "EnergyHarvestRoomProcess",
   "StaticMonoCreepKeeperRoomProcess",
   "StaticMonoCreepBuildRoomProcess",
@@ -104,6 +113,13 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "NukeProcess",
   "ManualCreepOperatorProcess",
   "TemplateProcess",
+  "ManualRoomPlannerProcess",
+  "SaboteurPositionProcess",
+  "FireControlSystemProcess",
+  "BootstrapRoomProcess",
+  "DetectNukeProcess",
+  "ProblemResolverProcess",
+  "SellExcessResourceProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -139,15 +155,17 @@ export type ProcessCategory = "bot" | "application" | "combat" | "economy" | "dr
 export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = {
   // Bot
   MitsuyoshiBotProcess: "bot",
+  V3BridgeBotProcess: "bot",
 
   // Application
-  V3ResourceDistributorProcess: "application",
-  ProblemResolverProcess: "application",
 
   // Combat
   AttackRoomManagerProcess: "combat",
   ScoutProcess: "combat",
   NukeProcess: "combat",
+  SaboteurPositionProcess: "combat",
+  FireControlSystemProcess: "combat",
+  DetectNukeProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",
@@ -157,9 +175,10 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   StaticMonoCreepBuildRoomProcess: "economy",
   DisposeResourceProcess: "economy",
   RoomPlannerProcess: "economy",
-
-  // Economy - Normalized Process
+  BootstrapRoomProcess: "economy",
   ClaimRoomProcess: "economy",
+  ProblemResolverProcess: "economy",
+  SellExcessResourceProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
@@ -186,6 +205,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   OnHeapContinuousTaskProcess: "support",
   ManualCreepOperatorProcess: "support",
   TemplateProcess: "support",
+  ManualRoomPlannerProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {
