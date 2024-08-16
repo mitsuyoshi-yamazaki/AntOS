@@ -26,8 +26,8 @@ const resourcePriority: ResourceConstant[] = [  // 添字の小さいほうが�
   RESOURCE_POWER,
   RESOURCE_OPS,
   ...CommodityConstant,
-  ...DepositConstant,
   ...MineralBoostConstant,
+  ...DepositConstant,
   ...MineralBaseCompoundsConstant,
   ...MineralConstant,
 ]
