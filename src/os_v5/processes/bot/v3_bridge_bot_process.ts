@@ -9,7 +9,7 @@ import { Command, runCommands } from "os_v5/standard_io/command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { V3BridgeDriverProcessApi } from "../v3_os_bridge/v3_bridge_driver_process"
 import { SystemCalls } from "os_v5/system_calls/interface"
-import { BotApi, ProcessOrder } from "./types"
+import { BotApi } from "./types"
 import { ApplicationProcess } from "os_v5/process/application_process"
 import { SemanticVersion } from "shared/utility/semantic_version"
 import { MyRoom } from "shared/utility/room"
@@ -121,8 +121,8 @@ export class V3BridgeBotProcess extends ApplicationProcess<Dependency, ProcessDe
         return this.getV3Rooms(dependency)
       },
 
-      registerChildProcess: (process: AnyProcess): ProcessOrder => {
-        return {}
+      registerChildProcess: (process: AnyProcess): void => {
+        return
       },
     }
   }
