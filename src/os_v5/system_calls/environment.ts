@@ -8,15 +8,13 @@ const serverRestartTime = Game.time
 
 
 // Environment Info
-export enum EnvironmentName {
-  mmo = "mmo",
-  sim = "sim",
-  swc = "swc",
-  botarena = "botarena",
-  private = "private",
-  mockSeason = "mockSeason", /// シーズンマッチ未開催時
-  unknown = "unknown",
-}
+type EnvironmentName = "mmo"
+  | "sim"
+  | "swc"
+  | "botarena"
+  | "private"
+  | "mockSeason" /// シーズンマッチ未開催時
+  | "unknown"
 
 
 type EnvironmentInfo = {
@@ -29,12 +27,12 @@ const initializeEnvironmentInfo = (): EnvironmentInfo => {
   switch (shardName) {
   case "sim":
     return {
-      name: EnvironmentName.sim,
+      name: "sim",
     }
 
   case "shardSeason":
     return {
-      name: EnvironmentName.mockSeason,
+      name: "mockSeason",
     }
 
   case "shard0":
@@ -42,27 +40,27 @@ const initializeEnvironmentInfo = (): EnvironmentInfo => {
   case "shard2":
   case "shard3":
     return {
-      name: EnvironmentName.mmo,
+      name: "mmo",
     }
 
   case "swc":
     return {
-      name: EnvironmentName.swc,
+      name: "swc",
     }
 
   case "botarena":
     return {
-      name: EnvironmentName.botarena,
+      name: "botarena",
     }
 
   default:
     if (isPrivateEnvironment(shardName) === true) {
       return {
-        name: EnvironmentName.private,
+        name: "private",
       }
     }
     return {
-      name: EnvironmentName.unknown,
+      name: "unknown",
     }
   }
 }
