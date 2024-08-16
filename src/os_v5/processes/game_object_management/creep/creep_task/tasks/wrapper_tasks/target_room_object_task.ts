@@ -22,7 +22,10 @@ type TargetRoomObjectState = {
 }
 
 
-export class TargetRoomObject extends Task<TargetRoomObjectState> {
+type Errors = "not_in_the_room" | "no_target" | "unexpected_task_type" | unknown
+
+
+export class TargetRoomObject extends Task<TargetRoomObjectState, unknown, Errors> {
   public get actionType(): CreepActions | null {
     return null // TODO:
   }
@@ -77,24 +80,39 @@ export class TargetRoomObject extends Task<TargetRoomObjectState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<unknown, Errors> {
     if (creep.room.name !== this.targetRoomName) {
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "TargetRoomObject",
+        error: "not_in_the_room",
+      }
     }
 
     switch (this.childTaskArguments.taskType) {
     case "ClaimController": {
       const controller = creep.room.controller
       if (controller == null) {
-        return "failed"
+        return {
+          case: "failed",
+          taskType: "TargetRoomObject",
+          error: "no_target",
+        }
       }
-      return this.createClaimTask(controller, this.childTaskArguments)
+      return {
+        case: "next_task",
+        task: this.createClaimTask(controller, this.childTaskArguments),
+      }
     }
 
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _: never = this.childTaskArguments.taskType
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "TargetRoomObject",
+        error: "unexpected_task_type",
+      }
     }
     }
   }

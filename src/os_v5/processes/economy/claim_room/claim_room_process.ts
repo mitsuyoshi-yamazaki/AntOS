@@ -7,7 +7,7 @@ import { CreepTask } from "os_v5/processes/game_object_management/creep/creep_ta
 import { CreepBody } from "utility/creep_body_v2"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
-import { CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
+import { AnyTaskDrivenCreep, CreepTaskObserver, CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
 
 // TODO: 完了見込みの算出
 // TODO: （主に移動経路で）問題発生時のエラー処理
@@ -25,7 +25,7 @@ ProcessDecoder.register("ClaimRoomProcess", (processId: ClaimRoomProcessId, stat
 export type ClaimRoomProcessId = ProcessId<Dependency, RoomName, void, ClaimRoomProcessState, ClaimRoomProcess>
 
 
-export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimRoomProcessState, ClaimRoomProcess> {
+export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimRoomProcessState, ClaimRoomProcess> implements CreepTaskObserver {
   public readonly identifier: RoomName
   public readonly dependencies: ProcessDependencies = {
     processes: [
@@ -75,7 +75,7 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
 
   public run(dependency: Dependency): void {
     const { spawned } = dependency.getSpawnedCreepsFor(this.processId)
-    const creepsWithTasks = dependency.registerTaskDrivenCreeps<"", Record<string, never>>(spawned)
+    const creepsWithTasks = dependency.registerTaskDrivenCreeps<"", Record<string, never>>(spawned, {observer: {processId: this.processId, observer: this}})
 
     creepsWithTasks.forEach(creep => {
       if (creep.task != null) {
@@ -87,7 +87,17 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     // TODO: creep taskの失敗を通知できるようにする：task側にフラグを持たせる
   }
 
-  // Private
+
+  // ---- Event Handler ---- //
+  // CreepTaskObserver
+  public creepTaskFinished(creep: AnyTaskDrivenCreep, task: CreepTask.TaskTypes, result: unknown): void {
+  }
+
+  public creepTaskFailed(creep: AnyTaskDrivenCreep, task: CreepTask.TaskTypes, error: unknown): void {
+  }
+
+
+  // ---- Private ---- //
   private claimerTaskFor(creep: TaskDrivenCreep<"", Record<string, never>>): CreepTask.AnyTask {
     if (creep.room.name !== this.roomName) {
       return CreepTask.Tasks.MoveToRoom.create(this.roomName, [])

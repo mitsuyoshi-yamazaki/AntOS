@@ -10,7 +10,10 @@ type SequentialState = {
   readonly i?: true
 }
 
-export class Sequential extends Task<SequentialState> {
+type Result = "all_tasks_finished" | unknown
+type Errors = unknown
+
+export class Sequential extends Task<SequentialState, Result, Errors> {
   public get actionType(): CreepActions | null {
     return this.childTasks[0]?.actionType ?? null
   }
@@ -34,41 +37,65 @@ export class Sequential extends Task<SequentialState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<Result, Errors> {
     const currentTask = this.childTasks[0]
     if (currentTask == null) {
-      return "finished"
+      return {
+        case: "finished",
+        taskType: "Sequential",
+        result: "all_tasks_finished",
+      }
     }
 
     const result = currentTask.run(creep)
-    switch (result) {
+    switch (result.case) {
     case "finished":
       this.childTasks.shift()
+      if (this.childTasks.length <= 0) {
+        return result
+      }
       break
 
-    case "in progress":
-      return "in progress"
+    case "in_progress":
+      return {
+        case: "in_progress",
+      }
 
     case "failed":
       if (this.ignoreFailure !== true) {
-        return "failed"
+        return result
       }
       this.childTasks.shift()
+      if (this.childTasks.length <= 0) {
+        return result
+      }
       break
 
-    default:
+    case "next_task":
       this.childTasks.shift()
-      this.childTasks.unshift(result)
+      this.childTasks.unshift(result.task)
       break
+
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = result
+      break
+    }
     }
 
     const nextTask = this.childTasks[0]
     if (nextTask == null) {
-      return "finished"
+      return {
+        case: "finished",
+        taskType: "Sequential",
+        result: "all_tasks_finished",
+      }
     }
 
     if (nextTask.canRun(creep) !== true) {
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
     }
     return this.run(creep)
   }

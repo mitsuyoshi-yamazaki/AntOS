@@ -7,7 +7,10 @@ type DropResourceState = {
   readonly a?: number
 }
 
-export class DropResource extends Task<DropResourceState> {
+type Errors = Exclude<ReturnType<Creep["drop"]>, OK>
+
+
+export class DropResource extends Task<DropResourceState, void, Errors> {
   public readonly actionType = "drop"
 
   private constructor(
@@ -33,11 +36,20 @@ export class DropResource extends Task<DropResourceState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
-    if (creep.drop(this.resourceType, this.amount) === OK) {
+  public run(creep: AnyV5Creep): TaskResult<void, Errors> {
+    const result = creep.drop(this.resourceType, this.amount)
+    if (result === OK) {
       creep.executedActions.add(this.actionType)
-      return "finished"
+      return {
+        case: "finished",
+        taskType: "DropResource",
+        result: undefined,
+      }
     }
-    return "failed"
+    return {
+      case: "failed",
+      taskType: "DropResource",
+      error: result,
+    }
   }
 }
