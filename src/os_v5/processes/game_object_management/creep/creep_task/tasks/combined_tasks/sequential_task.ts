@@ -10,8 +10,8 @@ type SequentialState = {
   readonly i?: true
 }
 
-type Result = "all_tasks_finished" | unknown
-type Errors = unknown
+type Result = "all_tasks_finished" | string | number
+type Errors = string | number
 
 export class Sequential extends Task<SequentialState, Result, Errors> {
   public get actionType(): CreepActions | null {

@@ -9,8 +9,8 @@ type MoveToRoomState = {
   readonly w: RoomName[]
 }
 
-type Result = unknown
-type Errors = Exclude<ReturnType<Creep["move"]>, OK> | "no_exit" | unknown
+type Result = string | number | undefined
+type Errors = Exclude<ReturnType<Creep["move"]>, OK> | "no_exit" | string | number
 
 export class MoveToRoom extends Task<MoveToRoomState, Result, Errors> {
   public readonly actionType = "move"

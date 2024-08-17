@@ -22,10 +22,11 @@ type TargetRoomObjectState = {
 }
 
 
-type Errors = "not_in_the_room" | "no_target" | "unexpected_task_type" | unknown
+type Result = string | number
+type Errors = "not_in_the_room" | "no_target" | "unexpected_task_type" | string | number
 
 
-export class TargetRoomObject extends Task<TargetRoomObjectState, unknown, Errors> {
+export class TargetRoomObject extends Task<TargetRoomObjectState, Result, Errors> {
   public get actionType(): CreepActions | null {
     return null // TODO:
   }
@@ -80,7 +81,7 @@ export class TargetRoomObject extends Task<TargetRoomObjectState, unknown, Error
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<unknown, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<Result, Errors> {
     if (creep.room.name !== this.targetRoomName) {
       return {
         case: "failed",
