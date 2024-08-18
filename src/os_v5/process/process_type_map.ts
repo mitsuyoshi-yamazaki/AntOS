@@ -47,6 +47,7 @@ export const processTypeDecodingMap = {
   an: "DetectNukeProcess",
   ao: "V3BridgeBotProcess",
   ap: "SellExcessResourceProcess",
+  aq: "V3ProcessLauncherProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -120,6 +121,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "DetectNukeProcess",
   "ProblemResolverProcess",
   "SellExcessResourceProcess",
+  "V3ProcessLauncherProcess",
 
   // Normalized Processes
   "ClaimRoomProcess",
@@ -206,6 +208,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   ManualCreepOperatorProcess: "support",
   TemplateProcess: "support",
   ManualRoomPlannerProcess: "support",
+  V3ProcessLauncherProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

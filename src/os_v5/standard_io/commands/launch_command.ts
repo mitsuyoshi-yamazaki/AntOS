@@ -44,6 +44,7 @@ import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_ro
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
 import { ManualCreepOperatorProcess } from "../../processes/support/manual_creep_operator_process"
 import { ManualRoomPlannerProcess } from "../../processes/support/manual_room_planner/manual_room_planner_process"
+import { V3ProcessLauncherProcess, V3ProcessLauncherProcessId } from "../../processes/v3_os_bridge/v3_process_launcher_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -280,3 +281,15 @@ registerProcess("ScoutProcess", (argumentParser) => {
 //     return SaboteurPositionProcess.create(processId, room.name, targetRoomName, waypoints, { creepCount })
 //   }) as ProcessConstructor
 // })
+
+registerProcess("V3ProcessLauncherProcess", (argumentParser) => {
+  const name = argumentParser.string("name").parse()
+  const interval = argumentParser.int("interval").parse({ min: 1 })
+  const duration = argumentParser.int("duration").parse({ min: 1 })
+  const message = argumentParser.string("message").parse()
+
+
+  return ((processId: V3ProcessLauncherProcessId): V3ProcessLauncherProcess => {
+    return V3ProcessLauncherProcess.create(processId, name, message, interval, duration)
+  }) as ProcessConstructor
+})
