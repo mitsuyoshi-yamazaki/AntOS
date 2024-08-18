@@ -28,7 +28,7 @@ const commandRunners: Command[] = [
 
 export const StandardIO = (input: string): string => {
   try {
-    const argumentParser = new ArgumentParser(input.split(" "))
+    const argumentParser = new ArgumentParser(input)
     return runCommands(argumentParser, commandRunners)
   } catch (error) {
     if (error instanceof Error) {
