@@ -1,4 +1,4 @@
-import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory, processDefaultIdentifier, ProcessDefaultIdentifier } from "os_v5/process/process"
+import { Process, ProcessDependencies, ProcessId, ReadonlySharedMemory, processDefaultIdentifier } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { V3BridgeDriverProcessApi } from "./v3_bridge_driver_process"
 import { Timestamp } from "shared/utility/timestamp"
@@ -28,15 +28,18 @@ type V3ProcessLauncherProcessState = {
 
 ProcessDecoder.register("V3ProcessLauncherProcess", (processId: V3ProcessLauncherProcessId, state: V3ProcessLauncherProcessState) => V3ProcessLauncherProcess.decode(processId, state))
 
-export type V3ProcessLauncherProcessId = ProcessId<Dependency, ProcessDefaultIdentifier, void, V3ProcessLauncherProcessState, V3ProcessLauncherProcess>
+export type V3ProcessLauncherProcessId = ProcessId<Dependency, string, void, V3ProcessLauncherProcessState, V3ProcessLauncherProcess>
 
 
-export class V3ProcessLauncherProcess extends Process<Dependency, ProcessDefaultIdentifier, void, V3ProcessLauncherProcessState, V3ProcessLauncherProcess> {
-  public readonly identifier = processDefaultIdentifier
+export class V3ProcessLauncherProcess extends Process<Dependency, string, void, V3ProcessLauncherProcessState, V3ProcessLauncherProcess> {
   public readonly dependencies: ProcessDependencies = {
     processes: [
       { processType: "V3BridgeDriverProcess", identifier: processDefaultIdentifier},
     ],
+  }
+
+  public get identifier(): string {
+    return this.name
   }
 
   private constructor(
