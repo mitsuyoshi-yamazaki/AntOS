@@ -63,6 +63,7 @@ import { isProcessType, ProcessTypes } from "os_v5/process/process_type_map"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { RoomName } from "shared/utility/room_name_types"
 import { ProcessManagerError } from "os_v5/system_calls/process_manager/process_manager_error"
+import { Logger } from "os_v5/system_calls/logger"
 
 
 export const LaunchCommand: Command = {
@@ -132,6 +133,10 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
   const constructor = constructorMaker(argumentParser, addOutput)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
+
+  if (argumentParser.hasOption("l")) {
+    Logger.setLogEnabledFor([process.processId], 1000)
+  }
 
   outputs.unshift(`Launched ${process} ${process.staticDescription()}`)
 
