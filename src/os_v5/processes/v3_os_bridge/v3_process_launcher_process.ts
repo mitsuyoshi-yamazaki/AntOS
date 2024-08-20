@@ -77,7 +77,7 @@ export class V3ProcessLauncherProcess extends Process<Dependency, string, void, 
 
   public staticDescription(): string {
     const descriptions: string[] = [
-      this.name,
+      ConsoleUtility.colored(this.name, "white"),
       `next run in: ${this.nextRun - Game.time}`,
       `in ${ConsoleUtility.shortenedNumber(this.until - Game.time)}`,
     ]
