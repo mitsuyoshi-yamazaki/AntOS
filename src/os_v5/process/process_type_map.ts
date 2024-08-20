@@ -48,6 +48,7 @@ export const processTypeDecodingMap = {
   ao: "V3BridgeBotProcess",
   ap: "SellExcessResourceProcess",
   aq: "V3ProcessLauncherProcess",
+  ar: "EventDrivenTestProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -94,6 +95,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "V3BridgeBotProcess",
 
   // Application
+  "EventDrivenTestProcess",
 
   // Manager Processes
   "GenericRoomManagerProcess",
@@ -160,6 +162,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   V3BridgeBotProcess: "bot",
 
   // Application
+  EventDrivenTestProcess: "application",
 
   // Combat
   AttackRoomManagerProcess: "combat",

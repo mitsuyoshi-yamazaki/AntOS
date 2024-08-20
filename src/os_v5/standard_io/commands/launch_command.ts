@@ -5,6 +5,7 @@ import { V3BridgeBotProcess } from "../../processes/bot/v3_bridge_bot_process"
 
 // Application
 import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
+import {  } from "../../processes/application/event_driven_test_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"

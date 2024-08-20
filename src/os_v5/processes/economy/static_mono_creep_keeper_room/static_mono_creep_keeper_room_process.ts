@@ -141,7 +141,7 @@ export class StaticMonoCreepKeeperRoomProcess extends Process<Dependency, RoomNa
     return descriptions.join(", ")
   }
 
-  public run(dependency: Dependency): StaticMonoCreepKeeperRoomProcessApi {
+  public run(): StaticMonoCreepKeeperRoomProcessApi {
     const room = Game.rooms[this.roomName]
     if (room == null || !isMyRoom(room)) {
       return {

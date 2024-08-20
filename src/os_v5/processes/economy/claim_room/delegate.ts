@@ -1,5 +1,4 @@
 import type { RoomName } from "shared/utility/room_name_types"
-import type { MyController } from "shared/utility/structure_controller"
 import type { ClaimRoomProcess } from "./claim_room_process"
 
 export type ClaimRoomProblemClaimFailed = {
