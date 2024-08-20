@@ -5,7 +5,7 @@ import { V3BridgeBotProcess } from "../../processes/bot/v3_bridge_bot_process"
 
 // Application
 import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
-import {  } from "../../processes/application/event_driven_test_process"
+import { ChildProcessArguments, EventDrivenTestProcess, EventDrivenTestProcessId, isEventDrivenTestChildProcessTypes } from "../../processes/application/event_driven_test_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
@@ -294,8 +294,27 @@ registerProcess("V3ProcessLauncherProcess", (argumentParser) => {
   const duration = argumentParser.int("duration").parse({ min: 1 })
   const message = argumentParser.string("message").parse()
 
-
   return ((processId: V3ProcessLauncherProcessId): V3ProcessLauncherProcess => {
     return V3ProcessLauncherProcess.create(processId, name, message, interval, duration)
+  }) as ProcessConstructor
+})
+
+registerProcess("EventDrivenTestProcess", (argumentParser) => {
+  const name = argumentParser.string("name").parse()
+  const parentRoomName = argumentParser.roomName("parent_room_name").parse({my: true})
+  const childProcessType = argumentParser.typedString("child_process", "EventDrivenTestChildProcessTypes", isEventDrivenTestChildProcessTypes).parse()
+
+  const childProcessArguments = ((): ChildProcessArguments => {
+    switch (childProcessType) {
+    case "ClaimRoomProcess":
+      return {
+        case: "cr",
+        r: argumentParser.roomName("target_room_name").parse({my: false}),
+      }
+    }
+  })()
+
+  return ((processId: EventDrivenTestProcessId): EventDrivenTestProcess => {
+    return EventDrivenTestProcess.create(processId, name, parentRoomName, childProcessArguments)
   }) as ProcessConstructor
 })
