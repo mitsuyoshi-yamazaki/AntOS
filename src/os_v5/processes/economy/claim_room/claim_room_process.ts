@@ -1,4 +1,4 @@
-import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "os_v5/process/process"
+import { Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ProcessSpecifier, ReadonlySharedMemory } from "os_v5/process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -10,7 +10,7 @@ import { AnyTaskDrivenCreep, CreepTaskObserver, CreepTaskStateManagementProcessA
 import { Timestamp } from "shared/utility/timestamp"
 import { ClaimRoomDelegate, ClaimRoomProblem } from "./delegate"
 import { CreepTaskError, CreepTaskResult } from "os_v5/processes/game_object_management/creep/creep_task_result"
-import { processTypeDecodingMap, processTypeEncodingMap, ProcessTypes, SerializedProcessTypes } from "os_v5/process/process_type_map"
+import { processTypeDecodingMap, processTypeEncodingMap, SerializedProcessTypes } from "os_v5/process/process_type_map"
 import { CreepProviderApi } from "../../bot/creep_provider_api"
 
 
@@ -42,6 +42,7 @@ type ClaimRoomProcessState = {
   readonly l: Timestamp /// Launch time
   readonly r: RoomName  /// Room Name
   readonly p: SerializedProcessTypes  /// Serialized parent process type
+  readonly pi: string                 /// Parent identifier
   readonly s: ClaimState
 }
 
@@ -66,14 +67,14 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     public readonly processId: ClaimRoomProcessId,
     public readonly launchTime: Timestamp,
     public readonly roomName: RoomName,
-    private readonly parentProcessType: ProcessTypes,
+    private readonly parentProcessSpecifier: ProcessSpecifier,
     private claimState: ClaimState,
   ) {
     super()
 
     this.identifier = roomName
     this.codename = SystemCalls.uniqueId.generateCodename("V3BridgeSpawnRequestProcess", parseInt(processId, 36))
-    this.dependencies.processes.push({ processType: parentProcessType, identifier: this.roomName })
+    this.dependencies.processes.push(parentProcessSpecifier)
     this.estimatedFinishTime = this.launchTime + 1500 // TODO: 正確な見積もりを出す
   }
 
@@ -81,17 +82,22 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     return {
       l: this.launchTime,
       r: this.roomName,
-      p: processTypeEncodingMap[this.parentProcessType],
+      p: processTypeEncodingMap[this.parentProcessSpecifier.processType],
+      pi: this.parentProcessSpecifier.identifier,
       s: this.claimState,
     }
   }
 
   public static decode(processId: ClaimRoomProcessId, state: ClaimRoomProcessState): ClaimRoomProcess {
-    return new ClaimRoomProcess(processId, state.l, state.r, processTypeDecodingMap[state.p], state.s)
+    const parent: ProcessSpecifier = {
+      processType: processTypeDecodingMap[state.p],
+      identifier: state.pi,
+    }
+    return new ClaimRoomProcess(processId, state.l, state.r, parent, state.s)
   }
 
-  public static create(processId: ClaimRoomProcessId, roomName: RoomName, parentProcessType: ProcessTypes): ClaimRoomProcess {
-    return new ClaimRoomProcess(processId, Game.time, roomName, parentProcessType, {case: "initialized"})
+  public static create(processId: ClaimRoomProcessId, roomName: RoomName, parentProcessSpecifier: ProcessSpecifier): ClaimRoomProcess {
+    return new ClaimRoomProcess(processId, Game.time, roomName, parentProcessSpecifier, {case: "initialized"})
   }
 
   public getDependentData(sharedMemory: ReadonlySharedMemory): Dependency | null {

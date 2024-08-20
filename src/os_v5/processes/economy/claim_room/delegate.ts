@@ -1,3 +1,4 @@
+import type { CreepProviderApi } from "os_v5/processes/bot/creep_provider_api"
 import type { RoomName } from "shared/utility/room_name_types"
 import type { ClaimRoomProcess } from "./claim_room_process"
 
@@ -26,7 +27,7 @@ export type ClaimRoomProblem = ClaimRoomProblemClaimFailed
   | ClaimRoomProblemUnknown
 
 
-export type ClaimRoomDelegate = {
+export type ClaimRoomDelegate = CreepProviderApi & {
   claimRoomDidFinishClaiming(process: ClaimRoomProcess): void
   claimRoomDidFailClaiming(process: ClaimRoomProcess, problem: ClaimRoomProblem): void
 }
