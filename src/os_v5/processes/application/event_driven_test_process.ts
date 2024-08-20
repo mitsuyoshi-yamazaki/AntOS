@@ -76,7 +76,7 @@ export type EventDrivenTestProcessId = ProcessId<Dependency, string, Api, EventD
 
 export class EventDrivenTestProcess extends ApplicationProcess<Dependency, string, Api, EventDrivenTestProcessState, EventDrivenTestProcess> {
   public readonly applicationName = "EventDrivenTest"
-  public readonly version = new SemanticVersion(1, 0, 1)
+  public readonly version = new SemanticVersion(1, 0, 2)
 
   public readonly dependencies: ProcessDependencies = {
     processes: [
@@ -175,10 +175,38 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
         )
       },
 
+      // ---- ClaimRoomProcess ---- //
       claimRoomDidFinishClaiming: (process: ClaimRoomProcess): void => {
+        SystemCalls.logger.log(this, `claimRoomDidFinishClaiming: ${ConsoleUtility.roomLink(process.roomName)}`)
+
+        this.childProcessState = {
+          case: "finished",
+          t: Game.time,
+        }
       },
 
       claimRoomDidFailClaiming: (process: ClaimRoomProcess, problem: ClaimRoomProblem): void => {
+        const problemDescription = ((): string => {
+          switch (problem.case) {
+          case "claim_failed":
+            return `[claim_failed] ${problem.reason}`
+          case "controller_unreachable":
+            return "[controller_unreachable]"
+          case "creep_attacked":
+            return "[creep_attacked]"
+          case "room_unreachable":
+            return `[room_unreachable] ${ConsoleUtility.roomLink(problem.blockingRoomName)}`
+          case "unknown":
+            return `[unknown] ${problem.reason}`
+          }
+        })()
+        SystemCalls.logger.log(this, `claimRoomDidFailClaiming: ${ConsoleUtility.roomLink(process.roomName)}, ${problemDescription}`)
+
+        this.childProcessState = {
+          case: "failed",
+          reason: `${ConsoleUtility.roomLink(process.roomName)}: ${problemDescription}`,
+          t: Game.time,
+        }
       },
     }
   }
@@ -218,6 +246,8 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
         }
       })
 
+      SystemCalls.logger.log(this, `Launched ${process}`)
+
       return {
         case: "running",
         p: process.processId as AnyProcessId,
@@ -230,6 +260,8 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
           return "ClaimRoomProcess"
         }
       })()
+
+      SystemCalls.logger.log(this, `Launch ${processType} failed: ${error}`)
 
       return {
         case: "failed",
@@ -261,6 +293,7 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
       })()
 
       const descriptions: string[] = [
+        "- " + ConsoleUtility.colored(`${this.version}`, "white"),
         `- ${ConsoleUtility.colored(this.identifier, "white")}`,
         `- Child process state: ${stateDescription}`,
       ]

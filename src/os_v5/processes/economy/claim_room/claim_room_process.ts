@@ -236,7 +236,7 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     case ERR_NO_PATH:
       return {
         case: "room_unreachable",
-        blockingRoom: creep.room.name,
+        blockingRoomName: creep.room.name,
       }
 
     case ERR_NOT_OWNER:

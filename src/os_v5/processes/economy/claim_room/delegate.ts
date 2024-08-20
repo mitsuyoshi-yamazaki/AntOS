@@ -14,7 +14,7 @@ export type ClaimRoomProblemControllerUnreachable = {
 }
 export type ClaimRoomProblemRoomUnreachable = {
   readonly case: "room_unreachable"
-  readonly blockingRoom: RoomName
+  readonly blockingRoomName: RoomName
 }
 export type ClaimRoomProblemUnknown = {
   readonly case: "unknown"
