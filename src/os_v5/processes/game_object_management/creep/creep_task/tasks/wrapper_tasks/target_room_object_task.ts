@@ -22,8 +22,8 @@ type TargetRoomObjectState = {
 }
 
 
-export type TargetRoomObjectResult = string | number
-export type TargetRoomObjectError = "not_in_the_room" | "no_target" | "unexpected_task_type" | string | number
+export type TargetRoomObjectResult = void
+export type TargetRoomObjectError = "not_in_the_room" | "no_target" | "unexpected_task_type"
 
 
 export class TargetRoomObject extends Task<TargetRoomObjectState, TargetRoomObjectResult, TargetRoomObjectError> {

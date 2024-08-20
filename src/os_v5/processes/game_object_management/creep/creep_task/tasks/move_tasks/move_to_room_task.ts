@@ -10,7 +10,7 @@ type MoveToRoomState = {
 }
 
 export type MoveToRoomResult = string | number | undefined
-export type MoveToRoomError = Exclude<ReturnType<Creep["move"]>, OK> | "no_exit" | string | number
+export type MoveToRoomError = Exclude<(ReturnType<Creep["move"]> | ReturnType<Creep["moveTo"]>), OK> | "no_exit"
 
 export class MoveToRoom extends Task<MoveToRoomState, MoveToRoomResult, MoveToRoomError> {
   public readonly actionType = "move"
