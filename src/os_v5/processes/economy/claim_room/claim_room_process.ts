@@ -9,10 +9,12 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
 import { AnyTaskDrivenCreep, CreepTaskObserver, CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
 import { Timestamp } from "shared/utility/timestamp"
-
+import { ClaimRoomDelegate, ClaimRoomProblem } from "./delegate"
+import { CreepTaskError, CreepTaskResult } from "os_v5/processes/game_object_management/creep/creep_task_result"
 
 
 type Dependency = ProblemResolverProcessApi
+  & ClaimRoomDelegate
   & CreepDistributorProcessApi
   & CreepTaskStateManagementProcessApi
 
@@ -31,8 +33,7 @@ type ClaimStateFinished = {
 }
 type ClaimStateFailed = {
   readonly case: "failed"
-  readonly taskType: CreepTask.TaskTypes
-  readonly error: string | number
+  readonly problem: ClaimRoomProblem
 }
 type ClaimState = ClaimStateInitialized | ClaimStateSpawnRequested | ClaimStateRunning | ClaimStateFinished | ClaimStateFailed
 
@@ -112,6 +113,12 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
       creep.task = this.claimerTaskFor(creep)
     })
 
+    this.transitionStates(dependency)
+  }
+
+
+  // ---- Private ---- //
+  private transitionStates(dependency: Dependency): void {
     switch (this.claimState.case) {
     case "initialized":
       this.spawnClaimer(dependency)
@@ -125,13 +132,19 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
       if (Game.time >= this.estimatedFinishTime) {
         return
       }
-      break
+      dependency.claimRoomDidFailClaiming(this, {
+        case: "unknown",
+        reason: `haven't finished in ${Game.time - this.launchTime} ticks, state: ${this.claimState.case}`,
+      })
+      return
 
     case "finished":
+      dependency.claimRoomDidFinishClaiming(this)
+      return
+
     case "failed":
-    // TODO: Problem Resolverが受け付けられる、アクションに対する問題解決がある
-      // この場合はClaim失敗と到達の失敗
-      break
+      dependency.claimRoomDidFailClaiming(this, this.claimState.problem)
+      return
 
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -141,21 +154,6 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     }
   }
 
-
-  // ---- Event Handler ---- //
-  // CreepTaskObserver
-  public creepTaskFinished(creep: AnyTaskDrivenCreep, task: CreepTask.TaskTypes, result: unknown): void {
-    this.claimState = {
-      case: "finished",
-    }
-  }
-
-  public creepTaskFailed(creep: AnyTaskDrivenCreep, task: CreepTask.TaskTypes, error: unknown): void {
-
-  }
-
-
-  // ---- Private ---- //
   private claimerTaskFor(creep: TaskDrivenCreep<"", Record<string, never>>): CreepTask.AnyTask {
     if (creep.room.name !== this.roomName) {
       return CreepTask.Tasks.MoveToRoom.create(this.roomName, [])
@@ -184,5 +182,114 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
         memory: {},
       },
     })
+  }
+
+
+  // ---- Event Handler ---- //
+  // CreepTaskObserver
+  public creepTaskFinished(creep: AnyTaskDrivenCreep, result: CreepTaskResult): void {
+    if (result.taskType !== "ClaimController") {
+      return
+    }
+    this.claimState = {
+      case: "finished",
+    }
+  }
+
+  public creepTaskFailed(creep: AnyTaskDrivenCreep, error: CreepTaskError): void {
+    const problem = this.claimRoomProblemOf(creep, error)
+    if (problem == null) {
+      return
+    }
+    this.claimState = {
+      case: "failed",
+      problem,
+    }
+  }
+
+  private claimRoomProblemOf(creep: AnyTaskDrivenCreep, error: CreepTaskError): ClaimRoomProblem | null {
+    switch (error.taskType) {
+    case "MoveToRoom":
+      return this.moveToRoomFailed(creep, error.error)
+    case "TargetRoomObject":
+      return this.targetRoomObjectFailed(creep, error.error)
+    case "ClaimController":
+      return this.claimControllerFailed(creep, error.error)
+    default:
+      return null
+    }
+  }
+
+  private moveToRoomFailed(creep: AnyTaskDrivenCreep, error: CreepTask.Errors.MoveToRoomError): ClaimRoomProblem {
+    switch (error) {
+    case "no_exit":
+    case ERR_NO_PATH:
+      return {
+        case: "room_unreachable",
+        blockingRoom: creep.room.name,
+      }
+
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_TIRED:
+    case ERR_NO_BODYPART:
+    case ERR_INVALID_TARGET:
+    case ERR_NOT_FOUND:
+    default:
+      return {
+        case: "unknown",
+        reason: `MoveToRoom failed with ${error}`,
+      }
+    }
+  }
+
+  private targetRoomObjectFailed(creep: AnyTaskDrivenCreep, error: CreepTask.Errors.TargetRoomObjectError): ClaimRoomProblem {
+    switch (error) {
+    case "no_target":
+    case "not_in_the_room":
+    case "unexpected_task_type":
+      return {
+        case: "unknown",
+        reason: `MoveToRoom failed with ${error}`,
+      }
+    }
+  }
+
+  private claimControllerFailed(creep: AnyTaskDrivenCreep, error: CreepTask.Errors.ClaimControllerError): ClaimRoomProblem {
+    switch (error) {
+    case "no_controller":
+      return {
+        case: "claim_failed",
+        reason: "no_controller",
+      }
+
+    case ERR_NO_BODYPART:
+      return {
+        case: "creep_attacked",
+      }
+
+    case ERR_FULL: //You cannot claim more than 3 rooms in the Novice Area.
+    case ERR_GCL_NOT_ENOUGH:
+      return {
+        case: "claim_failed",
+        reason: "max",
+      }
+
+    case ERR_INVALID_TARGET:
+      return {
+        case: "claim_failed",
+        reason: "not_neutral",
+      }
+
+    case ERR_TIRED:
+    case ERR_NOT_OWNER:
+    case ERR_BUSY:
+    case ERR_NOT_IN_RANGE:
+    default:
+      return {
+        case: "unknown",
+        reason: `ClaimController failed with ${error}`,
+      }
+    }
   }
 }
