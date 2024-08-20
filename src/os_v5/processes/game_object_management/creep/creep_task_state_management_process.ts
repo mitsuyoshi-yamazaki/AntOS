@@ -6,7 +6,7 @@ import { CreepTask } from "./creep_task/creep_task"
 import { CreepName } from "prototype/creep"
 import { CreepDistributorProcessApi } from "./creep_distributor_process"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
-import { TaskResultFailed, TaskResultFinished } from "./creep_task"
+import { CreepTaskError, CreepTaskResult } from "./creep_task_result"
 
 /**
 #
@@ -22,6 +22,8 @@ import { TaskResultFailed, TaskResultFinished } from "./creep_task"
 ## Discussion
 - 入れ子の子タスクはserializeしたままで、遷移時にdeserializeすればdeserialize時間を短縮できないか
  */
+
+// TODO: Creepが死んだ場合はTaskの終了イベントが発火しない
 
 ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTaskStateManagementProcessId) => CreepTaskStateManagementProcess.decode(processId))
 
@@ -41,8 +43,8 @@ export type AnyTaskDrivenCreep = TaskDrivenCreep<string, Record<string, any>>
 
 
 export type CreepTaskObserver = {
-  creepTaskFinished(creep: AnyTaskDrivenCreep, task: CreepTask.TaskTypes, result: unknown): void
-  creepTaskFailed(creep: AnyTaskDrivenCreep, task: CreepTask.TaskTypes, error: unknown): void
+  creepTaskFinished(creep: AnyTaskDrivenCreep, result: CreepTaskResult): void
+  creepTaskFailed(creep: AnyTaskDrivenCreep, error: CreepTaskError): void
 }
 
 
@@ -157,13 +159,13 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
       case "finished":
         creep.task = null
         if (creep.memory.p != null) {
-          this.creepTaskFinished(creep, creep.memory.p, result.result)
+          this.creepTaskFinished(creep, creep.memory.p, result)
         }
         break
       case "failed":
         creep.task = null
         if (creep.memory.p != null) {
-          this.creepTaskFailed(creep, creep.memory.p, result.error)
+          this.creepTaskFailed(creep, creep.memory.p, result)
         }
         break
       case "next_task":
@@ -181,20 +183,20 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
     }, `CreepTaskStateManagementProcess.runCreepTask(${task.constructor.name}) for creep ${creep.name}`)()
   }
 
-  private creepTaskFinished(creep: AnyTaskDrivenCreep, processId: AnyProcessId, result: TaskResultFinished<unknown>): void {
+  private creepTaskFinished(creep: AnyTaskDrivenCreep, processId: AnyProcessId, result: CreepTaskResult): void {
     const observer = this.taskDrivenCreepObservers.get(processId)
     if (observer == null) {
       return
     }
-    observer.creepTaskFinished(creep, result.taskType, result.result)
+    observer.creepTaskFinished(creep, result)
   }
 
-  private creepTaskFailed(creep: AnyTaskDrivenCreep, processId: AnyProcessId, error: TaskResultFailed<unknown>): void {
+  private creepTaskFailed(creep: AnyTaskDrivenCreep, processId: AnyProcessId, error: CreepTaskError): void {
     const observer = this.taskDrivenCreepObservers.get(processId)
     if (observer == null) {
       return
     }
-    observer.creepTaskFailed(creep, error.taskType, error.error)
+    observer.creepTaskFailed(creep, error)
   }
 
   private parseRootTask(creep: AnyTaskDrivenCreep): CreepTask.AnyTask | null {
