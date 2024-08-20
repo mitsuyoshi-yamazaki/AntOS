@@ -1,3 +1,12 @@
+// Process Management
+import { ProcessStore } from "./process_store"
+import { ProcessDecoder, ProcessState } from "./process_decoder"
+import { ProcessManagerError } from "./process_manager_error"
+import { DependencyGraphNode } from "./process_dependency_graph"
+import { ProcessExecutionLog } from "./process_execution_log"
+import { ProcessManagerNotification, processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "./process_manager_notification"
+
+// Import
 import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
@@ -8,12 +17,6 @@ import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "shared/utility/serializable_types"
 import { UniqueId } from "../unique_id"
 import { SharedMemory } from "./shared_memory"
-import { ProcessStore } from "./process_store"
-import { ProcessDecoder, ProcessState } from "./process_decoder"
-import { ProcessManagerError } from "./process_manager_error"
-import { DependencyGraphNode } from "./process_dependency_graph"
-import { ProcessExecutionLog } from "./process_execution_log"
-import { ProcessManagerNotification, processManagerProcessDidKillNotification, processManagerProcessDidLaunchNotification } from "./process_manager_notification"
 import { DriverProcessConstructor } from "os_v5/process/process_constructor"
 
 
@@ -75,16 +78,19 @@ const processExecutionLogs: ProcessExecutionLog[] = []
 
 
 type ProcessManager = {
+  // Process Lifecycle
   addProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(constructor: (processId: ProcessId<D, I, M, S, P>) => P): P
   getProcess<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processId: ProcessId<D, I, M, S, P>): P | null
   getProcessByIdentifier<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(processType: ProcessTypes, identifier: string): P | null
   getProcessRunningState(processId: AnyProcessId): ProcessRunningState
   hasProcess(processType: ProcessTypes, identifier: string): boolean
 
+  // Process Control
   suspend(process: AnyProcess): boolean
   resume(process: AnyProcess): boolean
   killProcess(process: AnyProcess): void
 
+  // Utility
   getDependencyFor<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): D | null
   getRuntimeDescription<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P): string | null
   listProcesses(): AnyProcess[]
@@ -94,6 +100,7 @@ type ProcessManager = {
   /** @throws */
   sendMessage<D extends Record<string, unknown> | void, I extends string, M, S extends SerializableObject, P extends Process<D, I, M, S, P>>(process: P, argumentParser: ArgumentParser): string
 
+  // Settings
   cpuUsageThreshold(): number
   setCpuUsageThreshold(threshold: number): void
 }
@@ -421,6 +428,7 @@ export const ProcessManager: SystemCall<"ProcessManager", ProcessManagerMemory> 
     return process.didReceiveMessage(argumentParser, dependency)
   },
 
+  // Settings
   cpuUsageThreshold(): number {
     return processManagerMemory.cpuUsageThreshold
   },
