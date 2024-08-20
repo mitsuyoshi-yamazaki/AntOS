@@ -27,6 +27,7 @@ export type ClaimRoomProblem = ClaimRoomProblemClaimFailed
   | ClaimRoomProblemUnknown
 
 
+/// 呼び出されるのは afterRun() のタイミングであることがある
 export type ClaimRoomDelegate = CreepProviderApi & {
   claimRoomDidFinishClaiming(process: ClaimRoomProcess): void
   claimRoomDidFailClaiming(process: ClaimRoomProcess, problem: ClaimRoomProblem): void

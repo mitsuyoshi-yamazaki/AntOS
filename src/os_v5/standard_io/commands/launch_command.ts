@@ -302,7 +302,7 @@ registerProcess("V3ProcessLauncherProcess", (argumentParser) => {
 registerProcess("EventDrivenTestProcess", (argumentParser) => {
   const name = argumentParser.string("name").parse()
   const parentRoomName = argumentParser.roomName("parent_room_name").parse({my: true})
-  const childProcessType = argumentParser.typedString("child_process", "EventDrivenTestChildProcessTypes", isEventDrivenTestChildProcessTypes).parse()
+  const childProcessType = argumentParser.typedString("child_process_type", "EventDrivenTestChildProcessTypes", isEventDrivenTestChildProcessTypes).parse()
 
   const childProcessArguments = ((): ChildProcessArguments => {
     switch (childProcessType) {

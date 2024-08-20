@@ -8,7 +8,7 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
 import { AnyTaskDrivenCreep, CreepTaskObserver, CreepTaskStateManagementProcessApi, TaskDrivenCreep } from "os_v5/processes/game_object_management/creep/creep_task_state_management_process"
 import { Timestamp } from "shared/utility/timestamp"
-import { ClaimRoomDelegate, ClaimRoomProblem } from "./delegate"
+import { ClaimRoomDelegate, ClaimRoomProblem, ClaimRoomProblemUnknown } from "./delegate"
 import { CreepTaskError, CreepTaskResult } from "os_v5/processes/game_object_management/creep/creep_task_result"
 import { processTypeDecodingMap, processTypeEncodingMap, SerializedProcessTypes } from "os_v5/process/process_type_map"
 import { CreepProviderApi } from "../../bot/creep_provider_api"
@@ -62,6 +62,7 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
 
   private readonly codename: string
   private readonly estimatedFinishTime: Timestamp
+  private onTickDependency: Dependency | null = null
 
   private constructor(
     public readonly processId: ClaimRoomProcessId,
@@ -113,6 +114,8 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
   }
 
   public run(dependency: Dependency): void {
+    this.onTickDependency = dependency
+
     const { spawned } = dependency.getSpawnedCreepsFor(this.processId)
     const creepsWithTasks = dependency.registerTaskDrivenCreeps<"", Record<string, never>>(spawned, { observer: { processId: this.processId, observer: this } })
 
@@ -132,33 +135,56 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     switch (this.claimState.case) {
     case "initialized":
       this.spawnClaimer(dependency)
-      this.claimState = {
+      this.changeClaimState(dependency, {
         case: "spawn_requested",
-      }
-      return
-
-    case "spawn_requested":
-    case "running":
-      if (Game.time >= this.estimatedFinishTime) {
-        return
-      }
-      dependency.claimRoomDidFailClaiming(this, {
-        case: "unknown",
-        reason: `haven't finished in ${Game.time - this.launchTime} ticks, state: ${this.claimState.case}`,
       })
       return
 
-    case "finished":
-      dependency.claimRoomDidFinishClaiming(this)
+    case "spawn_requested":
+    case "running": {
+      if (Game.time >= this.estimatedFinishTime) {
+        return
+      }
+      const problem: ClaimRoomProblemUnknown = {
+        case: "unknown",
+        reason: `haven't finished in ${Game.time - this.launchTime} ticks, state: ${this.claimState.case}`,
+      }
+      this.changeClaimState(dependency, {
+        case: "failed",
+        problem,
+      })
       return
+    }
 
+    case "finished":
     case "failed":
-      dependency.claimRoomDidFailClaiming(this, this.claimState.problem)
       return
 
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _: never = this.claimState
+      break
+    }
+    }
+  }
+
+  private changeClaimState(dependency: Dependency, newState: ClaimState): void {
+    this.claimState = newState
+
+    switch (newState.case) {
+    case "initialized":
+    case "spawn_requested":
+    case "running":
+      break
+    case "finished":
+      dependency.claimRoomDidFinishClaiming(this)
+      break
+    case "failed":
+      dependency.claimRoomDidFailClaiming(this, newState.problem)
+      break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = newState
       break
     }
     }
@@ -201,8 +227,10 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     if (result.taskType !== "ClaimController") {
       return
     }
-    this.claimState = {
-      case: "finished",
+    if (this.onTickDependency != null) {
+      this.changeClaimState(this.onTickDependency, {
+        case: "finished",
+      })
     }
   }
 
@@ -211,9 +239,11 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     if (problem == null) {
       return
     }
-    this.claimState = {
-      case: "failed",
-      problem,
+    if (this.onTickDependency != null) {
+      this.changeClaimState(this.onTickDependency, {
+        case: "failed",
+        problem,
+      })
     }
   }
 

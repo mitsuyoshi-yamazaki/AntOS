@@ -76,7 +76,7 @@ export type EventDrivenTestProcessId = ProcessId<Dependency, string, Api, EventD
 
 export class EventDrivenTestProcess extends ApplicationProcess<Dependency, string, Api, EventDrivenTestProcessState, EventDrivenTestProcess> {
   public readonly applicationName = "EventDrivenTest"
-  public readonly version = new SemanticVersion(1, 0, 2)
+  public readonly version = new SemanticVersion(1, 0, 3)
 
   public readonly dependencies: ProcessDependencies = {
     processes: [
