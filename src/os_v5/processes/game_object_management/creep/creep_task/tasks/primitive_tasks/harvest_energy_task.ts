@@ -7,10 +7,11 @@ type HarvestEnergyState = {
   readonly tg: Id<Source>
 }
 
-type Errors = Exclude<ReturnType<Creep["harvest"]>, OK> | "no_source"
+export type HarvestEnergyResult = void
+export type HarvestEnergyError = Exclude<ReturnType<Creep["harvest"]>, OK> | "no_source"
 
 
-export class HarvestEnergy extends Task<HarvestEnergyState, void, Errors> {
+export class HarvestEnergy extends Task<HarvestEnergyState, HarvestEnergyResult, HarvestEnergyError> {
   public readonly actionType = "harvest"
 
   private constructor(
@@ -34,7 +35,7 @@ export class HarvestEnergy extends Task<HarvestEnergyState, void, Errors> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<void, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<HarvestEnergyResult, HarvestEnergyError> {
     const target = Game.getObjectById(this.targetId)
     if (target == null) {
       return {

@@ -9,11 +9,11 @@ type MoveToState = {
 }
 
 type Range = number
-type Result = Range
-type Errors = Exclude<ReturnType<Creep["moveTo"]>, OK>
+export type MoveToResult = Range
+export type MoveToError = Exclude<ReturnType<Creep["moveTo"]>, OK>
 
 
-export class MoveTo extends Task<MoveToState, Result, Errors> {
+export class MoveTo extends Task<MoveToState, MoveToResult, MoveToError> {
   public readonly actionType = "move"
 
   private constructor(
@@ -39,7 +39,7 @@ export class MoveTo extends Task<MoveToState, Result, Errors> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<Result, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<MoveToResult, MoveToError> {
     if (!isSpawnedV5Creep(creep)) {
       return {
         case: "in_progress",

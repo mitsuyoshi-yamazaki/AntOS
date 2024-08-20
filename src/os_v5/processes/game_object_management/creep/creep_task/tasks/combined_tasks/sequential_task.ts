@@ -10,10 +10,10 @@ type SequentialState = {
   readonly i?: true
 }
 
-type Result = "all_tasks_finished" | string | number
-type Errors = string | number
+export type SequentialResult = "all_tasks_finished" | string | number
+export type SequentialError = string | number
 
-export class Sequential extends Task<SequentialState, Result, Errors> {
+export class Sequential extends Task<SequentialState, SequentialResult, SequentialError> {
   public get actionType(): CreepActions | null {
     return this.childTasks[0]?.actionType ?? null
   }
@@ -37,7 +37,7 @@ export class Sequential extends Task<SequentialState, Result, Errors> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<Result, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<SequentialResult, SequentialError> {
     const currentTask = this.childTasks[0]
     if (currentTask == null) {
       return {

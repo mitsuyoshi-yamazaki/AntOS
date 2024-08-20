@@ -1,6 +1,6 @@
 import { SerializableObject } from "shared/utility/serializable_types"
 import { AnyTask, TaskState, taskTypeDecodingMap, TaskTypes } from "./types"
-import { Tasks } from "./tasks/tasks"
+import * as Tasks from "./tasks/tasks"
 
 
 export const decode = (state: TaskState): AnyTask | null => {

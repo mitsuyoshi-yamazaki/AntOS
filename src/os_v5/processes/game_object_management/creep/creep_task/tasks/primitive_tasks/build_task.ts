@@ -7,10 +7,11 @@ type BuildState = {
   readonly c: Id<ConstructionSite<BuildableStructureConstant>>  /// Construction site ID
 }
 
-type Errors = Exclude<ReturnType<Creep["build"]>, OK> | "no_construction_site"
+export type BuildResult = void
+export type BuildError = Exclude<ReturnType<Creep["build"]>, OK> | "no_construction_site"
 
 
-export class Build extends Task<BuildState, void, Errors> {
+export class Build extends Task<BuildState, BuildResult, BuildError> {
   public readonly actionType = "build"
 
   private constructor(
@@ -34,7 +35,7 @@ export class Build extends Task<BuildState, void, Errors> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<void, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<BuildResult, BuildError> {
     const constructionSite = Game.getObjectById(this.constructionSiteId)
     if (constructionSite == null) {
       return {

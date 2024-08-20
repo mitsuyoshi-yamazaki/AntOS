@@ -9,10 +9,11 @@ type WithdrawResourceState = {
   readonly a?: number
 }
 
-type Errors = Exclude<ReturnType<Creep["withdraw"]>, OK> | "no_target"
+export type WithdrawResourceResult = void
+export type WithdrawResourceError = Exclude<ReturnType<Creep["withdraw"]>, OK> | "no_target"
 
 
-export class WithdrawResource extends Task<WithdrawResourceState, void, Errors> {
+export class WithdrawResource extends Task<WithdrawResourceState, WithdrawResourceResult, WithdrawResourceError> {
   public readonly actionType = "withdraw"
 
   private constructor(
@@ -40,7 +41,7 @@ export class WithdrawResource extends Task<WithdrawResourceState, void, Errors> 
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<void, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<WithdrawResourceResult, WithdrawResourceError> {
     const target = Game.getObjectById(this.targetId)
     if (target == null) {
       return {

@@ -7,10 +7,11 @@ type ClaimControllerState = {
   readonly s?: string
 }
 
-type Errors = Exclude<ReturnType<Creep["claimController"]>, OK> | "no_controller"
+export type ClaimControllerResult = void
+export type ClaimControllerError = Exclude<ReturnType<Creep["claimController"]>, OK> | "no_controller"
 
 
-export class ClaimController extends Task<ClaimControllerState, void, Errors> {
+export class ClaimController extends Task<ClaimControllerState, ClaimControllerResult, ClaimControllerError> {
   public readonly actionType = null
 
   private constructor(
@@ -36,7 +37,7 @@ export class ClaimController extends Task<ClaimControllerState, void, Errors> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<void, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<ClaimControllerResult, ClaimControllerError> {
     const controller = Game.getObjectById(this.controllerId)
     if (controller == null) {
       return {

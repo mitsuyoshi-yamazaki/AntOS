@@ -7,10 +7,11 @@ type UpgradeControllerState = {
   readonly tg: Id<StructureController>
 }
 
-type Errors = Exclude<ReturnType<Creep["upgradeController"]>, OK> | "no_controller"
+export type UpgradeControllerResult = void
+export type UpgradeControllerError = Exclude<ReturnType<Creep["upgradeController"]>, OK> | "no_controller"
 
 
-export class UpgradeController extends Task<UpgradeControllerState, void, Errors> {
+export class UpgradeController extends Task<UpgradeControllerState, UpgradeControllerResult, UpgradeControllerError> {
   public readonly actionType = "upgradeController"
 
   private constructor(
@@ -34,7 +35,7 @@ export class UpgradeController extends Task<UpgradeControllerState, void, Errors
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<void, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<UpgradeControllerResult, UpgradeControllerError> {
     const target = Game.getObjectById(this.targetId)
     if (target == null) {
       return {

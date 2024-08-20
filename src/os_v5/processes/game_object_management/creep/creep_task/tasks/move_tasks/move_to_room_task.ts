@@ -9,10 +9,10 @@ type MoveToRoomState = {
   readonly w: RoomName[]
 }
 
-type Result = string | number | undefined
-type Errors = Exclude<ReturnType<Creep["move"]>, OK> | "no_exit" | string | number
+export type MoveToRoomResult = string | number | undefined
+export type MoveToRoomError = Exclude<ReturnType<Creep["move"]>, OK> | "no_exit" | string | number
 
-export class MoveToRoom extends Task<MoveToRoomState, Result, Errors> {
+export class MoveToRoom extends Task<MoveToRoomState, MoveToRoomResult, MoveToRoomError> {
   public readonly actionType = "move"
   private exitPosition: RoomPosition | null = null
 
@@ -39,7 +39,7 @@ export class MoveToRoom extends Task<MoveToRoomState, Result, Errors> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult<Result, Errors> {
+  public run(creep: AnyV5Creep): TaskResult<MoveToRoomResult, MoveToRoomError> {
     if (!isSpawnedV5Creep(creep) || creep.fatigue > 0) {
       return {
         case: "in_progress",
@@ -149,7 +149,7 @@ export class MoveToRoom extends Task<MoveToRoomState, Result, Errors> {
     return this.moveCreep(creep, this.exitPosition)
   }
 
-  private moveCreep(creep: AnyV5Creep, position: RoomPosition): TaskResult<Result, Errors> {
+  private moveCreep(creep: AnyV5Creep, position: RoomPosition): TaskResult<MoveToRoomResult, MoveToRoomError> {
     const moveToOptions: MoveToOpts = {
       reusePath: 8,
       serializeMemory: true,
