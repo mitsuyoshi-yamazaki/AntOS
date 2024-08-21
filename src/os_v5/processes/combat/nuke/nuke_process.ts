@@ -10,6 +10,14 @@ import { GameConstants } from "utility/constants"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { SystemCalls } from "os_v5/system_calls/interface"
 
+
+const roomNameArgumentLiterals = [
+  "all",
+] as const
+type RoomNameArgumentLiterals = typeof roomNameArgumentLiterals[number]
+const isRoomNameArgumentLiterals = (value: string): value is RoomNameArgumentLiterals => (roomNameArgumentLiterals as Readonly<string[]>).includes(value)
+
+
 type NukerInfo = {
   readonly nukerId: Id<StructureNuker>
   readonly position: Position
@@ -283,8 +291,8 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
       const targetFlags = Array.from(Object.values(Game.flags)).filter(flag => flag.pos.roomName === targetRoomName)
 
       const nukers = ((): StructureNuker[] => {
-        const nukerRoomsArg = argumentParser.string("room_names").parseOptional()
-        switch (nukerRoomsArg) {
+        const nukerRooms = argumentParser.list("room_names", "my_room").withStringLiteral(isRoomNameArgumentLiterals).parse()
+        switch (nukerRooms) {
         case "all": {
           const nukersInRange = Array.from(Object.values(Game.rooms))
             .filter(isMyRoom)
@@ -298,31 +306,30 @@ export class NukeProcess extends Process<void, ProcessDefaultIdentifier, void, N
           }
           return nukersInRange
         }
-        default:
-          break
-        }
 
-        const nukerRooms = argumentParser.list("room_names", "my_room").parse()
-        const specifiedRoomNukers = nukerRooms.map(room => {
-          const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
-          if (nuker == null) {
-            throw `No nuker in ${roomLink(room.name)}`
+        default: {
+          const specifiedRoomNukers = nukerRooms.map(room => {
+            const nuker = room.find<StructureNuker>(FIND_MY_STRUCTURES, { filter: { structureType: STRUCTURE_NUKER } })[0]
+            if (nuker == null) {
+              throw `No nuker in ${roomLink(room.name)}`
+            }
+            if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
+              throw `Nuker in ${roomLink(room.name)} lack of energy`
+            }
+            if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
+              throw `Nuker in ${roomLink(room.name)} lack of ghodium`
+            }
+            if (reservedNukerIds.has(nuker.id) === true) {
+              throw `Nuker in ${roomLink(room.name)} already reserved`
+            }
+            return nuker
+          })
+          if (specifiedRoomNukers.length !== targetFlags.length) {
+            throw `Target count mismatch: ${specifiedRoomNukers.length} nukers != ${targetFlags.length} flags`
           }
-          if (nuker.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
-            throw `Nuker in ${roomLink(room.name)} lack of energy`
-          }
-          if (nuker.store.getFreeCapacity(RESOURCE_GHODIUM) > 0) {
-            throw `Nuker in ${roomLink(room.name)} lack of ghodium`
-          }
-          if (reservedNukerIds.has(nuker.id) === true) {
-            throw `Nuker in ${roomLink(room.name)} already reserved`
-          }
-          return nuker
-        })
-        if (specifiedRoomNukers.length !== targetFlags.length) {
-          throw `Target count mismatch: ${specifiedRoomNukers.length} nukers != ${targetFlags.length} flags`
+          return specifiedRoomNukers
         }
-        return specifiedRoomNukers
+        }
       })()
 
 
