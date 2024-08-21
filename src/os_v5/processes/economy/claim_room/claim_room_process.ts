@@ -119,12 +119,14 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     const { spawned } = dependency.getSpawnedCreepsFor(this.processId)
     const creepsWithTasks = dependency.registerTaskDrivenCreeps<"", Record<string, never>>(spawned, { observer: { processId: this.processId, observer: this } })
 
-    creepsWithTasks.forEach(creep => {
-      if (creep.task != null) {
-        return
-      }
-      creep.task = this.claimerTaskFor(creep)
-    })
+    if (this.claimState.case === "running") {
+      creepsWithTasks.forEach(creep => {
+        if (creep.task != null) {
+          return
+        }
+        creep.task = this.claimerTaskFor(creep)
+      })
+    }
 
     this.transitionStates(dependency)
   }
@@ -136,13 +138,14 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     case "initialized":
       this.spawnClaimer(dependency)
       this.changeClaimState(dependency, {
-        case: "spawn_requested",
+        // case: "spawn_requested", // TODO: Spawn通知が出るようになったら状態を追加する
+        case: "running",
       })
       return
 
     case "spawn_requested":
     case "running": {
-      if (Game.time >= this.estimatedFinishTime) {
+      if (Game.time < this.estimatedFinishTime) {
         return
       }
       const problem: ClaimRoomProblemUnknown = {
@@ -224,6 +227,10 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
   // ---- Event Handler ---- //
   // CreepTaskObserver
   public creepTaskFinished(creep: AnyTaskDrivenCreep, result: CreepTaskResult): void {
+    if (this.claimState.case !== "running") {
+      return
+    }
+
     if (result.taskType !== "ClaimController") {
       return
     }
@@ -235,6 +242,10 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
   }
 
   public creepTaskFailed(creep: AnyTaskDrivenCreep, error: CreepTaskError): void {
+    if (this.claimState.case !== "running") {
+      return
+    }
+
     const problem = this.claimRoomProblemOf(creep, error)
     if (problem == null) {
       return
@@ -290,7 +301,7 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     case "unexpected_task_type":
       return {
         case: "unknown",
-        reason: `MoveToRoom failed with ${error}`,
+        reason: `TargetRoomObject failed with ${error}`,
       }
     }
   }

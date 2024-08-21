@@ -18,6 +18,9 @@ import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"
 
 
+// Game.v5.io("launch EventDrivenTestProcess name=E51N52-claimable parent_room_name=E53N53 child_process_type=ClaimRoomProcess target_room_name=E51N52 -l")
+
+
 const eventDrivenTestChildProcessTypes = [
   "ClaimRoomProcess",
 ] as const
@@ -76,7 +79,7 @@ export type EventDrivenTestProcessId = ProcessId<Dependency, string, Api, EventD
 
 export class EventDrivenTestProcess extends ApplicationProcess<Dependency, string, Api, EventDrivenTestProcessState, EventDrivenTestProcess> {
   public readonly applicationName = "EventDrivenTest"
-  public readonly version = new SemanticVersion(1, 0, 3)
+  public readonly version = new SemanticVersion(1, 0, 5)
 
   public readonly dependencies: ProcessDependencies = {
     processes: [
