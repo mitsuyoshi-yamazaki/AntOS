@@ -43,6 +43,7 @@ import { GameConstants } from "utility/constants"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 
 ProcessDecoder.register("DistributorProcess", state => {
   return DistributorProcess.decode(state as DistributorProcessState)
@@ -465,8 +466,12 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       if (this.shouldWithdrawLink !== true && link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(TransferEnergyApiWrapper.create(link))
       }
-      if (energyStore.store.getFreeCapacity(RESOURCE_ENERGY) < 20000) {
-        processLog(this, `Not enough space in ${energyStore} ${roomLink(this.parentRoomName)}`)
+      const energyStoreEmptySpace = energyStore.store.getFreeCapacity(RESOURCE_ENERGY)
+      if (energyStoreEmptySpace < 20000) {
+        // processLog(this, `Not enough space in ${energyStore} ${roomLink(this.parentRoomName)}`)
+        if (energyStoreEmptySpace < 5000 && energySource.store.getFreeCapacity(RESOURCE_ENERGY) < 5000) {
+          return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+        }
         return RunApiTask.create(TransferEnergyApiWrapper.create(energySource))
       }
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))
