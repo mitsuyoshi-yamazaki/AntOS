@@ -1,5 +1,5 @@
 import { AnyProcess } from "os_v5/process/process"
-import { coloredProcessType, ProcessTypes } from "os_v5/process/process_type_map"
+import { coloredProcessType } from "os_v5/process/process_type_map"
 import { ProcessManager, ProcessRunningState } from "os_v5/system_calls/process_manager/process_manager"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 
