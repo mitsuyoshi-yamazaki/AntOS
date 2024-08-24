@@ -35,7 +35,7 @@ export const processTypeDecodingMap = {
   ab: "RoomPlannerProcess",
   ac: "ProblemResolverProcess",
   ad: "ClaimRoomProcess",
-  ae: "ScoutProcess",
+  // ae: "ScoutProcess",
   af: "NukeProcess",
   ag: "ManualCreepOperatorProcess",
   ah: "TemplateProcess",
@@ -49,6 +49,7 @@ export const processTypeDecodingMap = {
   ap: "SellExcessResourceProcess",
   aq: "V3ProcessLauncherProcess",
   ar: "EventDrivenTestProcess",
+  as: "ScoutRoomProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -112,7 +113,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
   "TestPullProcess",
-  "ScoutProcess",
   "NukeProcess",
   "ManualCreepOperatorProcess",
   "TemplateProcess",
@@ -124,9 +124,8 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "ProblemResolverProcess",
   "SellExcessResourceProcess",
   "V3ProcessLauncherProcess",
-
-  // Normalized Processes
   "ClaimRoomProcess",
+  "ScoutRoomProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -166,11 +165,11 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
 
   // Combat
   AttackRoomManagerProcess: "combat",
-  ScoutProcess: "combat",
   NukeProcess: "combat",
   SaboteurPositionProcess: "combat",
   FireControlSystemProcess: "combat",
   DetectNukeProcess: "combat",
+  ScoutRoomProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",

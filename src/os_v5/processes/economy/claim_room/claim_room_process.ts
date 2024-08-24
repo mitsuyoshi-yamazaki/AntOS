@@ -74,7 +74,7 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
     super()
 
     this.identifier = roomName
-    this.codename = SystemCalls.uniqueId.generateCodename("V3BridgeSpawnRequestProcess", parseInt(processId, 36))
+    this.codename = SystemCalls.uniqueId.generateCodename("ClaimRoomProcess", parseInt(processId, 36))
     this.dependencies.processes.push(parentProcessSpecifier)
     this.estimatedFinishTime = this.launchTime + 1500 // TODO: 正確な見積もりを出す
   }

@@ -1,6 +1,7 @@
 // Child Processes
 import { ClaimRoomProcess, ClaimRoomProcessId } from "../economy/claim_room/claim_room_process"
 import { ClaimRoomDelegate, ClaimRoomProblem } from "../economy/claim_room/delegate"
+import {} from "../combat/scouting/scout_room_process"
 
 // Import
 import { AnyProcessId, processDefaultIdentifier, ProcessDependencies, ProcessId, ProcessSpecifier, ReadonlySharedMemory } from "os_v5/process/process"
@@ -18,7 +19,7 @@ import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"
 
 
-// Game.v5.io("launch EventDrivenTestProcess name=E51N52-claimable parent_room_name=E53N53 child_process_type=ClaimRoomProcess target_room_name=E51N52 -l")
+// Game.v5.io("launch EventDrivenTestProcess name=E53N50-no-ctrl parent_room_name=E53N53 child_process_type=ClaimRoomProcess target_room_name=E53N50 -l")
 
 
 const eventDrivenTestChildProcessTypes = [
