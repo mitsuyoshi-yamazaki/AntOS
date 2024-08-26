@@ -3,7 +3,7 @@ import { Process, ProcessId } from "process/process"
 import { ProcessState } from "../../process_state"
 import { ProcessDecoder } from "../../process_decoder"
 import { FillNukerProcess } from "./fill_nuker_process"
-import { roomLink } from "utility/log"
+import { coloredResourceType, roomLink } from "utility/log"
 import { Timestamp } from "shared/utility/timestamp"
 import { RoomName } from "shared/utility/room_name_types"
 import { ResourceManager } from "utility/resource_manager"
@@ -107,17 +107,25 @@ export class NukerManagementProcess implements Process, Procedural {
 
     const requiredGhodiumAmount = targetInfo.nuker.store.getFreeCapacity(RESOURCE_GHODIUM)
 
-    const sendResult = ((): boolean => {
+    const sendResult = ((): true | { terminal: StructureTerminal, result: ReturnType<StructureTerminal["send"]> }[] => {
+      const results: {terminal: StructureTerminal, result: ReturnType<StructureTerminal["send"]>}[] = []
+
       for (const terminal of terminalInfo) {
-        const result = terminal.terminal.send(RESOURCE_GHODIUM, requiredGhodiumAmount, targetInfo.nuker.room.name)
-        if (result === OK) {
+        const sendResult = terminal.terminal.send(RESOURCE_GHODIUM, requiredGhodiumAmount, targetInfo.nuker.room.name)
+        if (sendResult === OK) {
           return true
         }
+        results.push({
+          terminal: terminal.terminal,
+          result: sendResult,
+        })
       }
-      return false
+      return results
     })()
 
     if (sendResult !== true) {
+      const failureReason = sendResult.map(result => `- ${roomLink(result.terminal.room.name)}: ${result.result}`)
+      PrimitiveLogger.programError(`${this.constructor.name} send ${coloredResourceType(RESOURCE_GHODIUM)} failed:\n${failureReason.join("\n")}`)
       this.sleepUntil = Game.time + 307
       return
     }
@@ -143,6 +151,7 @@ export class NukerManagementProcess implements Process, Procedural {
     let targetNuker: StructureNuker | null = null
     const senderTerminals: StructureTerminal[] = []
 
+    // Gを持つTerminalをリストアップ
     for (const [roomName, amount] of roomNamesWithGhodium.entries()) {
       const roomResource = RoomResources.getOwnedRoomResource(roomName)
       if (roomResource == null) {
@@ -166,7 +175,8 @@ export class NukerManagementProcess implements Process, Procedural {
       }
     }
 
-    if (targetNuker != null) {
+    if (targetNuker != null && senderTerminals.length > 0) {
+      console.log(`HOGE1 nuker in ${targetNuker.room.name} from ${senderTerminals.map(t => t.room.name).join(",")}`)
       return {
         nuker: targetNuker,
         senderTerminals,
@@ -180,6 +190,7 @@ export class NukerManagementProcess implements Process, Procedural {
       }
       const requiredGhodiumAmount = nuker.store.getFreeCapacity(RESOURCE_GHODIUM)
       if (requiredGhodiumAmount > 0) {
+        console.log(`HOGE2 nuker in ${nuker.room.name} from ${senderTerminals.map(t => t.room.name).join(",")}`)
         return {
           nuker,
           senderTerminals,
