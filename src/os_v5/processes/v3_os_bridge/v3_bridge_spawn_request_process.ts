@@ -9,6 +9,8 @@ import { CreepName } from "prototype/creep"
 import { ExtendedV5CreepMemory, V5CreepMemory } from "os_v5/utility/game_object/creep"
 import { V3BridgeDriverProcessApi } from "./v3_bridge_driver_process"
 import { Notification } from "os_v5/system_calls/depended_system_calls/notification_manager_types"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import { Command, runCommands } from "os_v5/standard_io/command"
 
 // SpawnPoolのライフサイクル（v3 OSの実行）が終わった後に実行する必要がある
 
@@ -118,6 +120,13 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
 
   public runtimeDescription(): string {
     return this.staticDescription()
+  }
+
+  /** @throws */
+  didReceiveMessage?(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.clearCommand,
+    ])
   }
 
   public run(): V3BridgeSpawnRequestProcessApi {
@@ -269,5 +278,20 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
 
   private sendNotification(notification: V3BridgeSpawnRequestNotification): void {
     SystemCalls.notificationManager.send(notification)
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly clearCommand: Command = {
+    command: "clear",
+    help: (): string => "clear",
+
+    /** @throws */
+    run: (): string => {
+      const requestCount = this.storedSpawnRequests.length
+      this.storedSpawnRequests.splice(0, requestCount)
+
+      return `Cleared ${requestCount} requests`
+    }
   }
 }
