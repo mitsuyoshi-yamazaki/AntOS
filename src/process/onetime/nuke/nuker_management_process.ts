@@ -172,6 +172,11 @@ export class NukerManagementProcess implements Process, Procedural {
         if (requiredGhodium > 0 && requiredGhodium < amount) {
           targetNuker = nuker
         }
+      } else {
+        // targetNuker有り
+        if (nuker.cooldown < targetNuker.cooldown) {
+          targetNuker = nuker
+        }
       }
     }
 
