@@ -300,6 +300,13 @@ registerProcess("EventDrivenTestProcess", (argumentParser) => {
         case: "cr",
         r: argumentParser.roomName("target_room_name").parse({my: false}),
       }
+    case "RoomKeeperProcess":
+      return {
+        case: "rk",
+        r: argumentParser.roomName("target_room_name").parse({ my: false }),
+        ws: argumentParser.int("worker_size").parse({min: 1, max: 12}),
+        wc: argumentParser.int("worker_count").parse({ min: 1, max: 20 }),
+      }
     }
   })()
 

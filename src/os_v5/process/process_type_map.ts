@@ -50,6 +50,7 @@ export const processTypeDecodingMap = {
   aq: "V3ProcessLauncherProcess",
   ar: "EventDrivenTestProcess",
   as: "ScoutRoomProcess",
+  at: "RoomKeeperProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -126,6 +127,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "V3ProcessLauncherProcess",
   "ClaimRoomProcess",
   "ScoutRoomProcess",
+  "RoomKeeperProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -183,6 +185,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   ClaimRoomProcess: "economy",
   ProblemResolverProcess: "economy",
   SellExcessResourceProcess: "economy",
+  RoomKeeperProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",

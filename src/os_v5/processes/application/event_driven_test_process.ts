@@ -2,6 +2,8 @@
 import { ClaimRoomProcess, ClaimRoomProcessId } from "../economy/claim_room/claim_room_process"
 import { ClaimRoomDelegate, ClaimRoomProblem } from "../economy/claim_room/delegate"
 import {} from "../combat/scouting/scout_room_process"
+import { RoomKeeperProcess, RoomKeeperProcessId } from "../economy/room_keeper/room_keeper_process"
+import { RoomKeeperDelegate, RoomKeeperProblem } from "../economy/room_keeper/delegate"
 
 // Import
 import { AnyProcessId, processDefaultIdentifier, ProcessDependencies, ProcessId, ProcessSpecifier, ReadonlySharedMemory } from "os_v5/process/process"
@@ -20,10 +22,12 @@ import { SystemCalls } from "os_v5/system_calls/interface"
 
 
 // Game.v5.io("launch EventDrivenTestProcess name=E53N50-no-ctrl parent_room_name=E53N53 child_process_type=ClaimRoomProcess target_room_name=E53N50 -l")
+// Game.v5.io("launch EventDrivenTestProcess name=E55N53-keeper parent_room_name=E53N53 child_process_type=RoomKeeperProcess target_room_name=E55N53 -l")
 
 
 const eventDrivenTestChildProcessTypes = [
   "ClaimRoomProcess",
+  "RoomKeeperProcess",
 ] as const
 export type EventDrivenTestChildProcessTypes = typeof eventDrivenTestChildProcessTypes[number]
 export const isEventDrivenTestChildProcessTypes = (value: string): value is EventDrivenTestChildProcessTypes => (eventDrivenTestChildProcessTypes as Readonly<string[]>).includes(value)
@@ -32,14 +36,20 @@ export const isEventDrivenTestChildProcessTypes = (value: string): value is Even
 export type EventDrivenTestProcessApi = {
   //
 }
-type Api = EventDrivenTestProcessApi & ClaimRoomDelegate
+type Api = EventDrivenTestProcessApi & ClaimRoomDelegate & RoomKeeperDelegate
 
 
 type ChildProcessArgumentsClaimRoom = {
   readonly case: "cr"
   readonly r: RoomName
 }
-export type ChildProcessArguments = ChildProcessArgumentsClaimRoom
+type ChildProcessArgumentsRoomKeeper = {
+  readonly case: "rk"
+  readonly r: RoomName
+  readonly ws: number   /// Worker size
+  readonly wc: number   /// Worker count
+}
+export type ChildProcessArguments = ChildProcessArgumentsClaimRoom | ChildProcessArgumentsRoomKeeper
 
 
 type ChildProcessStateInit = {
@@ -212,6 +222,11 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
           t: Game.time,
         }
       },
+
+      // ---- RoomKeeperProcess ---- //
+      roomKeeperDidRaiseProblem: (process: RoomKeeperProcess, problem: RoomKeeperProblem): void => {
+        // TODO:
+      },
     }
   }
 
@@ -247,6 +262,8 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
         switch (childProcessArguments.case) {
         case "cr":
           return ClaimRoomProcess.create(processId as ClaimRoomProcessId, childProcessArguments.r, specifier)
+        case "rk":
+          return RoomKeeperProcess.create(processId as RoomKeeperProcessId, childProcessArguments.r, specifier, childProcessArguments.wc, childProcessArguments.ws)
         }
       })
 
@@ -262,6 +279,8 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
         switch (childProcessArguments.case) {
         case "cr":
           return "ClaimRoomProcess"
+        case "rk":
+          return "RoomKeeperProcess"
         }
       })()
 
