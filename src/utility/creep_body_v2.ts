@@ -1,4 +1,5 @@
 import { reverseConstMapping } from "shared/utility/strict_entries"
+import { GameConstants } from "./constants"
 
 const bodyPartEncodingMap = {
   w: WORK,
@@ -42,8 +43,27 @@ export class CreepBody {
   ) {
   }
 
+  // TODO: bodyが空等の場合はthrowする
   public static createWithBodyParts(bodyParts: BodyPartConstant[]): CreepBody {
     return new CreepBody(bodyParts, null)
+  }
+
+  /** @throws */
+  public static createWith(baseBody: BodyPartConstant[], unit: BodyPartConstant[], unitMaxCount: number, energyCapacity: number): CreepBody {
+    // TODO: パーツの並び替え
+    const body: BodyPartConstant[] = [...baseBody]
+
+    const baseCost = bodyCost(baseBody)
+    const unitCost = bodyCost(unit)
+
+    const maxCountBasedOnEnergy = Math.floor((energyCapacity - baseCost) / unitCost)
+    const maxCountBasedOnBody = Math.floor((GameConstants.creep.body.bodyPartMaxCount - baseBody.length) / unit.length)
+    const maxCount = Math.min(maxCountBasedOnEnergy, maxCountBasedOnBody, unitMaxCount)
+
+    for (let i = 0; i < maxCount; i += 1) {
+      body.unshift(...unit)
+    }
+    return new CreepBody(body, null)
   }
 
   /**
@@ -126,4 +146,10 @@ const parseEncodedCreepBody = (input: string): BodyPartConstant[] => {
   }
 
   return body
+}
+
+const bodyCost = (body: BodyPartConstant[]): number => {
+  return body.reduce((result, current) => {
+    return result + BODYPART_COST[current]
+  }, 0)
 }
