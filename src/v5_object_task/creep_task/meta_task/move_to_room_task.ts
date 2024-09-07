@@ -6,7 +6,7 @@ import { roomLink } from "utility/log"
 import { CreepTask } from "../creep_task"
 import { CreepTaskState } from "../creep_task_state"
 import { SourceKeeper } from "game/source_keeper"
-import { GameConstants } from "utility/constants"
+import { GameConstants, oppositeDirection } from "utility/constants"
 import type { RoomName } from "shared/utility/room_name_types"
 import { roomTypeOf } from "utility/room_coordinate"
 
@@ -255,7 +255,37 @@ export class MoveToRoomTask implements CreepTask {
       if (exitFlag != null) {
         return exitFlag.pos
       }
-      return creep.pos.findClosestByPath(exit) ?? "no path"
+      const foundPath = creep.pos.findClosestByPath(exit)
+      if (foundPath == null) {
+        if (creep.room.name === "W13S11") { // FixMe:
+          const ignoreCreep = creep.pos.findClosestByPath(exit, { ignoreCreeps: true })
+          if (ignoreCreep == null) {
+            return "no path6"
+          }
+          const moveDirection = creep.pos.getDirectionTo(ignoreCreep)
+          const destinationPos = creep.pos.positionTo(moveDirection)
+          if (destinationPos == null) {
+            return "no path7"
+          }
+          const otherCreep = destinationPos.lookFor(LOOK_CREEPS).find(c => c.my === true)
+          if (otherCreep == null) {
+            const otherCreep2 = creep.pos.findInRange(FIND_MY_CREEPS, 1).filter(c => c.name !== creep.name)[0]
+            if (otherCreep2 != null) {
+              const d = creep.pos.getDirectionTo(otherCreep2.pos)
+              otherCreep2.move(oppositeDirection(d))
+              creep.move(d)
+              return "swap2"
+            }
+            return "no path8"
+          }
+          otherCreep.move(oppositeDirection(moveDirection))
+          creep.move(moveDirection)
+          return "swap!"
+        }
+
+        return "no path4"
+      }
+      return foundPath
     })()
 
     if (typeof exitPosition === "string") {

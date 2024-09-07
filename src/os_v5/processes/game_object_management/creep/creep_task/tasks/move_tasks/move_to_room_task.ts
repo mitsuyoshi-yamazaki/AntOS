@@ -133,7 +133,7 @@ export class MoveToRoom extends Task<MoveToRoomState, MoveToRoomResult, MoveToRo
       if (exitFlag != null) {
         return exitFlag.pos
       }
-      return creep.pos.findClosestByPath(exit) ?? "no path"
+      return creep.pos.findClosestByPath(exit) ?? "no path2"
     })()
 
     if (typeof exitPosition === "string") {

@@ -201,7 +201,7 @@ export class MoveToRoomTask implements CreepTask {
 
     const exitPosition = exitFlag?.pos ?? creep.pos.findClosestByPath(exit)
     if (exitPosition == null) {
-      creep.say("no path")
+      creep.say("no path1")
       if (creep.room.controller != null) {
         creep.moveTo(creep.room.controller, defaultMoveToOptions())
       } else {
