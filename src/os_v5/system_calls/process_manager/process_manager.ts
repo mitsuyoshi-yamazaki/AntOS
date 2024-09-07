@@ -11,13 +11,14 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 import { PrimitiveLogger } from "shared/utility/logger/primitive_logger"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { Mutable } from "shared/utility/types"
-import { AnyProcess, AnyProcessId, Process, processDefaultIdentifier, ProcessError, ProcessId } from "../../process/process"
+import { AnyProcess, AnyProcessId, Process, processDefaultIdentifier, ProcessId } from "../../process/process"
 import { deprecatedProcessTypeDecodingMap, processTypeDecodingMap, processTypeEncodingMap, ProcessTypes } from "../../process/process_type_map"
 import { SystemCall } from "os_v5/system_call"
 import { SerializableObject } from "shared/utility/serializable_types"
 import { UniqueId } from "../unique_id"
 import { SharedMemory } from "./shared_memory"
 import { DriverProcessConstructor } from "os_v5/process/process_constructor"
+import { ProcessError } from "os_v5/process/process_errors"
 
 
 /**
