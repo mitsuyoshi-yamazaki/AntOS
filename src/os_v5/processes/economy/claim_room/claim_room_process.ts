@@ -211,7 +211,7 @@ export class ClaimRoomProcess extends Process<Dependency, RoomName, void, ClaimR
   }
 
   private spawnClaimer(dependency: Dependency): void { // TODO: 呼び出し
-    dependency.requestCreep({
+    dependency.requestFixedCreep({
       processId: this.processId,
       requestIdentifier: "claimer",
       body: CreepBody.createWithBodyParts([MOVE, CLAIM]),

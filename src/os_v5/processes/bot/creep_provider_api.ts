@@ -17,5 +17,6 @@ export type CreepRequest<M extends SerializableObject> = {
   }
 }
 export type CreepProviderApi = {
-  requestCreep<M extends SerializableObject>(request: CreepRequest<M>): void
+  requestFixedCreep<M extends SerializableObject>(request: CreepRequest<M>): void
+  requestArbitaryCreep<M extends SerializableObject>(roomName: RoomName, requestMaker: (energyCapacity: number) => CreepRequest<M>): void
 }

@@ -142,11 +142,6 @@ export class RoomKeeperProcess extends Process<Dependency, RoomName, void, RoomK
   }
 
   public run(dependency: Dependency): void {
-    const room = Game.rooms[this.roomName]
-    if (room == null || !isMyRoom(room)) {
-      return
-    }
-
     const { spawned, spawning } = dependency.getSpawnedCreepsFor(this.processId)
     const creepsWithTasks = dependency.registerTaskDrivenCreeps<"", Record<string, never>>(spawned, { observer: { processId: this.processId, observer: this } })
 
@@ -187,17 +182,17 @@ export class RoomKeeperProcess extends Process<Dependency, RoomName, void, RoomK
     return CreepTask.Tasks.Sequential.create(tasks)
   }
 
-  private spawnWorker(dependency: Dependency, room: MyRoom): void {
-    dependency.requestCreep({
+  private spawnWorker(dependency: Dependency): void {
+    dependency.requestArbitaryCreep(this.roomName, energyCapacity => ({
       processId: this.processId,
       requestIdentifier: "worker",
-      body: CreepBody.createWith([], [MOVE, CARRY, MOVE, MOVE], this.workerSpec.maxSize, room.energyCapacityAvailable),
+      body: CreepBody.createWith([], [MOVE, CARRY, MOVE, MOVE], this.workerSpec.maxSize, energyCapacity),
       roomName: this.roomName,
       options: {
         codename: this.codename,
         memory: {},
       },
-    })
+    }))
   }
 
 

@@ -19,6 +19,7 @@ import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { V3BridgeSpawnRequestProcessApi } from "../v3_os_bridge/v3_bridge_spawn_request_process"
 import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"
+import { MyRoom } from "shared/utility/room"
 
 
 // Game.v5.io("launch EventDrivenTestProcess name=E53N50-no-ctrl parent_room_name=E53N53 child_process_type=ClaimRoomProcess target_room_name=E53N50 -l")
@@ -178,8 +179,20 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
   public run(dependency: Dependency): Api {
     this.transitionState()
 
+    const parentRoom = Game.rooms[this.parentRoomName]
+    const requestArbitaryCreep: <M extends SerializableObject>(roomName: RoomName, requestMaker: (energyCapacity: number) => CreepRequest<M>) => void = parentRoom == null ? () => undefined : (roomName, requestMaker) => {
+      const request = requestMaker(parentRoom.energyCapacityAvailable)
+      dependency.addSpawnRequestV3(
+        request.processId,
+        request.requestIdentifier,
+        request.body,
+        this.parentRoomName,
+        request.options,
+      )
+    }
+
     return {
-      requestCreep: <M extends SerializableObject>(request: CreepRequest<M>): void => {
+      requestFixedCreep: <M extends SerializableObject>(request: CreepRequest<M>): void => {
         dependency.addSpawnRequestV3(
           request.processId,
           request.requestIdentifier,
@@ -188,6 +201,8 @@ export class EventDrivenTestProcess extends ApplicationProcess<Dependency, strin
           request.options,
         )
       },
+
+      requestArbitaryCreep,
 
       // ---- ClaimRoomProcess ---- //
       claimRoomDidFinishClaiming: (process: ClaimRoomProcess): void => {

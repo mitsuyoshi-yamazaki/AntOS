@@ -1,7 +1,7 @@
 import { StaticMonoCreepBuildRoomProcess, StaticMonoCreepBuildRoomProcessId } from "./static_mono_creep_build_room_process"
 
 // Import
-import { BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessError, ProcessId, ReadonlySharedMemory } from "../../../process/process"
+import { BotSpecifier, Process, processDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { RoomName } from "shared/utility/room_name_types"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
@@ -10,6 +10,7 @@ import { BotTypes } from "os_v5/process/process_type_map"
 import { CreepDistributorProcessApi } from "os_v5/processes/game_object_management/creep/creep_distributor_process"
 import { isMyRoom } from "shared/utility/room"
 import { MyController } from "shared/utility/structure_controller"
+import { ProcessError } from "os_v5/process/process_errors"
 
 
 /**
