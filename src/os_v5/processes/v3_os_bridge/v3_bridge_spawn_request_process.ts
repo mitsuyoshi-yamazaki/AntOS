@@ -6,9 +6,11 @@ import { RoomName } from "shared/utility/room_name_types"
 import { SystemCalls } from "os_v5/system_calls/interface"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { CreepName } from "prototype/creep"
-import { V5CreepMemory } from "os_v5/utility/game_object/creep"
+import { ExtendedV5CreepMemory, V5CreepMemory } from "os_v5/utility/game_object/creep"
 import { V3BridgeDriverProcessApi } from "./v3_bridge_driver_process"
 import { Notification } from "os_v5/system_calls/depended_system_calls/notification_manager_types"
+import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
+import { Command, runCommands } from "os_v5/standard_io/command"
 
 // SpawnPoolのライフサイクル（v3 OSの実行）が終わった後に実行する必要がある
 
@@ -39,6 +41,9 @@ type StoredSpawnRequest = {
 export type V3BridgeSpawnRequestProcessApi = {
   addSpawnRequest<M extends SerializableObject>(body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: V5CreepMemory<M> }): void
   addSpawnRequestV2<M extends SerializableObject>(processId: AnyProcessId, identifier: string, body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: V5CreepMemory<M> }): void
+
+  // createSpawnCreepMemoryFor() 不要
+  addSpawnRequestV3<M extends SerializableObject>(processId: AnyProcessId, identifier: string, body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: ExtendedV5CreepMemory<M> }): void
 }
 
 export const v3BridgeSpawnRequestDidSpawnNotification = "v3_spawn_spawned"
@@ -117,6 +122,13 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
     return this.staticDescription()
   }
 
+  /** @throws */
+  didReceiveMessage?(argumentParser: ArgumentParser): string {
+    return runCommands(argumentParser, [
+      this.clearCommand,
+    ])
+  }
+
   public run(): V3BridgeSpawnRequestProcessApi {
     this.spawnRequests = []
 
@@ -141,6 +153,34 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
           options,
         })
       },
+
+      addSpawnRequestV3: <M extends SerializableObject>(processId: AnyProcessId, identifier: string, body: CreepBody, roomName: RoomName, options?: { codename?: string, uniqueCreepName?: CreepName, memory?: ExtendedV5CreepMemory<M> }): void => {
+        const memory = ((): V5CreepMemory<SerializableObject> | undefined => {
+          if (options?.memory == null) {
+            return undefined
+          }
+          return {
+            v: "o5",
+            p: processId,
+            ...options.memory,
+          }
+        })()
+
+        const requestOptions: { codename?: string, uniqueCreepName?: CreepName, memory?: V5CreepMemory<SerializableObject> } = {
+          codename: options?.codename,
+          uniqueCreepName: options?.uniqueCreepName,
+          memory,
+        }
+
+        this.storedSpawnRequests.push({
+          processId,
+          identifier,
+          body: body.stringRepresentation,
+          bodyCost: body.energyCost,
+          roomName,
+          options: requestOptions,
+        })
+      }
     }
   }
 
@@ -213,7 +253,7 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
       const result = idleSpawn.spawnCreep(CreepBody.createFromStringRepresentation(request.body).bodyParts, creepName, options)
       if (result === OK) {
         skipRoomNames.push(request.roomName)
-        this.sendNotification({
+        this.sendNotification({ // FixMe: 次tickでCreepが生成されたら、Creepインスタンスと共に送信するようにする
           eventName: "v3_spawn_spawned",
           processId: request.processId,
           identifier: request.identifier,
@@ -238,5 +278,20 @@ export class V3BridgeSpawnRequestProcess extends Process<Dependency, ProcessDefa
 
   private sendNotification(notification: V3BridgeSpawnRequestNotification): void {
     SystemCalls.notificationManager.send(notification)
+  }
+
+
+  // ---- Command Runner ---- //
+  private readonly clearCommand: Command = {
+    command: "clear",
+    help: (): string => "clear",
+
+    /** @throws */
+    run: (): string => {
+      const requestCount = this.storedSpawnRequests.length
+      this.storedSpawnRequests.splice(0, requestCount)
+
+      return `Cleared ${requestCount} requests`
+    }
   }
 }

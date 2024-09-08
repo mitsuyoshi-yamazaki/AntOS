@@ -931,7 +931,10 @@ export class HarvestPowerProcess implements Process, Procedural, OwnedRoomProces
       if (parentRoom == null) {
         return null
       }
-      return parentRoom.terminal ?? parentRoom.storage ?? null
+      if (parentRoom.terminal != null && parentRoom.terminal.store.getFreeCapacity() > 1000) {
+        return parentRoom.terminal
+      }
+      return parentRoom.storage ?? null
     })()
     if (store == null) {
       creep.say("no store")

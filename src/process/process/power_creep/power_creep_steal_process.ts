@@ -25,10 +25,10 @@ type TransferTarget = StructureTerminal | StructureStorage
 const resourcePriority: ResourceConstant[] = [  // 添字の小さいほうが優先
   RESOURCE_POWER,
   RESOURCE_OPS,
-  ...CommodityConstant,
+  ...[...CommodityConstant].reverse(),
+  ...[...MineralBoostConstant].reverse(),
   ...DepositConstant,
-  ...MineralBoostConstant,
-  ...MineralBaseCompoundsConstant,
+  ...[...MineralBaseCompoundsConstant].reverse(),
   ...MineralConstant,
 ]
 

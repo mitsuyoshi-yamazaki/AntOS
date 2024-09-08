@@ -43,6 +43,7 @@ import { GameConstants } from "utility/constants"
 import { ProcessDecoder } from "process/process_decoder"
 import { MessageObserver } from "os/infrastructure/message_observer"
 import { OwnedRoomProcess } from "process/owned_room_process"
+import { DropResourceApiWrapper } from "v5_object_task/creep_task/api_wrapper/drop_resource_api_wrapper"
 
 ProcessDecoder.register("DistributorProcess", state => {
   return DistributorProcess.decode(state as DistributorProcessState)
@@ -328,7 +329,7 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) > 0) {
         return false
       }
-      if (creep.store.getUsedCapacity() > 0) {
+      if (creep.store.getUsedCapacity() > 0) { // energy以外のリソースを持っている
         return true
       }
       if (link != null) {
@@ -377,6 +378,7 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       // ...Tier5CommodityConstants,
     ]
 
+
     const creepResourceType = Object.keys(creep.store)[0]
     if (creepResourceType != null && isResourceConstant(creepResourceType) && creep.store.getUsedCapacity(creepResourceType) > 0) {
       const terminalShortage = terminalAmount - terminal.store.getUsedCapacity(creepResourceType)
@@ -414,8 +416,13 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       return RunApiTask.create(WithdrawResourceApiWrapper.create(terminal, excessResourceType, withdrawAmount))
     }
 
-    if (terminal.store.getFreeCapacity() < 20000) {
+    const terminalFreeCapacity = terminal.store.getFreeCapacity()
+    if (terminalFreeCapacity < 20000) {
       processLog(this, `Not enough space in ${terminal} ${roomLink(this.parentRoomName)}`)
+
+      if (terminalFreeCapacity > 1600 && terminal.store.getUsedCapacity(RESOURCE_GHODIUM) < 5000 && storage.store.getUsedCapacity(RESOURCE_GHODIUM) > 0) {
+        return RunApiTask.create(WithdrawResourceApiWrapper.create(storage, RESOURCE_GHODIUM))
+      }
       return null
     }
 
@@ -465,8 +472,13 @@ export class DistributorProcess implements Process, Procedural, OwnedRoomProcess
       if (this.shouldWithdrawLink !== true && link != null && link.store.getFreeCapacity(RESOURCE_ENERGY) > 0) {
         return RunApiTask.create(TransferEnergyApiWrapper.create(link))
       }
-      if (energyStore.store.getFreeCapacity(RESOURCE_ENERGY) < 20000) {
-        processLog(this, `Not enough space in ${energyStore} ${roomLink(this.parentRoomName)}`)
+      const energyStoreEmptySpace = energyStore.store.getFreeCapacity(RESOURCE_ENERGY)
+      if (energyStoreEmptySpace < 20000) {
+        // processLog(this, `Not enough space in ${energyStore} ${roomLink(this.parentRoomName)}`)
+        const energySourceEmptySpace = energySource.store.getFreeCapacity(RESOURCE_ENERGY)
+        if (energyStoreEmptySpace < 2000 || energySourceEmptySpace < 2000 || (energyStoreEmptySpace < 5000 && energySourceEmptySpace < 5000)) {
+          return RunApiTask.create(DropResourceApiWrapper.create(RESOURCE_ENERGY))
+        }
         return RunApiTask.create(TransferEnergyApiWrapper.create(energySource))
       }
       return RunApiTask.create(TransferEnergyApiWrapper.create(energyStore))

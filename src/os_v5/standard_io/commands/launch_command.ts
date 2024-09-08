@@ -5,10 +5,10 @@ import { V3BridgeBotProcess } from "../../processes/bot/v3_bridge_bot_process"
 
 // Application
 import { } from "@private/os_v5/processes/application/problem_resolver/problem_resolver_process"
+import { ChildProcessArguments, EventDrivenTestProcess, EventDrivenTestProcessId, isEventDrivenTestChildProcessTypes } from "../../processes/application/event_driven_test_process"
 
 // Combat
 import {} from "@private/os_v5/processes/combat/attack_room_manager_process"
-import { ScoutProcess, ScoutProcessId } from "../../processes/combat/scout_process"
 import { NukeProcess } from "../../processes/combat/nuke/nuke_process"
 import { } from "../../processes/combat/saboteur_position_process"
 
@@ -44,6 +44,7 @@ import {  } from "@private/os_v5/processes/support/test_guard_room/test_guard_ro
 import { TestHarvestRoomProcess, TestHarvestRoomProcessId } from "@private/os_v5/processes/support/test_harvest_room_process"
 import { ManualCreepOperatorProcess } from "../../processes/support/manual_creep_operator_process"
 import { ManualRoomPlannerProcess } from "../../processes/support/manual_room_planner/manual_room_planner_process"
+import { V3ProcessLauncherProcess, V3ProcessLauncherProcessId } from "../../processes/v3_os_bridge/v3_process_launcher_process"
 
 // v3 Bridge
 import { V3BridgeDriverProcess } from "../../processes/v3_os_bridge/v3_bridge_driver_process"
@@ -62,6 +63,7 @@ import { isProcessType, ProcessTypes } from "os_v5/process/process_type_map"
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { RoomName } from "shared/utility/room_name_types"
 import { ProcessManagerError } from "os_v5/system_calls/process_manager/process_manager_error"
+import { Logger } from "os_v5/system_calls/logger"
 
 
 export const LaunchCommand: Command = {
@@ -131,6 +133,10 @@ const launchProcess = (processType: ProcessTypes, argumentParser: ArgumentParser
   const constructor = constructorMaker(argumentParser, addOutput)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const process = ProcessManager.addProcess<any, any, any, any, AnyProcess>(constructor)
+
+  if (argumentParser.hasOption("l")) {
+    Logger.setLogEnabledFor([process.processId], 1000)
+  }
 
   outputs.unshift(`Launched ${process} ${process.staticDescription()}`)
 
@@ -259,16 +265,6 @@ registerProcess("StaticMonoCreepKeeperRoomProcess", (argumentParser, log) => {
   }) as ProcessConstructor
 })
 
-registerProcess("ScoutProcess", (argumentParser) => {
-  const room = argumentParser.myRoom("room_name").parse()
-  const targetRoomName = argumentParser.roomName("target_room_name").parse()
-  const waypoints = argumentParser.list("waypoints", "room_name").parse()
-  const creepCount = 1  // TODO:
-
-  return ((processId: ScoutProcessId): ScoutProcess => {
-    return ScoutProcess.create(processId, room.name, targetRoomName, waypoints, {creepCount})
-  }) as ProcessConstructor
-})
 
 // registerProcess("SaboteurPositionProcess", (argumentParser) => {
 //   const room = argumentParser.myRoom("room_name").parse()
@@ -280,3 +276,41 @@ registerProcess("ScoutProcess", (argumentParser) => {
 //     return SaboteurPositionProcess.create(processId, room.name, targetRoomName, waypoints, { creepCount })
 //   }) as ProcessConstructor
 // })
+
+registerProcess("V3ProcessLauncherProcess", (argumentParser) => {
+  const name = argumentParser.string("name").parse()
+  const interval = argumentParser.int("interval").parse({ min: 1 })
+  const duration = argumentParser.int("duration").parse({ min: 1 })
+  const message = argumentParser.string("message").parse()
+
+  return ((processId: V3ProcessLauncherProcessId): V3ProcessLauncherProcess => {
+    return V3ProcessLauncherProcess.create(processId, name, message, interval, duration)
+  }) as ProcessConstructor
+})
+
+registerProcess("EventDrivenTestProcess", (argumentParser) => {
+  const name = argumentParser.string("name").parse()
+  const parentRoomName = argumentParser.roomName("parent_room_name").parse({my: true})
+  const childProcessType = argumentParser.typedString("child_process_type", "EventDrivenTestChildProcessTypes", isEventDrivenTestChildProcessTypes).parse()
+
+  const childProcessArguments = ((): ChildProcessArguments => {
+    switch (childProcessType) {
+    case "ClaimRoomProcess":
+      return {
+        case: "cr",
+        r: argumentParser.roomName("target_room_name").parse({my: false}),
+      }
+    case "RoomKeeperProcess":
+      return {
+        case: "rk",
+        r: argumentParser.roomName("target_room_name").parse({ my: false }),
+        ws: argumentParser.int("worker_size").parse({min: 1, max: 12}),
+        wc: argumentParser.int("worker_count").parse({ min: 1, max: 20 }),
+      }
+    }
+  })()
+
+  return ((processId: EventDrivenTestProcessId): EventDrivenTestProcess => {
+    return EventDrivenTestProcess.create(processId, name, parentRoomName, childProcessArguments)
+  }) as ProcessConstructor
+})

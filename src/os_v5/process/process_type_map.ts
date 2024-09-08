@@ -35,7 +35,7 @@ export const processTypeDecodingMap = {
   ab: "RoomPlannerProcess",
   ac: "ProblemResolverProcess",
   ad: "ClaimRoomProcess",
-  ae: "ScoutProcess",
+  // ae: "ScoutProcess",
   af: "NukeProcess",
   ag: "ManualCreepOperatorProcess",
   ah: "TemplateProcess",
@@ -47,6 +47,10 @@ export const processTypeDecodingMap = {
   an: "DetectNukeProcess",
   ao: "V3BridgeBotProcess",
   ap: "SellExcessResourceProcess",
+  aq: "V3ProcessLauncherProcess",
+  ar: "EventDrivenTestProcess",
+  as: "ScoutRoomProcess",
+  at: "RoomKeeperProcess",
 } as const
 
 export const deprecatedProcessTypeDecodingMap = {
@@ -93,6 +97,7 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "V3BridgeBotProcess",
 
   // Application
+  "EventDrivenTestProcess",
 
   // Manager Processes
   "GenericRoomManagerProcess",
@@ -109,7 +114,6 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "GenericRoomKeeperProcess",
   "TestHarvestRoomProcess",
   "TestPullProcess",
-  "ScoutProcess",
   "NukeProcess",
   "ManualCreepOperatorProcess",
   "TemplateProcess",
@@ -120,9 +124,10 @@ const processDependencyOrder: Readonly<ProcessTypes[]> = [
   "DetectNukeProcess",
   "ProblemResolverProcess",
   "SellExcessResourceProcess",
-
-  // Normalized Processes
+  "V3ProcessLauncherProcess",
   "ClaimRoomProcess",
+  "ScoutRoomProcess",
+  "RoomKeeperProcess",
 ] as const
 
 export const processExecutionOrder = new Map<ProcessTypes, number>(processDependencyOrder.map((processType, index) => [processType, index]))
@@ -158,14 +163,15 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   V3BridgeBotProcess: "bot",
 
   // Application
+  EventDrivenTestProcess: "application",
 
   // Combat
   AttackRoomManagerProcess: "combat",
-  ScoutProcess: "combat",
   NukeProcess: "combat",
   SaboteurPositionProcess: "combat",
   FireControlSystemProcess: "combat",
   DetectNukeProcess: "combat",
+  ScoutRoomProcess: "combat",
 
   // Economy
   GenericRoomManagerProcess: "economy",
@@ -179,6 +185,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   ClaimRoomProcess: "economy",
   ProblemResolverProcess: "economy",
   SellExcessResourceProcess: "economy",
+  RoomKeeperProcess: "economy",
 
   // Driver
   TerrainCacheProcess: "driver",
@@ -206,6 +213,7 @@ export const categorizedProcessType: { [P in ProcessTypes]: ProcessCategory } = 
   ManualCreepOperatorProcess: "support",
   TemplateProcess: "support",
   ManualRoomPlannerProcess: "support",
+  V3ProcessLauncherProcess: "support",
 } as const
 
 const categoryColor: { [C in ProcessCategory]: NativeTextColor | "none" } = {

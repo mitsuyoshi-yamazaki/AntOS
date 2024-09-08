@@ -1,4 +1,4 @@
-import { AnyV5Creep } from "os_v5/utility/game_object/creep"
+import { AnyV5Creep, isSpawnedV5Creep } from "os_v5/utility/game_object/creep"
 import { RoomName } from "shared/utility/room_name_types"
 import { GameConstants } from "utility/constants"
 import { Task, TaskResult, TaskTypeEncodingMap } from "../../types"
@@ -9,7 +9,10 @@ type MoveToRoomState = {
   readonly w: RoomName[]
 }
 
-export class MoveToRoom extends Task<MoveToRoomState> {
+export type MoveToRoomResult = string | number | undefined
+export type MoveToRoomError = Exclude<(ReturnType<Creep["move"]> | ReturnType<Creep["moveTo"]>), OK> | "no_exit"
+
+export class MoveToRoom extends Task<MoveToRoomState, MoveToRoomResult, MoveToRoomError> {
   public readonly actionType = "move"
   private exitPosition: RoomPosition | null = null
 
@@ -36,7 +39,13 @@ export class MoveToRoom extends Task<MoveToRoomState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<MoveToRoomResult, MoveToRoomError> {
+    if (!isSpawnedV5Creep(creep) || creep.fatigue > 0) {
+      return {
+        case: "in_progress",
+      }
+    }
+
     if (creep.room.name === this.destinationRoomName) {
       if (creep.pos.x === GameConstants.room.edgePosition.min) {
         this.moveCreepToDirection(creep, RIGHT)
@@ -50,7 +59,11 @@ export class MoveToRoom extends Task<MoveToRoomState> {
       if (creep.pos.y === GameConstants.room.edgePosition.max) {
         this.moveCreepToDirection(creep, TOP)
       }
-      return "finished"
+      return {
+        case: "finished",
+        taskType: "MoveToRoom",
+        result: undefined,
+      }
     }
 
     const waypointIndex = this.waypoints.indexOf(creep.room.name)
@@ -120,19 +133,23 @@ export class MoveToRoom extends Task<MoveToRoomState> {
       if (exitFlag != null) {
         return exitFlag.pos
       }
-      return creep.pos.findClosestByPath(exit) ?? "no path"
+      return creep.pos.findClosestByPath(exit) ?? "no path2"
     })()
 
     if (typeof exitPosition === "string") {
       creep.say(exitPosition)
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "MoveToRoom",
+        error: "no_exit",
+      }
     }
 
     this.exitPosition = exitPosition
     return this.moveCreep(creep, this.exitPosition)
   }
 
-  private moveCreep(creep: AnyV5Creep, position: RoomPosition): TaskResult {
+  private moveCreep(creep: AnyV5Creep, position: RoomPosition): TaskResult<MoveToRoomResult, MoveToRoomError> {
     const moveToOptions: MoveToOpts = {
       reusePath: 8,
       serializeMemory: true,
@@ -142,48 +159,42 @@ export class MoveToRoom extends Task<MoveToRoomState> {
     switch (result) {
     case OK:
       creep.executedActions.add(this.actionType)
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
 
     case ERR_BUSY:
     case ERR_TIRED:
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
 
     case ERR_NO_PATH:
     case ERR_NOT_FOUND:
     case ERR_INVALID_TARGET:
     case ERR_NO_BODYPART:
     case ERR_NOT_OWNER:
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "MoveToRoom",
+        error: result,
+      }
 
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _: never = result
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "MoveToRoom",
+        error: result,
+      }
     }
     }
   }
 
-  private moveCreepToDirection(creep: AnyV5Creep, direction: TOP | BOTTOM | RIGHT | LEFT): TaskResult {
-    const result = creep.move(direction)
-
-    switch (result) {
-    case OK:
+  private moveCreepToDirection(creep: AnyV5Creep, direction: TOP | BOTTOM | RIGHT | LEFT): void {
+    if (creep.move(direction) === OK) {
       creep.executedActions.add(this.actionType)
-      return "in progress"
-
-    case ERR_BUSY:
-    case ERR_TIRED:
-      return "in progress"
-
-    case ERR_NO_BODYPART:
-    case ERR_NOT_OWNER:
-      return "failed"
-
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = result
-      return "failed"
-    }
     }
   }
 }

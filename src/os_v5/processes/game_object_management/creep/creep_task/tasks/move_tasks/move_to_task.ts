@@ -1,4 +1,4 @@
-import { AnyV5Creep } from "os_v5/utility/game_object/creep"
+import { AnyV5Creep, isSpawnedV5Creep } from "os_v5/utility/game_object/creep"
 import { decodeRoomPosition, RoomPositionState } from "prototype/room_position"
 import { Task, TaskResult, TaskTypeEncodingMap } from "../../types"
 
@@ -8,7 +8,12 @@ type MoveToState = {
   readonly r?: number
 }
 
-export class MoveTo extends Task<MoveToState> {
+type Range = number
+export type MoveToResult = Range
+export type MoveToError = Exclude<ReturnType<Creep["moveTo"]>, OK>
+
+
+export class MoveTo extends Task<MoveToState, MoveToResult, MoveToError> {
   public readonly actionType = "move"
 
   private constructor(
@@ -34,32 +39,60 @@ export class MoveTo extends Task<MoveToState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
-    if (creep.pos.getRangeTo(this.position) <= (this.range ?? 1)) {
-      return "finished"
+  public run(creep: AnyV5Creep): TaskResult<MoveToResult, MoveToError> {
+    if (!isSpawnedV5Creep(creep)) {
+      return {
+        case: "in_progress",
+      }
+    }
+    if (creep.fatigue > 0) {
+      return {
+        case: "in_progress",
+      }
+    }
+
+    const rangeToTarget = creep.pos.getRangeTo(this.position)
+    if (rangeToTarget <= (this.range ?? 1)) {
+      return {
+        case: "finished",
+        taskType: "MoveTo",
+        result: rangeToTarget,
+      }
     }
 
     const result = creep.moveTo(this.position)
+
     switch (result) {
     case OK:
       creep.executedActions.add(this.actionType)
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
 
     case ERR_BUSY:
     case ERR_TIRED:
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
 
     case ERR_NO_PATH:
     case ERR_NOT_FOUND:
     case ERR_INVALID_TARGET:
     case ERR_NO_BODYPART:
     case ERR_NOT_OWNER:
-      return "failed"
-
+      return {
+        case: "failed",
+        taskType: "MoveTo",
+        error: result,
+      }
     default: {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const _: never = result
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "MoveTo",
+        error: result,
+      }
     }
     }
   }

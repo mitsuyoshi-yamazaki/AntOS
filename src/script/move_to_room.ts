@@ -124,7 +124,7 @@ export function moveToRoom(creep: AnyCreep, targetRoomName: RoomName, waypoints:
     if (exitFlag != null) {
       return exitFlag.pos
     }
-    return creep.pos.findClosestByPath(exit) ?? "no path"
+    return creep.pos.findClosestByPath(exit) ?? "no path3"
   })()
 
   if (typeof exitPosition === "string") {

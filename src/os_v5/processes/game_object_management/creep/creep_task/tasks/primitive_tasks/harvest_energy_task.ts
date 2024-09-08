@@ -7,7 +7,11 @@ type HarvestEnergyState = {
   readonly tg: Id<Source>
 }
 
-export class HarvestEnergy extends Task<HarvestEnergyState> {
+export type HarvestEnergyResult = void
+export type HarvestEnergyError = Exclude<ReturnType<Creep["harvest"]>, OK> | "no_source"
+
+
+export class HarvestEnergy extends Task<HarvestEnergyState, HarvestEnergyResult, HarvestEnergyError> {
   public readonly actionType = "harvest"
 
   private constructor(
@@ -31,20 +35,36 @@ export class HarvestEnergy extends Task<HarvestEnergyState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<HarvestEnergyResult, HarvestEnergyError> {
     const target = Game.getObjectById(this.targetId)
     if (target == null) {
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "HarvestEnergy",
+        error: "no_source",
+      }
     }
-    if (creep.harvest(target) === OK) {
+
+    const result = creep.harvest(target)
+    if (result === OK) {
       creep.executedActions.add(this.actionType)
 
       const harvestPower = creep.body.filter(body => body.type === WORK).length * GameConstants.creep.actionPower.harvestEnergy
       if (creep.store.getFreeCapacity(RESOURCE_ENERGY) <= harvestPower) {
-        return "finished"
+        return {
+          case: "finished",
+          taskType: "HarvestEnergy",
+          result: undefined,
+        }
       }
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
     }
-    return "failed"
+    return {
+      case: "failed",
+      taskType: "HarvestEnergy",
+      error: result,
+    }
   }
 }

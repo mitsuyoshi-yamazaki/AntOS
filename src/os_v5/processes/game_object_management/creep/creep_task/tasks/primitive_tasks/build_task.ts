@@ -7,7 +7,11 @@ type BuildState = {
   readonly c: Id<ConstructionSite<BuildableStructureConstant>>  /// Construction site ID
 }
 
-export class Build extends Task<BuildState> {
+export type BuildResult = void
+export type BuildError = Exclude<ReturnType<Creep["build"]>, OK> | "no_construction_site"
+
+
+export class Build extends Task<BuildState, BuildResult, BuildError> {
   public readonly actionType = "build"
 
   private constructor(
@@ -31,43 +35,45 @@ export class Build extends Task<BuildState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<BuildResult, BuildError> {
     const constructionSite = Game.getObjectById(this.constructionSiteId)
     if (constructionSite == null) {
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "Build",
+        error: "no_construction_site",
+      }
     }
 
     const energy = creep.store.getUsedCapacity(RESOURCE_ENERGY)
     if (energy <= 0) {
-      return "finished"
+      return {
+        case: "finished",
+        taskType: "Build",
+        result: undefined,
+      }
     }
 
     const result = creep.build(constructionSite)
-    switch (result) {
-    case OK: {
+    if (result === OK) {
       const buildPower = creep.body.filter(body => body.type === WORK).length * GameConstants.creep.actionPower.build
       creep.executedActions.add(this.actionType)
       if (buildPower >= energy) {
-        return "finished"
+        return {
+          case: "finished",
+          taskType: "Build",
+          result: undefined,
+        }
       }
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
     }
 
-    case ERR_RCL_NOT_ENOUGH:
-    case ERR_NOT_ENOUGH_RESOURCES:
-    case ERR_TIRED:
-    case ERR_BUSY:
-    case ERR_NOT_IN_RANGE:
-    case ERR_INVALID_TARGET:
-    case ERR_NO_BODYPART:
-    case ERR_NOT_OWNER:
-      return "failed"
-
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = result
-      return "failed"
-    }
+    return {
+      case: "failed",
+      taskType: "Build",
+      error: result,
     }
   }
 }

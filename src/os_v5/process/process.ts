@@ -2,6 +2,7 @@ import type { DeferredTaskResult } from "os_v5/system_calls/depended_system_call
 import type { SerializableObject } from "shared/utility/serializable_types"
 import type { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
 import { BotTypes, coloredProcessType, ProcessTypes } from "./process_type_map"
+import type {} from "./process_errors"
 
 /**
 # Process
@@ -12,20 +13,6 @@ import { BotTypes, coloredProcessType, ProcessTypes } from "./process_type_map"
   - 固定値であるため実装時に重複のないように指定する
  */
 
-// ---- Error ---- //
-type ProcessErrorNotExecutable = {
-  readonly case: "not_executable"
-  readonly reason: string
-}
-type ProcessErrorTypes = ProcessErrorNotExecutable
-
-export class ProcessError extends Error {
-  public constructor(
-    public readonly error: ProcessErrorTypes,
-  ) {
-    super(error.reason)
-  }
-}
 
 
 // ---- ProcessId ---- //

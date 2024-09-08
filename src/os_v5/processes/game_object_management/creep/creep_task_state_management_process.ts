@@ -1,4 +1,4 @@
-import { Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
+import { AnyProcessId, Process, processDefaultIdentifier, ProcessDefaultIdentifier, ProcessDependencies, ProcessId, ReadonlySharedMemory } from "../../../process/process"
 import { ProcessDecoder } from "os_v5/system_calls/process_manager/process_decoder"
 import { AnyV5Creep, V5Creep, V5CreepMemoryReservedProperties } from "os_v5/utility/game_object/creep"
 import { EmptySerializable, SerializableObject } from "shared/utility/serializable_types"
@@ -6,6 +6,7 @@ import { CreepTask } from "./creep_task/creep_task"
 import { CreepName } from "prototype/creep"
 import { CreepDistributorProcessApi } from "./creep_distributor_process"
 import { ErrorMapper } from "error_mapper/ErrorMapper"
+import { CreepTaskError, CreepTaskResult } from "./creep_task_result"
 
 /**
 #
@@ -22,27 +23,34 @@ import { ErrorMapper } from "error_mapper/ErrorMapper"
 - 入れ子の子タスクはserializeしたままで、遷移時にdeserializeすればdeserialize時間を短縮できないか
  */
 
+// TODO: Creepが死んだ場合はTaskの終了イベントが発火しない
+
 ProcessDecoder.register("CreepTaskStateManagementProcess", (processId: CreepTaskStateManagementProcessId) => CreepTaskStateManagementProcess.decode(processId))
 
 export type TaskDrivenCreepMemory<Roles> = {
   t: CreepTask.TaskState | null
   r: Roles
-  // s?: true  /// CreepTask tが終了した際に次タスクの生成を求めるか  // TODO:
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type TaskDrivenCreepMemoryReservedProperties = V5CreepMemoryReservedProperties | { t: any } | { r: any } | { s: any }
+type TaskDrivenCreepMemoryReservedProperties = V5CreepMemoryReservedProperties | { t: any } | { r: any } | { n: any }
 
 export type TaskDrivenCreep<Roles extends string, M extends SerializableObject> = M extends TaskDrivenCreepMemoryReservedProperties ? never : V5Creep<TaskDrivenCreepMemory<Roles> & M> & {
   task: CreepTask.AnyTask | null
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyTaskDrivenCreep = TaskDrivenCreep<string, Record<string, any>>
+export type AnyTaskDrivenCreep = TaskDrivenCreep<string, Record<string, any>>
+
+
+export type CreepTaskObserver = {
+  creepTaskFinished(creep: AnyTaskDrivenCreep, result: CreepTaskResult): void
+  creepTaskFailed(creep: AnyTaskDrivenCreep, error: CreepTaskError): void
+}
 
 
 export type CreepTaskStateManagementProcessApi = {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  registerTaskDrivenCreeps<Roles extends string, M extends SerializableObject>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles, M>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
+  registerTaskDrivenCreeps<Roles extends string, M extends SerializableObject>(creepsToRegister: AnyV5Creep[], options?: {observer?: {processId: AnyProcessId, observer: CreepTaskObserver}}): TaskDrivenCreep<Roles, M>[] /// CreepMemoryにタスク内容を保存・現在の状態に更新
 }
 
 export type CreepTaskStateManagementProcessId = ProcessId<Dependency, ProcessDefaultIdentifier, CreepTaskStateManagementProcessApi, EmptySerializable, CreepTaskStateManagementProcess>
@@ -59,6 +67,7 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
   }
 
   private taskDrivenCreeps: AnyTaskDrivenCreep[] = []
+  private taskDrivenCreepObservers = new Map<AnyProcessId, CreepTaskObserver>()
   private readonly creepTaskCache = new Map<CreepName, CreepTask.AnyTask>()
 
   private constructor(
@@ -93,6 +102,7 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
 
   public run(dependency: Dependency): CreepTaskStateManagementProcessApi {
     this.taskDrivenCreeps = []
+    this.taskDrivenCreepObservers.clear()
 
     dependency.getDeadCreeps().forEach(deadCreepName => {
       if (this.creepTaskCache.has(deadCreepName) !== true) {
@@ -104,7 +114,11 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
 
     return {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      registerTaskDrivenCreeps: <Roles extends string, MemoryExtension extends Record<string, any>>(creepsToRegister: AnyV5Creep[]): TaskDrivenCreep<Roles, MemoryExtension>[] => {
+      registerTaskDrivenCreeps: <Roles extends string, MemoryExtension extends Record<string, any>>(creepsToRegister: AnyV5Creep[], options?: { observer?: { processId: AnyProcessId, observer: CreepTaskObserver } }): TaskDrivenCreep<Roles, MemoryExtension>[] => {
+        if (options?.observer != null) {
+          this.taskDrivenCreepObservers.set(options.observer.processId, options.observer.observer)
+        }
+
         const creeps = creepsToRegister as TaskDrivenCreep<Roles, MemoryExtension>[]
         creeps.forEach(creep => {
           creep.task = this.parseRootTask(creep) // TODO: タスクをキャッシュ
@@ -139,21 +153,50 @@ export class CreepTaskStateManagementProcess extends Process<Dependency, Process
 
     ErrorMapper.wrapLoop((): void => {
       const result = task.run(creep)
-      switch (result) {
-      case "in progress":
+      switch (result.case) {
+      case "in_progress":
         break
       case "finished":
+        creep.task = null
+        if (creep.memory.p != null) {
+          this.creepTaskFinished(creep, creep.memory.p, result)
+        }
+        break
       case "failed":
         creep.task = null
+        if (creep.memory.p != null) {
+          this.creepTaskFailed(creep, creep.memory.p, result)
+        }
         break
-      default:
-        creep.task = result
-        if (result.canRun(creep) === true) {
+      case "next_task":
+        creep.task = result.task
+        if (result.task.canRun(creep) === true) {
           this.runCreepTask(creep)
         }
         break
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = result
+        break
+      }
       }
     }, `CreepTaskStateManagementProcess.runCreepTask(${task.constructor.name}) for creep ${creep.name}`)()
+  }
+
+  private creepTaskFinished(creep: AnyTaskDrivenCreep, processId: AnyProcessId, result: CreepTaskResult): void {
+    const observer = this.taskDrivenCreepObservers.get(processId)
+    if (observer == null) {
+      return
+    }
+    observer.creepTaskFinished(creep, result)
+  }
+
+  private creepTaskFailed(creep: AnyTaskDrivenCreep, processId: AnyProcessId, error: CreepTaskError): void {
+    const observer = this.taskDrivenCreepObservers.get(processId)
+    if (observer == null) {
+      return
+    }
+    observer.creepTaskFailed(creep, error)
   }
 
   private parseRootTask(creep: AnyTaskDrivenCreep): CreepTask.AnyTask | null {

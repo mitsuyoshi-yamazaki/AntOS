@@ -8,7 +8,10 @@ import { ResumeCommand } from "./commands/resume_command"
 import { MessageCommand } from "./commands/message_command"
 import { SettingCommand } from "./commands/setting_command"
 
-// ---- ---- //
+// ---- Alias ---- //
+import { makeAlias } from "./commands/alias"
+
+// ---- Import ---- //
 import { ConsoleUtility } from "shared/utility/console_utility/console_utility"
 import { Command, runCommands } from "./command"
 import { ArgumentParser } from "os_v5/utility/v5_argument_parser/argument_parser"
@@ -28,8 +31,22 @@ const commandRunners: Command[] = [
 
 export const StandardIO = (input: string): string => {
   try {
-    const argumentParser = new ArgumentParser(input.split(" "))
+    const argumentParser = new ArgumentParser(input)
+
+    // 特殊な処理のコマンド
+    const command = argumentParser.string([0, "command"]).parseOptional()
+    switch (command) {
+    case "alias":
+      argumentParser.moveOffset(+1)
+      return parseAlias(argumentParser)
+
+    default:
+      break
+    }
+
+
     return runCommands(argumentParser, commandRunners)
+
   } catch (error) {
     if (error instanceof Error) {
       const stackTrace = error.stack
@@ -39,4 +56,11 @@ export const StandardIO = (input: string): string => {
     }
     return `${ConsoleUtility.colored("[ERROR]", "error")} ${error}`
   }
+}
+
+
+const parseAlias = (argumentParser: ArgumentParser): string => {
+  const alias = makeAlias(argumentParser)
+
+  return `${alias}`
 }

@@ -134,7 +134,7 @@ export class CreepDistributorProcess extends Process<void, ProcessDefaultIdentif
 
       createSpawnCreepMemoryFor: <M extends SerializableObject>(processId: AnyProcessId, memory: ExtendedV5CreepMemory<M>): V5CreepMemory<M> => {
         return {
-          v: "o5",  // TODO:
+          v: "o5",
           p: processId,
           ...memory,
         }

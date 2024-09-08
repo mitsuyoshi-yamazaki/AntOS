@@ -7,7 +7,11 @@ type UpgradeControllerState = {
   readonly tg: Id<StructureController>
 }
 
-export class UpgradeController extends Task<UpgradeControllerState> {
+export type UpgradeControllerResult = void
+export type UpgradeControllerError = Exclude<ReturnType<Creep["upgradeController"]>, OK> | "no_controller"
+
+
+export class UpgradeController extends Task<UpgradeControllerState, UpgradeControllerResult, UpgradeControllerError> {
   public readonly actionType = "upgradeController"
 
   private constructor(
@@ -31,20 +35,37 @@ export class UpgradeController extends Task<UpgradeControllerState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<UpgradeControllerResult, UpgradeControllerError> {
     const target = Game.getObjectById(this.targetId)
     if (target == null) {
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "UpgradeController",
+        error: "no_controller",
+      }
     }
-    if (creep.upgradeController(target) === OK) {
+
+    const result = creep.upgradeController(target)
+    if (result === OK) {
       creep.executedActions.add(this.actionType)
 
       const upgradePower = creep.body.filter(body => body.type === WORK).length * GameConstants.creep.actionPower.upgradeController
       if (creep.store.getUsedCapacity(RESOURCE_ENERGY) <= upgradePower) {
-        return "finished"
+        return {
+          case: "finished",
+          taskType: "UpgradeController",
+          result: undefined,
+        }
       }
-      return "in progress"
+      return {
+        case: "in_progress",
+      }
     }
-    return "failed"
+
+    return {
+      case: "failed",
+      taskType: "UpgradeController",
+      error: result,
+    }
   }
 }

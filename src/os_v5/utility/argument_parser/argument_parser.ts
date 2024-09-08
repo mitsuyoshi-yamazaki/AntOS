@@ -12,6 +12,28 @@ import { IterableArgumentType, ListArgumentParser } from "./list_argument_parser
 - 配列引数は添字で指定するため、キーワード引数より前に指定する
  */
 
+/// ListかKeywordかは=が出てくるまで不明
+type ParsedArgumentUnknown = {
+  readonly case: "unknown"
+  value: string
+}
+/// Argumentが'で囲われている場合
+type ParsedArgumentList = {
+  readonly case: "list"
+  value: string
+}
+type ParsedArgumentKeyword = {
+  readonly case: "keyword"
+  readonly key: string
+  value: string
+  isInQuotation: boolean
+}
+type ParsedArgumentOption = {
+  readonly case: "option"
+  readonly values: string[]
+}
+type ParsedArgument = ParsedArgumentUnknown | ParsedArgumentList | ParsedArgumentKeyword | ParsedArgumentOption
+
 export class ArgumentParser {
   public get isEmpty(): boolean {
     return Array.from(this.rawKeywordArguments.values()).length === 0 && this.rawArguments.length <= this.rawArgumentOffset
@@ -24,47 +46,161 @@ export class ArgumentParser {
 
   /** @throws */
   public constructor(
-    args: string[],
+    rawArgument: string,
   ) {
-    let hasKeywordArguments = false
-    const errors: string[] = []
     const optionArguments: string[] = []
 
-    args.forEach(arg => {
-      if (arg.length <= 0) {
+    let currentArgument = {
+      case: "unknown",
+      value: "",
+    } as ParsedArgument
+
+    rawArgument.split("").forEach(c => {
+      switch (currentArgument.case) {
+      case "unknown":
+        switch (c) {
+        case "'":
+          if (currentArgument.value.length > 0) {
+            throw `Unexpected ' in middle of unknown type argument: ${currentArgument.value + c}`
+          }
+          currentArgument = {
+            case: "list",
+            value: "",
+          }
+          return
+
+        case " ":
+          if (currentArgument.value.length > 0) {
+            // ' で終わった等で、値を読み出す前にスペースに来ることがある
+            this.rawArguments.push(currentArgument.value)
+            currentArgument = {
+              case: "unknown",
+              value: "",
+            }
+          }
+          return
+
+        case "=": {
+          const key = currentArgument.value
+          currentArgument = {
+            case: "keyword",
+            key,
+            value: "",
+            isInQuotation: false,
+          }
+          return
+        }
+
+        case "-":
+          if (currentArgument.value.length > 0) {
+            throw `Unexpected - in middle of argument: ${currentArgument.value + c}`
+          }
+          currentArgument = {
+            case: "option",
+            values: [],
+          }
+          return
+
+        default: {
+          currentArgument.value += c
+          return
+        }
+        }
+
+      case "list": // ' から始まっている場合のみ
+        if (this.rawKeywordArguments.size > 0) {
+          throw "List argument comes after keyword arguments"
+        }
+        switch (c) {
+        case "'":
+          this.rawArguments.push(currentArgument.value)
+          currentArgument = {
+            case: "unknown",
+            value: "",
+          }
+          return
+
+        default:
+          currentArgument.value += c
+          return
+        }
+
+      case "keyword":
+        switch (c) {
+        case "'":
+          if (currentArgument.value.length <= 0) {
+            currentArgument.isInQuotation = true
+            return
+          }
+          this.rawKeywordArguments.set(currentArgument.key, currentArgument.value)
+          currentArgument = {
+            case: "unknown",
+            value: "",
+          }
+          return
+
+        case " ":
+          if (currentArgument.isInQuotation) {
+            currentArgument.value += c
+          } else {
+            this.rawKeywordArguments.set(currentArgument.key, currentArgument.value)
+            currentArgument = {
+              case: "unknown",
+              value: "",
+            }
+          }
+          return
+
+        default:
+          currentArgument.value += c
+          return
+        }
+
+      case "option":
+        switch (c) {
+        case " ":
+          optionArguments.push(...currentArgument.values)
+          currentArgument = {
+            case: "unknown",
+            value: "",
+          }
+          return
+
+        default:
+          currentArgument.values.push(c)
+          return
+        }
+
+      default: {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _: never = currentArgument
         return
       }
-
-      const keyValuePair = arg.split("=")
-      switch (keyValuePair.length) {
-      case 1:
-        // list argument or option
-        if (arg.startsWith("-") === true) {
-          optionArguments.push(...arg.split(""))
-          return
-        }
-        if (hasKeywordArguments === true) {
-          errors.push(`list argument comes after keyword arguments (${arg})`)
-          return
-        }
-        this.rawArguments.push(arg)
-        return
-
-      case 2:
-        // keyword argument
-        hasKeywordArguments = true
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        this.rawKeywordArguments.set(keyValuePair[0]!, keyValuePair[1]!)
-        return
-
-      default:
-        errors.push(`cannot parse argument with ${keyValuePair.length - 1} "="s (${arg})`)
-        return
       }
     })
 
-    if (errors.length > 0) {
-      throw `Argument parse errors: ${errors.join("\n")}`
+    switch (currentArgument.case) {
+    case "unknown":
+      if (currentArgument.value.length > 0) {
+        this.rawArguments.push(currentArgument.value)
+      }
+      break
+    case "list":
+      if (currentArgument.value.length > 0) {
+        this.rawArguments.push(currentArgument.value)
+      }
+      break
+    case "keyword":
+      this.rawKeywordArguments.set(currentArgument.key, currentArgument.value)
+      break
+    case "option":
+      optionArguments.push(...currentArgument.values)
+      break
+    default: {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const _: never = currentArgument
+      break
+    }
     }
 
     this.optionArguments = new Set<string>(optionArguments)

@@ -8,7 +8,10 @@ type TrafficManagedMoveState = {
   readonly r?: number
 }
 
-export class TrafficManagedMove extends Task<TrafficManagedMoveState> {
+export type TrafficManagedMoveResult = void
+export type TrafficManagedMoveError = void // TODO:
+
+export class TrafficManagedMove extends Task<TrafficManagedMoveState, TrafficManagedMoveResult, TrafficManagedMoveError> {
   public readonly actionType = "move"
 
   private constructor(
@@ -34,8 +37,12 @@ export class TrafficManagedMove extends Task<TrafficManagedMoveState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult { // TODO: CreepはTrafficManagedでなければならない
+  public run(creep: AnyV5Creep): TaskResult<TrafficManagedMoveResult, TrafficManagedMoveError> { // TODO: CreepはTrafficManagedでなければならない
     creep.say("Not I")
-    return "failed"
+    return {
+      case: "failed",
+      taskType: "TrafficManagedMove",
+      error: undefined,
+    }
   }
 }

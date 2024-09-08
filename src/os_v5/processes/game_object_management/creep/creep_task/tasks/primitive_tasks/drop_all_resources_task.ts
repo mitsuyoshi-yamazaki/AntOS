@@ -6,7 +6,11 @@ type DropAllResourcesState = {
   readonly t: TaskTypeEncodingMap["DropAllResources"]
 }
 
-export class DropAllResources extends Task<DropAllResourcesState> {
+export type DropAllResourcesResult = void
+export type DropAllResourcesError = Exclude<ReturnType<Creep["drop"]>, OK>
+
+
+export class DropAllResources extends Task<DropAllResourcesState, DropAllResourcesResult, DropAllResourcesError> {
   public readonly actionType = "drop"
 
   private constructor(
@@ -28,12 +32,16 @@ export class DropAllResources extends Task<DropAllResourcesState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<DropAllResourcesResult, DropAllResourcesError> {
     const storedResources = storedResourceTypes(creep.store)
 
     storedResources.forEach(resourceType => {
       creep.drop(resourceType)
     })
-    return "finished"
+    return {
+      case: "finished",
+      taskType: "DropAllResources",
+      result: undefined,
+    }
   }
 }

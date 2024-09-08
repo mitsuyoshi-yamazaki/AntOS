@@ -6,7 +6,7 @@ export type ArgumentParserOptions = {
 }
 
 
-export abstract class SingleArgumentParser<Options, Value> {
+abstract class SingleArgumentParser<Options, Value> { // 運用上は常に SingleOptionalArgument を利用するのでexportしない
   public constructor(
     public readonly key: Key,
     public readonly value: string | null,
@@ -36,6 +36,40 @@ export abstract class SingleOptionalArgument<Options, Value> extends SingleArgum
       return null
     }
     return this.parse(options)
+  }
+
+  public withStringLiteral<T extends string>(typeGuard: ((arg: string) => arg is T)): SingleOptionalArgument<Options, Value | T> {
+    return new UnionArgument<Options, Value, T>(
+      (options?: Options): Value => this.parse(options),
+      typeGuard,
+      this.key,
+      this.value,
+      this.parseOptions,
+    )
+  }
+}
+
+
+class UnionArgument<Options, Value, Literal extends string> extends SingleOptionalArgument<Options, Value | Literal> {
+  public constructor(
+    private readonly parseValue: (options?: Options) => Value,
+    private readonly typeGuard: ((arg: string) => arg is Literal),
+    key: Key,
+    value: string | null,
+    parseOptions?: ArgumentParserOptions,
+  ) {
+    super(key, value, parseOptions)
+  }
+
+  public parse(options?: Options): Value | Literal {
+    if (this.value == null) {
+      throw this.missingArgumentErrorMessage()
+    }
+
+    if (this.typeGuard(this.value)) {
+      return this.value
+    }
+    return this.parseValue(options)
   }
 }
 

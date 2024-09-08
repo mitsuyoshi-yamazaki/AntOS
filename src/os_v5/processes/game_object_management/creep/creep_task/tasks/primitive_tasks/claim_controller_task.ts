@@ -7,7 +7,11 @@ type ClaimControllerState = {
   readonly s?: string
 }
 
-export class ClaimController extends Task<ClaimControllerState> {
+export type ClaimControllerResult = void
+export type ClaimControllerError = Exclude<ReturnType<Creep["claimController"]>, OK> | "no_controller"
+
+
+export class ClaimController extends Task<ClaimControllerState, ClaimControllerResult, ClaimControllerError> {
   public readonly actionType = null
 
   private constructor(
@@ -33,10 +37,14 @@ export class ClaimController extends Task<ClaimControllerState> {
     }
   }
 
-  public run(creep: AnyV5Creep): TaskResult {
+  public run(creep: AnyV5Creep): TaskResult<ClaimControllerResult, ClaimControllerError> {
     const controller = Game.getObjectById(this.controllerId)
     if (controller == null) {
-      return "failed"
+      return {
+        case: "failed",
+        taskType: "ClaimController",
+        error: "no_controller",
+      }
     }
 
     if (this.sign != null) {
@@ -44,25 +52,18 @@ export class ClaimController extends Task<ClaimControllerState> {
     }
 
     const result = creep.claimController(controller)
-    switch (result) {
-    case OK:
-      return "finished"
-
-    case ERR_TIRED:
-    case ERR_BUSY:
-    case ERR_GCL_NOT_ENOUGH:
-    case ERR_NOT_IN_RANGE:
-    case ERR_FULL:
-    case ERR_INVALID_TARGET:
-    case ERR_NO_BODYPART:
-    case ERR_NOT_OWNER:
-      return "failed"
-
-    default: {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const _: never = result
-      return "failed"
+    if (result === OK) {
+      return {
+        case: "finished",
+        taskType: "ClaimController",
+        result: undefined,
+      }
     }
+
+    return {
+      case: "failed",
+      taskType: "ClaimController",
+      error: result,
     }
   }
 }
