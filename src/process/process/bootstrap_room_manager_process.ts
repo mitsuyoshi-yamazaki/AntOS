@@ -274,7 +274,7 @@ export class BootstrapRoomManagerProcess implements Process, Procedural, Message
     }
     if (availableRoomCount === targetingRoomCount) {
       const nextLevel = Game.gcl.progressTotal - Game.gcl.progress
-      return nextLevel < 80000  // TODO: 算出する
+      return nextLevel < 50000  // TODO: 算出する
     }
     return false
   }
